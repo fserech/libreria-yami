@@ -1,0 +1,7 @@
+{
+  "name": "libreria-frontend",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
