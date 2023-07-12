@@ -5,7 +5,13 @@
   "projects": {
     "app": {
       "projectType": "application",
-      "schematics": {},
+      "schematics": {
+        "@schematics/angular:component": {
+          "styleext": "scss",
+          "spec": false,
+          "flat": true
+        }
+      },
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",
@@ -136,8 +142,7 @@
   "cli": {
     "schematicCollections": [
       "@ionic/angular-toolkit"
-    ],
-    "analytics": false
+    ]
   },
   "schematics": {
     "@ionic/angular-toolkit:component": {
