@@ -1,62 +1,23 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
+import { NotFoundComponent } from './shared/components/not-found/not-found.component';
 
 const routes: Routes = [
   {
     path: '',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
+    loadChildren: () => import('./authentication/autentication.module').then( m => m.AutenticationModule)
   },
   {
-    path: 'home',
-    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
+    path: 'dashboard',
+    loadChildren: () => import('./dashboard/dashboard.module').then( m => m.DashboardModule)
   },
   {
-    path: 'auth',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
+    path: 'not-found',
+    component: NotFoundComponent
   },
   {
-    path: 'inventory',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  },
-  {
-    path: 'categories-products',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  },
-  {
-    path: 'sales',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  },
-  {
-    path: 'shopping',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  },
-    {
-    path: 'roles-users',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  },
-  {
-    path: 'statistics',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  },
-  {
-    path: 'products',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  },
-  {
-    path: 'cancellations',
-    loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  },
-  // {
-  //   path: 'sales',
-  //   loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  // },
-  // {
-  //   path: 'sales',
-  //   loadChildren: () => import('./authetication/authetication.module').then( m => m.AutheticationModule)
-  // },
-  {
-    path: '',
-    redirectTo: '',
+    path: '**',
+    redirectTo: 'not-found',
     pathMatch: 'full'
   },
 ];

@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { NotFoundComponent } from './components/not-found/not-found.component';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { PageWidgetsComponent } from './components/page-widgets/page-widgets.component';
 
 
 
 @NgModule({
   declarations: [
-    NotFoundComponent
+    NotFoundComponent,
+    PageWidgetsComponent
   ],
   imports: [
     CommonModule,
@@ -20,7 +22,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
     IonicModule,
     NotFoundComponent,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    PageWidgetsComponent
   ]
 })
 export class SharedModule { }
