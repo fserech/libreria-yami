@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
 import { NewCategoryComponent } from './components/new-category/new-category.component';
+import { RouterModule, Routes } from '@angular/router';
 import { ViewCategoriesComponent } from './components/view-categories/view-categories.component';
 
 const routes: Routes = [
