@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "libreria-80d84"
+  },
+  "targets": {
+    "libreria-80d84": {
+      "hosting": {
+        "app": [
+          "libreria-80d84"
+        ]
+      }
+    }
   }
 }

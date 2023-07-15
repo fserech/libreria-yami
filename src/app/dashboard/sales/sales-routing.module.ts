@@ -3,9 +3,10 @@ import { RouterModule, Routes } from '@angular/router';
 import { NewSaleComponent } from './components/new-sale/new-sale.component';
 import { HistorySalesComponent } from './components/history-sales/history-sales.component';
 import { MySalesComponent } from './components/my-sales/my-sales.component';
+import { PageWidgetsComponent } from 'src/app/shared/components/page-widgets/page-widgets.component';
 
 const routes: Routes = [
-  {path: '', component: NewSaleComponent},
+  {path: '', component: PageWidgetsComponent},
   {path: 'new-sale', component: NewSaleComponent},
   {path: 'my-sales', component: MySalesComponent},
   {path: 'history-sales', component: HistorySalesComponent}
