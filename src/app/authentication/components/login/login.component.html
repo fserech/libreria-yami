@@ -1,7 +1,7 @@
 <ion-content mode="ios">
   <div class="container" [@fadeInOut]>
 
-    <ion-card>
+    <ion-card *ngIf="!load">
       <ion-card-content [formGroup]="form">
         <div class="forgot-password">
           <img width="100" src="https://images.vexels.com/media/users/3/267831/isolated/preview/cd079d709300f6af3cdfa75b83d35db8-icono-de-libros-acogedores-de-invierno.png" alt="">
@@ -30,6 +30,30 @@
 
           <div class="forgot-password">
             <a routerLink="/auth/forget-password">¿Olvidaste tu contraseña?</a>
+          </div>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="load" class="col-12 col-md-4">
+      <ion-card-content [formGroup]="form">
+        <div class="forgot-password">
+          <img width="100" src="https://images.vexels.com/media/users/3/267831/isolated/preview/cd079d709300f6af3cdfa75b83d35db8-icono-de-libros-acogedores-de-invierno.png" alt="">
+        </div>
+
+          <div class="forgot-password mb-2 col-12">
+            <ion-skeleton-text color="primary" [animated]="true" class="rounded-pill m-auto" style="width: 90%; height: 30px;"></ion-skeleton-text>
+          </div>
+
+          <div class="forgot-password mb-2">
+            <ion-skeleton-text color="primary" [animated]="true" class="rounded-pill m-auto" style="width: 90%; height: 30px;"></ion-skeleton-text>
+          </div>
+
+          <div class="forgot-password mb-2">
+            <ion-skeleton-text color="primary" [animated]="true" class="rounded-pill m-auto" style="width: 50%; height: 30px;"></ion-skeleton-text>
+          </div>
+
+          <div class="forgot-password">
+            <ion-skeleton-text [animated]="true" class="rounded-pill m-auto" style="width: 40%"></ion-skeleton-text>
           </div>
       </ion-card-content>
     </ion-card>

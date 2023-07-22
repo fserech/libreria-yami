@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { AuthService } from 'src/app/shared/services/auth/auth.service';
+import { error } from 'console';
 
 @Component({
   selector: 'app-login',
@@ -19,6 +20,7 @@ export class LoginComponent  implements OnInit {
 
   form: FormGroup;
   hidePassword = true;
+  load: boolean = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -38,8 +40,18 @@ export class LoginComponent  implements OnInit {
 
   login() {
     if (this.form.valid) {
-      console.log('Email:', this.form.get('email').value);
-      console.log('Password:', this.form.get('password').value);
+      this.load = true;
+      const email = this.form.get('email').value;
+      const password = this.form.get('password').value;
+      this.authService.login(email, password)
+        .then(result => {
+          console.log(result);
+          this.load = false;
+        })
+        .catch(error => {
+          console.log(error);
+          this.load = false;
+        });
     }
   }
 

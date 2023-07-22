@@ -18,6 +18,7 @@ import { AuthService } from 'src/app/shared/services/auth/auth.service';
 export class ForgetPasswordComponent  implements OnInit {
 
   form: FormGroup;
+  load: boolean = false;
 
   constructor(
     private formBuilder: FormBuilder,

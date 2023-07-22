@@ -15,7 +15,7 @@ export class AuthService {
     private router: Router,
     private firestore: AngularFirestore) { }
 
-  login(email, password) {
+  login(email: string, password: string) {
     return this.afAuth.signInWithEmailAndPassword(email, password);
   }
 
