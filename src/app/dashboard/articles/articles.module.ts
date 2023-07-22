@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ArticlesRoutingModule } from './articles-routing.module';
 import { NewArticleComponent } from './components/new-article/new-article.component';
 import { ViewArticlesComponent } from './components/view-articles/view-articles.component';
+import { SharedModule } from 'src/app/shared/shared.module';
 
 
 @NgModule({
@@ -12,7 +13,8 @@ import { ViewArticlesComponent } from './components/view-articles/view-articles.
     ViewArticlesComponent],
   imports: [
     CommonModule,
-    ArticlesRoutingModule
+    ArticlesRoutingModule,
+    SharedModule
   ]
 })
 export class ArticlesModule { }
