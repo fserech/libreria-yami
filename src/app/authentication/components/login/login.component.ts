@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { trigger, state, style, transition, animate } from '@angular/animations';
+import { AuthService } from 'src/app/shared/services/auth/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +22,8 @@ export class LoginComponent  implements OnInit {
 
   constructor(
     private formBuilder: FormBuilder,
-    private route: Router) {}
+    private route: Router,
+    private authService: AuthService) {}
 
   ngOnInit() {
     this.form = this.formBuilder.group({
