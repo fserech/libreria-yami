@@ -12,8 +12,9 @@ export class ForgetPasswordComponent  implements OnInit {
 
   ngOnInit() {}
 
-  navigate(){
-    this.route.navigate(['login'])
+  navigate(route: string){
+    // this.route.navigate(['login'])
+    this.route.navigate(['auth/' + route]);
   }
 
 }

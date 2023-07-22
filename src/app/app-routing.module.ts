@@ -3,23 +3,11 @@ import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
 import { NotFoundComponent } from './shared/components/not-found/not-found.component';
 
 const routes: Routes = [
-  {
-    path: '',
-    loadChildren: () => import('./authentication/autentication.module').then( m => m.AutenticationModule)
-  },
-  {
-    path: 'dashboard',
-    loadChildren: () => import('./dashboard/dashboard.module').then( m => m.DashboardModule)
-  },
-  {
-    path: 'not-found',
-    component: NotFoundComponent
-  },
-  {
-    path: '**',
-    redirectTo: 'not-found',
-    pathMatch: 'full'
-  },
+  { path: 'auth', loadChildren: () => import('./authentication/autentication.module').then( m => m.AutenticationModule) },
+  { path: 'dashboard', loadChildren: () => import('./dashboard/dashboard.module').then( m => m.DashboardModule) },
+  { path: 'not-found', component: NotFoundComponent },
+  { path: '', redirectTo: 'auth/login', pathMatch: 'full'},
+  { path: '**', redirectTo: 'not-found', pathMatch: 'full' },
 ];
 
 @NgModule({

@@ -1,9 +1,10 @@
-import { NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotFoundComponent } from './components/not-found/not-found.component';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PageWidgetsComponent } from './components/page-widgets/page-widgets.component';
+import { RouterModule } from '@angular/router';
 
 
 
@@ -16,14 +17,17 @@ import { PageWidgetsComponent } from './components/page-widgets/page-widgets.com
     CommonModule,
     IonicModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    RouterModule
   ],
   exports:[
     IonicModule,
     NotFoundComponent,
     FormsModule,
     ReactiveFormsModule,
-    PageWidgetsComponent
-  ]
+    PageWidgetsComponent,
+    RouterModule
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class SharedModule { }

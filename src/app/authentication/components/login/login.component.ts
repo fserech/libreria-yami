@@ -1,19 +1,48 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
+  animations: [
+    trigger('fadeInOut', [
+      state('void', style({ opacity: 0 })),
+      transition('void <=> *', animate(500)),
+    ]),
+  ]
 })
 export class LoginComponent  implements OnInit {
 
-  constructor(private route: Router) { }
+  form: FormGroup;
+  hidePassword = true;
 
-  ngOnInit() {}
+  constructor(
+    private formBuilder: FormBuilder,
+    private route: Router) {}
+
+  ngOnInit() {
+    this.form = this.formBuilder.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+    });
+  }
+
+  togglePasswordVisibility() {
+    this.hidePassword = !this.hidePassword;
+  }
+
+  login() {
+    if (this.form.valid) {
+      console.log('Email:', this.form.get('email').value);
+      console.log('Password:', this.form.get('password').value);
+    }
+  }
 
   navigate(route: string){
-    this.route.navigate([route])
+    route === 'dashboard' ? this.route.navigate(['dashboard']) : this.route.navigate(['auth/' + route]);
   }
 
 }
