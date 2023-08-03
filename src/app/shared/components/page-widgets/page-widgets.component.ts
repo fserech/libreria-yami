@@ -1,4 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-page-widgets',
@@ -7,10 +8,12 @@ import { Component, Input, OnInit } from '@angular/core';
 })
 export class PageWidgetsComponent  implements OnInit {
 
-  @Input() widgets: any[];
+  widgets: any[] = [];
 
-  constructor() { }
+  constructor(private route: ActivatedRoute) { }
 
-  ngOnInit() {}
-
+  ngOnInit() {
+    const moduleParam = this.route.snapshot.params['module'];
+    console.log('el nombre del modulo es:', moduleParam);
+  }
 }
