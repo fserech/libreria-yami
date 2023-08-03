@@ -1,5 +1,5 @@
 <ion-content mode="ios">
-  <div class="container" [@fadeInOut]>
+  <div class="container" [@fadeInOut]="showForm ? 'visible' : 'hidden'">
 
     <ion-card *ngIf="!load">
       <ion-card-content [formGroup]="form">
