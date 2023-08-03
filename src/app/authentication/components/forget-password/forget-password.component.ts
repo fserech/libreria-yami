@@ -3,22 +3,19 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { AuthService } from 'src/app/shared/services/auth/auth.service';
+import { fadeInOutAnimation } from 'src/app/shared/animations/fade-in-out.animation';
 
 @Component({
   selector: 'app-forget-password',
   templateUrl: './forget-password.component.html',
   styleUrls: ['./forget-password.component.scss'],
-  animations: [
-    trigger('fadeInOut', [
-      state('void', style({ opacity: 0 })),
-      transition('void <=> *', animate(500)),
-    ]),
-  ]
+  animations: [ fadeInOutAnimation ]
 })
 export class ForgetPasswordComponent  implements OnInit {
 
   form: FormGroup;
   load: boolean = false;
+  showForm: boolean = true;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -36,6 +33,16 @@ export class ForgetPasswordComponent  implements OnInit {
     reset(){
       if (this.form.valid) {
         console.log('Email:', this.form.get('email').value);
+      }
+    }
+
+    loadForm(load: boolean){
+      if(load){
+        this.load = true;
+        this.showForm = false;
+      }else{
+        this.load = false;
+        this.showForm = true;
       }
     }
   navigate(route: string){
