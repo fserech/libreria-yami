@@ -1,12 +1,13 @@
 import { Submodule } from "./submodule";
 
 export interface Module {
-  name: string;
-  label: string;
-  path: string;
-  icon: string;
-  menuFooter: boolean;
-  access: boolean;
-  badgeSecondary:boolean;
-  subModules: Submodule[]
+  access: boolean,
+  badge: boolean,
+  badgeSecondary: boolean,
+  icon: string,
+  label: string,
+  menuFooter: string,
+  name: string,
+  path: string,
+  submodules: Submodule[]
 }
