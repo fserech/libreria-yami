@@ -14,6 +14,7 @@ import { provideStorage,getStorage } from '@angular/fire/storage';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AngularFireAuthModule } from '@angular/fire/compat/auth';
 import { AngularFireModule } from '@angular/fire/compat';
+import { HttpClientModule } from '@angular/common/http'
 
 @NgModule({
   declarations: [	AppComponent ],
@@ -23,6 +24,7 @@ import { AngularFireModule } from '@angular/fire/compat';
     AppRoutingModule,
     AngularFireAuthModule,
     BrowserAnimationsModule,
+    HttpClientModule,
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     AngularFireModule.initializeApp(environment.firebase),
     provideAuth(() => getAuth()),

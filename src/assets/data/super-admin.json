@@ -1,0 +1,334 @@
+{
+  "key": "1678575633842_superadmin",
+  "name": "super_admin",
+  "label":"Super admin",
+  "permissions": [
+    {
+      "access": true,
+      "badge": false,
+      "badgeSecondary": false,
+      "icon": "archive-outline",
+      "label": "Inventario",
+      "menuFooter": false,
+      "name": "inventory",
+      "path": "inventory",
+      "submodules": [
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "newspaper-outline",
+          "label": "Historial",
+          "name": "inventory-history",
+          "order": 1,
+          "path": "/inventory/history",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "file-tray-stacked-outline",
+          "label": "Stock",
+          "name": "inventory-stock",
+          "order": 2,
+          "path": "/inventory/stock",
+          "widget": false
+        }
+      ]
+    },
+    {
+      "access": true,
+      "badge": false,
+      "badgeSecondary": false,
+      "icon": "shapes-outline",
+      "label": "Categorias",
+      "menuFooter": false,
+      "name": "categories",
+      "path": "categories",
+      "submodules": [
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "add-outline",
+          "label": "Nueva categoria",
+          "name": "categories-add",
+          "order": 1,
+          "path": "/categories/new",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "albums-outline",
+          "label": "Ver categorias",
+          "name": "categories-all",
+          "order": 2,
+          "path": "/categories/all",
+          "widget": false
+        }
+      ]
+    },
+    {
+      "access": true,
+      "badge": false,
+      "badgeSecondary": false,
+      "icon": "library-outline",
+      "label": "Productos",
+      "menuFooter": false,
+      "name": "articles",
+      "path": "articles",
+      "submodules": [
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "add-outline",
+          "label": "Nuevo producto",
+          "name": "articles-add",
+          "order": 1,
+          "path": "/articles/new",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "list-outline",
+          "label": "Ver Productos",
+          "name": "articles-all",
+          "order": 2,
+          "path": "/articles/all",
+          "widget": false
+        }
+      ]
+    },
+    {
+      "access": true,
+      "badge": false,
+      "badgeSecondary": false,
+      "icon": "cash-outline",
+      "label": "Ventas",
+      "menuFooter": false,
+      "name": "sales",
+      "path": "sales",
+      "submodules": [
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "sunny-outline",
+          "label": "Mi día",
+          "name": "sales-day",
+          "order": 1,
+          "path": "/sales/day",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "bag-add-outline",
+          "label": "Nuevo venta",
+          "name": "sales-add",
+          "order": 2,
+          "path": "/sales/new",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "newspaper-outline",
+          "label": "Historial",
+          "name": "sales-all",
+          "order": 3,
+          "path": "/sales/all",
+          "widget": false
+        }
+      ]
+    },
+    {
+      "access": true,
+      "badge": false,
+      "badgeSecondary": false,
+      "icon": "bag-handle-outline",
+      "label": "Compras",
+      "menuFooter": false,
+      "name": "shopping",
+      "path": "shopping",
+      "submodules": [
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "add-outline",
+          "label": "Nueva compra",
+          "name": "shopping-add",
+          "order": 1,
+          "path": "/shopping/new",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "reload-outline",
+          "label": "Historial",
+          "name": "shopping-all",
+          "order": 2,
+          "path": "/shopping/all",
+          "widget": false
+        }
+      ]
+    },
+    {
+      "access": true,
+      "badge": false,
+      "badgeSecondary": false,
+      "icon": "walk-outline",
+      "label": "Usuarios y roles",
+      "menuFooter": false,
+      "name": "users-roles",
+      "path": "users-roles",
+      "submodules": [
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "people-outline",
+          "label": "Roles",
+          "name": "users-roles-all-role",
+          "order": 1,
+          "path": "/users-roles/all-role",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "person-add-outline",
+          "label": "Nuevo rol",
+          "name": "users-roles-add-role",
+          "order": 2,
+          "path": "/users-roles/new-rol",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "people-circle-outline",
+          "label": "Usuarios",
+          "name": "users-roles-all-user",
+          "order": 3,
+          "path": "/users-roles/all-user",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "add-outline",
+          "label": "Nuevo usuario",
+          "name": "users-roles-add-user",
+          "order": 4,
+          "path": "/users-roles/new-user",
+          "widget": false
+        }
+      ]
+    },
+    {
+      "access": true,
+      "badge": false,
+      "badgeSecondary": false,
+      "icon": "bar-chart-outline",
+      "label": "Estadísticas",
+      "menuFooter": false,
+      "name": "statistics",
+      "path": "statistics",
+      "submodules": [
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "stats-chart-outline",
+          "label": "KPI Ventas",
+          "name": "statistics-sales",
+          "order": 1,
+          "path": "/statistics/kpi-sales",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "analytics-outline",
+          "label": "KPI Compras",
+          "name": "statistics-shopping",
+          "order": 2,
+          "path": "/statistics/kpi-shopping",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "trending-up-outline",
+          "label": "Ganancias",
+          "name": "statistics-earnings",
+          "order": 3,
+          "path": "/statistics/earnings",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "trending-down-outline",
+          "label": "Pérdidas",
+          "name": "statistics-loses",
+          "order": 4,
+          "path": "/statistics/loses",
+          "widget": false
+        }
+      ]
+    },
+    {
+      "access": true,
+      "badge": false,
+      "badgeSecondary": false,
+      "icon": "trash-bin-outline",
+      "label": "Anulaciones",
+      "menuFooter": false,
+      "name": "cancellations",
+      "path": "cancellations",
+      "submodules": [
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "bag-remove-outline",
+          "label": "Anular venta",
+          "name": "cancellations-sales",
+          "order": 1,
+          "path": "/cancellations/sale",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "remove-circle-outline",
+          "label": "Anular compra",
+          "name": "cancellations-shopping",
+          "order": 1,
+          "path": "/cancellations/shopping",
+          "widget": false
+        }
+      ]
+    }
+  ]
+}

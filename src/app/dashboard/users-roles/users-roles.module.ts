@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { UsersRolesRoutingModule } from './users-roles-routing.module';
@@ -20,6 +20,7 @@ import { ViewUsersComponent } from './components/view-users/view-users.component
     CommonModule,
     UsersRolesRoutingModule,
     SharedModule
-  ]
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class UsersRolesModule { }

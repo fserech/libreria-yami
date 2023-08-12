@@ -5,13 +5,17 @@ import { IonicModule } from '@ionic/angular';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PageWidgetsComponent } from './components/page-widgets/page-widgets.component';
 import { RouterModule } from '@angular/router';
+import { HttpClientModule } from '@angular/common/http';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { InputComponent } from './components/input/input.component';
 
 
 
 @NgModule({
   declarations: [
     NotFoundComponent,
-    PageWidgetsComponent
+    PageWidgetsComponent,
+    InputComponent
   ],
   imports: [
     CommonModule,
@@ -26,7 +30,8 @@ import { RouterModule } from '@angular/router';
     FormsModule,
     ReactiveFormsModule,
     PageWidgetsComponent,
-    RouterModule
+    RouterModule,
+    InputComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

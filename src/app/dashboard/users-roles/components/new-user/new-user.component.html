@@ -1,3 +1,98 @@
-<p>
-  new-user works!
-</p>
+<ion-content class="ion-padding">
+
+  <ion-grid>
+    <ion-row class="ion-justify-content-center" >
+
+        <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+          <ion-card class="rounded-4">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-text color="primary">
+                  <h1>{{ title }}</h1>
+                </ion-text>
+              </ion-card-title>
+            </ion-card-header>
+
+            <ion-card-content class="mt-2">
+              <form [formGroup]="userForm">
+
+                <ion-row>
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                    <app-input
+                      [form]="userForm"
+                      name="email"
+                      label="Correo electronico"
+                      help="Solo se aceptan correos electronicos"
+                      placeholder="Ingresa correo electronico"
+                      [required]="true">
+                    </app-input>
+                  </ion-col>
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                    <app-input
+                      [form]="userForm"
+                      name="password"
+                      label="Contraseña"
+                      placeholder="Ingresa contraseña"
+                      [required]="true">
+                    </app-input>
+                  </ion-col>
+                </ion-row>
+
+                <ion-row>
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                    <app-input
+                      [form]="userForm"
+                      name="userName"
+                      label="Nombre de usuario"
+                      placeholder="Ingresa nombre de usuario"
+                      [required]="true">
+                    </app-input>
+                  </ion-col>
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                    <app-input
+                      [form]="userForm"
+                      name="nickname"
+                      label="Nickname"
+                      placeholder="Ingresa nickname"
+                      [required]="true">
+                    </app-input>
+                  </ion-col>
+                </ion-row>
+
+                <ion-row>
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                    <ion-list>
+                      <ion-label>Seleccion de rol<ion-text color="danger">*</ion-text></ion-label>
+                      <ion-item>
+                        <ion-select aria-label="Fruit" interface="popover" placeholder="Selecciona un rol">
+                          <ion-select-option value="apples">Rol 1</ion-select-option>
+                          <ion-select-option value="oranges">Rol 2</ion-select-option>
+                          <ion-select-option value="bananas">Rol 3</ion-select-option>
+                        </ion-select>
+                      </ion-item>
+                    </ion-list>
+                  </ion-col>
+                  <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="2" size-xl="3" class="m-auto">
+                    <ion-label>Genero<ion-text color="danger">*</ion-text></ion-label>
+                    <ion-radio-group formControlName="gender">
+                      <ion-item *ngFor="let gender of genderList">
+                        <ion-radio mode="md" [value]="gender.value">{{ gender.label }}</ion-radio>
+                      </ion-item>
+                    </ion-radio-group>
+                  </ion-col>
+                </ion-row>
+
+                <ion-row>
+                  <ion-col>
+                    <ion-button shape="round" [disabled]="userForm.invalid">Guardar usuario</ion-button>
+                  </ion-col>
+                </ion-row>
+              </form>
+            </ion-card-content>
+
+          </ion-card>
+        </ion-col>
+    </ion-row>
+  </ion-grid>
+
+</ion-content>

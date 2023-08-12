@@ -1,0 +1,17 @@
+<!-- [label]="label" -->
+<ion-item class="sin-borde">
+  <ion-input
+    ill="outline" shape="round"
+    mode="md"
+    [type]="type"
+    [formControl]="getFormControl()"
+    [placeholder]="placeholder"
+    (ionChange)="onInputChange($event)"
+    [errorText]="label + ' invalido'"
+    helperText="{{help}}"
+    labelPlacement="floating"
+    style="text-align: center; display: block; margin: 0 auto;">
+    <div slot="label" color="primary">{{ label }} <ion-text *ngIf="required" color="danger">*</ion-text></div>
+  </ion-input>
+  <ion-icon *ngIf="icon.show" [name]="icon" color="medium" slot="end"></ion-icon>
+</ion-item>
