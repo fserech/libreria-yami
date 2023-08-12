@@ -6,6 +6,8 @@ import { fadeInOutAnimation } from 'src/app/shared/animations/fade-in-out.animat
 import { BaseForm } from 'src/app/shared/classes/base-form';
 import { Observable } from 'rxjs';
 import { UserData } from 'src/app/shared/models/user';
+import { RolesService } from '../../services/roles.service';
+import { Role } from '../../models/role';
 
 
 @Component({
@@ -19,6 +21,7 @@ import { UserData } from 'src/app/shared/models/user';
 
 export class NewUserComponent  implements OnInit {
 
+  rolesList$: Observable<Role[]>;
   title: string = 'Nuevo usuario';
   userForm: FormGroup;
   genderList: any[]= [
@@ -26,7 +29,7 @@ export class NewUserComponent  implements OnInit {
     { label: 'Femenino', value: 'F' },
   ];
 
-  constructor(private formBuilder: FormBuilder) {
+  constructor(private formBuilder: FormBuilder, private rolesService: RolesService) {
     this.userForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -38,6 +41,7 @@ export class NewUserComponent  implements OnInit {
   }
 
   ngOnInit(): void {
+    this.rolesList$ = this.rolesService.getAllRoles();
   }
 
   saveUserData() {
