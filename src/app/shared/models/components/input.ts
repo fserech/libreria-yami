@@ -8,3 +8,8 @@ export interface InputCounter {
   maxLength: number,
   minLength: number
 }
+
+export interface InputOptionsSelect {
+  label: string;
+  value: string;
+}

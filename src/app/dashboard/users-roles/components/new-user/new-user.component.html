@@ -24,7 +24,8 @@
                       label="Correo electronico"
                       help="Solo se aceptan correos electronicos"
                       placeholder="Ingresa correo electronico"
-                      [required]="true">
+                      [required]="true"
+                      [load]="load">
                     </app-input>
                   </ion-col>
                   <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
@@ -33,7 +34,8 @@
                       name="password"
                       label="Contraseña"
                       placeholder="Ingresa contraseña"
-                      [required]="true">
+                      [required]="true"
+                      [load]="load">
                     </app-input>
                   </ion-col>
                 </ion-row>
@@ -45,7 +47,8 @@
                       name="userName"
                       label="Nombre de usuario"
                       placeholder="Ingresa nombre de usuario"
-                      [required]="true">
+                      [required]="true"
+                      [load]="load">
                     </app-input>
                   </ion-col>
                   <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
@@ -54,23 +57,36 @@
                       name="nickname"
                       label="Nickname"
                       placeholder="Ingresa nickname"
-                      [required]="true">
+                      [required]="true"
+                      [load]="load">
                     </app-input>
                   </ion-col>
                 </ion-row>
 
                 <ion-row>
-                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6"  class="m-auto">
-                    <ion-list class="m-auto">
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                    <app-select
+                      [form]="userForm"
+                      name="roleRef"
+                      label="Rol de usuario"
+                      placeholder="Selecciona un rol"
+                      [required]="true"
+                      [disabled]="false"
+                      [load]="load"
+                      [options]="{
+                        label: 'label',
+                        value: 'id' }">
+                    </app-select>
+                    <!-- <ion-list class="m-auto">
                       <ion-label>Seleccion de rol<ion-text color="danger"> *</ion-text></ion-label>
                       <ion-item>
                         <ion-select formControlName="roleRef" interface="popover" placeholder="Selecciona un rol">
                           <ion-select-option *ngFor="let role of rolesList$ | async" [value]="role.id">{{ role.label }}</ion-select-option>
                         </ion-select>
                       </ion-item>
-                    </ion-list>
+                    </ion-list> -->
                   </ion-col>
-                  <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="2" size-xl="3" class="m-auto">
+                  <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="2" size-xl="3">
                     <ion-label>Genero<ion-text color="danger"> *</ion-text></ion-label>
                     <ion-radio-group formControlName="gender">
                       <ion-item *ngFor="let gender of genderList">
@@ -82,7 +98,7 @@
 
                 <ion-row>
                   <ion-col>
-                    <ion-button shape="round" [disabled]="userForm.invalid">Guardar usuario</ion-button>
+                    <ion-button shape="round" [disabled]="userForm.invalid" (click)="saveUserData()">Guardar usuario</ion-button>
                   </ion-col>
                 </ion-row>
               </form>

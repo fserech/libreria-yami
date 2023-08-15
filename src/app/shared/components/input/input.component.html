@@ -1,7 +1,6 @@
-<!-- [label]="label" -->
-<ion-item class="sin-borde">
+<ion-item  *ngIf="!load" class="no-border">
   <ion-input
-    ill="outline" shape="round"
+    fill="solid"
     mode="md"
     [type]="type"
     [formControl]="getFormControl()"
@@ -11,7 +10,20 @@
     helperText="{{help}}"
     labelPlacement="floating"
     style="text-align: center; display: block; margin: 0 auto;">
-    <div slot="label" color="primary">{{ label }} <ion-text *ngIf="required" color="danger">*</ion-text></div>
+    <div slot="label" color="primary">{{ required ? label + '*' : label }}</div>
   </ion-input>
   <ion-icon *ngIf="icon.show" [name]="icon" color="medium" slot="end"></ion-icon>
 </ion-item>
+
+<ion-list *ngIf="load">
+  <ion-item>
+    <ion-label>
+      <h3>
+        <ion-skeleton-text [animated]="true" style="width: 100%; height: 40px;" class="rounded-3"></ion-skeleton-text>
+      </h3>
+      <p>
+        <ion-skeleton-text [animated]="true" style="width: 60%;" class="rounded-3"></ion-skeleton-text>
+      </p>
+    </ion-label>
+  </ion-item>
+</ion-list>

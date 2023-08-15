@@ -24,6 +24,7 @@ export class InputComponent implements OnInit {
   @Input() patternHint = '';
   @Input() disabled = false;
   @Input() required = false;
+  @Input() load = false;
   @Input() help: string;
 
   @Output() changes = new EventEmitter<string>();

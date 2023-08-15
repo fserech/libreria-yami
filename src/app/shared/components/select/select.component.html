@@ -1,3 +1,32 @@
-<p>
-  select works!
-</p>
+<ion-list class="m-auto" *ngIf="!load">
+  <!-- <ion-label>{{ label }}<ion-text *ngIf="required" color="{{ getFormControl().valid ? 'success' : 'danger'}}"> *</ion-text></ion-label> -->
+  <ion-item [disabled]="disabled" class="no-border">
+    <ion-select *ngIf="this.values.length === 0" label="{{ required ? label + '*' : label }}" label-placement="floating" fill="solid"
+      [formControl]="getFormControl()"
+      interface="popover"
+      placeholder="{{placeholder}}">
+      <ion-select-option *ngFor="let role of dataList$ | async" [value]="role[options.value]">{{ role[options.label] }}</ion-select-option>
+    </ion-select>
+
+    <ion-select *ngIf="this.values.length > 0" label="{{ required ? label + '*' : label }}" label-placement="floating" fill="solid"
+    [formControl]="getFormControl()"
+    interface="popover"
+    placeholder="{{placeholder}}">
+    <ion-select-option *ngFor="let role of values" [value]="role[options.value]">{{ role[options.label] }}</ion-select-option>
+  </ion-select>
+  </ion-item>
+</ion-list>
+
+<ion-list *ngIf="load">
+  <ion-item>
+    <ion-label>
+      <p class="text-center">
+        <ion-skeleton-text [animated]="true" style="width: 60%;" class="rounded-3"></ion-skeleton-text>
+      </p>
+      <h3>
+        <ion-skeleton-text [animated]="true" style="width: 100%; height: 40px;" class="rounded-3"></ion-skeleton-text>
+      </h3>
+
+    </ion-label>
+  </ion-item>
+</ion-list>

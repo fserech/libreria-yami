@@ -32,7 +32,7 @@ export class ToastService {
   async error(message:string) {
     const toast = await this.toastController.create({
       message: message,
-      duration: 100,
+      duration: 1000,
       position: 'bottom',
       icon: 'close-circle-outline'
     });

@@ -8,6 +8,8 @@ import { Observable } from 'rxjs';
 import { UserData } from 'src/app/shared/models/user';
 import { RolesService } from '../../services/roles.service';
 import { Role } from '../../models/role';
+import { ToastService } from 'src/app/shared/services/toast/toast.service';
+import { UsersService } from '../../services/users.service';
 
 
 @Component({
@@ -28,14 +30,20 @@ export class NewUserComponent  implements OnInit {
     { label: 'Masculino', value: 'M' },
     { label: 'Femenino', value: 'F' },
   ];
+  // load: boolean = true;
+  load: boolean = false;
 
-  constructor(private formBuilder: FormBuilder, private rolesService: RolesService) {
+  constructor(
+    private formBuilder: FormBuilder,
+    private rolesService: RolesService,
+    private toastService: ToastService,
+    private usersService: UsersService) {
     this.userForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       userName: ['', Validators.required],
       nickname: ['', Validators.required],
-      gender: ['M', Validators.required],
+      gender: ['', Validators.required],
       roleRef: ['', Validators.required],
     });
   }
@@ -45,13 +53,13 @@ export class NewUserComponent  implements OnInit {
   }
 
   saveUserData() {
+    this.load = true;
     if (this.userForm.valid) {
       const userData: UserData = this.userForm.value;
+      this.usersService.newUserEmailAndPassword(userData)
+      .then(response => {console.log(response); this.load = false;this.userForm.reset();})
+      .catch(error => {console.log(error); this.load = false;this.userForm.reset();})
 
-      // Aquí debes agregar lógica para guardar los datos en Firebase, por ejemplo, usando AngularFire
-
-      // Una vez guardados los datos, puedes limpiar el formulario o redirigir a una página de éxito
-      this.userForm.reset();
     }
   }
 }

@@ -8,6 +8,7 @@ import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { InputComponent } from './components/input/input.component';
+import { SelectComponent } from './components/select/select.component';
 
 
 
@@ -15,7 +16,8 @@ import { InputComponent } from './components/input/input.component';
   declarations: [
     NotFoundComponent,
     PageWidgetsComponent,
-    InputComponent
+    InputComponent,
+    SelectComponent
   ],
   imports: [
     CommonModule,
@@ -31,7 +33,8 @@ import { InputComponent } from './components/input/input.component';
     ReactiveFormsModule,
     PageWidgetsComponent,
     RouterModule,
-    InputComponent
+    InputComponent,
+    SelectComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
