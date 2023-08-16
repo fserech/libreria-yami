@@ -17,7 +17,8 @@ export class SelectComponent  implements OnInit {
   };
   @Input() options: InputOptionsSelect = {
     label: '',
-    value: ''
+    value: '',
+    resolver: ''
   };
   @Input() label: string;
   @Input() placeholder: string;
@@ -37,7 +38,7 @@ export class SelectComponent  implements OnInit {
   dataList$: Observable<any[]>;
 
   constructor(private route: ActivatedRoute) {
-    this.values.length > 0 ? this.values : this.dataList$ = this.route.data.pipe(map(data => data['data']));
+    this.values.length > 0 ? this.values : this.dataList$ = this.route.data.pipe(map(data => data[this.options.resolver]));
   }
 
   ngOnInit() {

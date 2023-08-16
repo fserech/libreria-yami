@@ -10,6 +10,7 @@ export interface InputCounter {
 }
 
 export interface InputOptionsSelect {
+  resolver?: string;
   label: string;
   value: string;
 }

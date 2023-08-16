@@ -6,7 +6,7 @@ import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.se
 @Injectable({
   providedIn: 'root'
 })
-export class TransactionTypesUnloadResolver implements Resolve<any> {
+export class RolesResolver implements Resolve<any> {
 
     constructor(protected service: DashboardService) {}
 

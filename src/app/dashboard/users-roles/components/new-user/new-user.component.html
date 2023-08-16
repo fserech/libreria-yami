@@ -5,6 +5,7 @@
 
         <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
           <ion-card class="rounded-4">
+
             <ion-card-header>
               <ion-card-title>
                 <ion-text color="medium">
@@ -74,15 +75,16 @@
                       [disabled]="false"
                       [load]="load"
                       [options]="{
+                        resolver: 'roles',
                         label: 'label',
                         value: 'id' }">
                     </app-select>
                   </ion-col>
-                  <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="2" size-xl="3">
+                  <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="3" size-xl="3">
                     <app-radio-button
                       [form]="userForm"
                       name="gender"
-                      label="Genero de usuario"
+                      label="Genero"
                       placeholder="Selecciona un genero"
                       [required]="true"
                       [disabled]="false"
@@ -100,6 +102,7 @@
                     <ion-button shape="round" [disabled]="userForm.invalid" (click)="saveUserData()">Guardar usuario</ion-button>
                   </ion-col>
                 </ion-row>
+
               </form>
             </ion-card-content>
 
