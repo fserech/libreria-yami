@@ -9,6 +9,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { InputComponent } from './components/input/input.component';
 import { SelectComponent } from './components/select/select.component';
+import { RadioButtonComponent } from './components/radio-button/radio-button.component';
 
 
 
@@ -17,7 +18,8 @@ import { SelectComponent } from './components/select/select.component';
     NotFoundComponent,
     PageWidgetsComponent,
     InputComponent,
-    SelectComponent
+    SelectComponent,
+    RadioButtonComponent
   ],
   imports: [
     CommonModule,
@@ -34,7 +36,8 @@ import { SelectComponent } from './components/select/select.component';
     PageWidgetsComponent,
     RouterModule,
     InputComponent,
-    SelectComponent
+    SelectComponent,
+    RadioButtonComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

@@ -30,8 +30,8 @@ export class NewUserComponent  implements OnInit {
     { label: 'Masculino', value: 'M' },
     { label: 'Femenino', value: 'F' },
   ];
-  // load: boolean = true;
-  load: boolean = false;
+  load: boolean = true;
+  // load: boolean = false;
 
   constructor(
     private formBuilder: FormBuilder,

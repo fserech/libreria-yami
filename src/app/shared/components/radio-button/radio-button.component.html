@@ -1,3 +1,51 @@
-<p>
-  radio-button works!
-</p>
+<!-- <ion-label>Genero<ion-text color="danger"> *</ion-text></ion-label>
+<ion-radio-group formControlName="gender">
+  <ion-item *ngFor="let gender of genderList">
+    <ion-radio mode="md" [value]="gender.value">{{ gender.label }}</ion-radio>
+  </ion-item>
+</ion-radio-group> -->
+
+<ion-item>
+  <ion-label *ngIf="!load" color="medium">{{ required ? label + '*' : label }}</ion-label>
+<ion-label *ngIf="load" color="medium">
+  <p class="text-center"> <ion-skeleton-text [animated]="true" style="width: 80%; height: 20px;" class="rounded-3"></ion-skeleton-text> </p>
+</ion-label>
+</ion-item>
+
+<ion-radio-group *ngIf="values.length > 0 && !load" [formControl]="getFormControl()">
+  <ion-item *ngFor="let item of values">
+    <ion-radio mode="md" [value]="item.value">{{ item.label }}</ion-radio>
+  </ion-item>
+</ion-radio-group>
+
+<ion-radio-group *ngIf="this.values.length === 0 && !load" [formControl]="getFormControl()">
+  <ion-item *ngFor="let item of dataList$ | async">
+    <ion-radio mode="md" [value]="item.value">{{ item.label }}</ion-radio>
+  </ion-item>
+</ion-radio-group>
+
+<ion-radio-group *ngIf="values.length > 0 && load" [formControl]="getFormControl()">
+  <ion-item *ngFor="let item of values">
+    <ion-thumbnail slot="end" style="width: 30px; height: 30px;">
+      <ion-skeleton-text [animated]="true" class="rounded-circle"></ion-skeleton-text>
+    </ion-thumbnail>
+    <ion-label>
+      <p>
+        <ion-skeleton-text [animated]="true" style="width: 100%; height: 20px;" class="rounded-3"></ion-skeleton-text>
+      </p>
+    </ion-label>
+  </ion-item>
+</ion-radio-group>
+
+<ion-radio-group *ngIf="this.values.length === 0 && load" [formControl]="getFormControl()">
+  <ion-item *ngFor="let item of dataList$ | async">
+    <ion-thumbnail slot="end" style="width: 30px; height: 30px;">
+      <ion-skeleton-text [animated]="true" class="rounded-circle"></ion-skeleton-text>
+    </ion-thumbnail>
+    <ion-label>
+      <p>
+        <ion-skeleton-text [animated]="true" style="width: 100%; height: 20px;" class="rounded-3"></ion-skeleton-text>
+      </p>
+    </ion-label>
+  </ion-item>
+</ion-radio-group>

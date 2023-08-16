@@ -79,12 +79,19 @@
                     </app-select>
                   </ion-col>
                   <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="2" size-xl="3">
-                    <ion-label>Genero<ion-text color="danger"> *</ion-text></ion-label>
-                    <ion-radio-group formControlName="gender">
-                      <ion-item *ngFor="let gender of genderList">
-                        <ion-radio mode="md" [value]="gender.value">{{ gender.label }}</ion-radio>
-                      </ion-item>
-                    </ion-radio-group>
+                    <app-radio-button
+                      [form]="userForm"
+                      name="gender"
+                      label="Genero de usuario"
+                      placeholder="Selecciona un genero"
+                      [required]="true"
+                      [disabled]="false"
+                      [load]="load"
+                      [values]="genderList"
+                      [options]="{
+                      label: 'label',
+                      value: 'id' }">
+                    </app-radio-button>
                   </ion-col>
                 </ion-row>
 
