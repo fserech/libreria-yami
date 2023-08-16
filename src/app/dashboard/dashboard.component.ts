@@ -20,9 +20,9 @@ export class DashboardComponent  implements OnInit, OnDestroy {
   user: UserFirestore
   role: Role;
   load: boolean = false;
-  menuSidebar: any[] = [];
-  menuFooter: any[] = [];
-  subscriptions: Subscription[] = []
+  permissions: Module[] = [];
+  permissionsFooter: Module[] = [];
+  subscriptions: Subscription[] = [];
 
   constructor(
     private usersService: UsersService,
@@ -31,6 +31,7 @@ export class DashboardComponent  implements OnInit, OnDestroy {
     private router: Router) { }
 
   ngOnInit() {
+    this.load = true;
     this.usersService.getUserLocal().subscribe({
       next: (user: any) => {
         console.log(user);
@@ -56,6 +57,10 @@ export class DashboardComponent  implements OnInit, OnDestroy {
         this.dashboardService.getDataDocumentReference(roleRef).then((role: Role) => {
           this.role = role;
           console.log('role: ', this.role)
+          console.log('permissions: ', this.getPermissionsRole())
+          this.permissions = this.getPermissionsRole();
+          this.permissionsFooter = this.getPermissionsMenuFooter();
+          this.load = false;
         });
 
       },
@@ -85,14 +90,13 @@ export class DashboardComponent  implements OnInit, OnDestroy {
   }
 
   navigateModule(item: any){
-    this.menuSidebar.forEach(module => {
-      const nameModule = item.name
-      if(module.name === nameModule && module.access){
-        const encodedParam = JSON.stringify(module.submodules)
-        this.router.navigate([module.path], { queryParams: { param: encodedParam } });
-      }
-    });
-
+    // this.menuSidebar.forEach(module => {
+    //   const nameModule = item.name
+    //   if(module.name === nameModule && module.access){
+    //     const encodedParam = JSON.stringify(module.submodules)
+    //     this.router.navigate([module.path], { queryParams: { param: encodedParam } });
+    //   }
+    // });
   }
 
   getPermissionsRole(): Module[]{
@@ -108,6 +112,24 @@ export class DashboardComponent  implements OnInit, OnDestroy {
         });
 
         module.submodules = permissionsSubmodule;
+        permissions.push(module);
+      }
+    });
+    return permissions;
+  }
+
+  getPermissionsMenuFooter(): Module[]{
+    let permissions: Module[] = [];
+
+    this.role.permissions.forEach((module: Module) => {
+      let permissionsSubmodule: Submodule[] = [];
+      // const submodules: Submodule[] = module.submodules;
+      if(module.access && module.menuFooter){
+        // submodules.forEach((submodule: Submodule) => {
+        //   if(submodule.access) permissionsSubmodule.push(submodule);
+        // });
+
+        // module.submodules = permissionsSubmodule;
         permissions.push(module);
       }
     });
