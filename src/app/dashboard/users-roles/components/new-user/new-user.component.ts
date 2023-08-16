@@ -23,14 +23,12 @@ import { UsersService } from '../../services/users.service';
 
 export class NewUserComponent  implements OnInit {
 
-  rolesList$: Observable<Role[]>;
   title: string = 'Nuevo usuario';
   userForm: FormGroup;
   genderList: any[]= [
     { label: 'Masculino', value: 'M' },
     { label: 'Femenino', value: 'F' },
   ];
-  // load: boolean = true;
   load: boolean = false;
 
   constructor(
@@ -49,7 +47,6 @@ export class NewUserComponent  implements OnInit {
   }
 
   ngOnInit(): void {
-    this.rolesList$ = this.rolesService.getAllRoles();
   }
 
   saveUserData() {
