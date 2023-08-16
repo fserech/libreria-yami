@@ -7,6 +7,8 @@ import { Role } from './users-roles/models/role';
 import { Subscription } from 'rxjs';
 import { MenuController } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { Module } from '../shared/models/module';
+import { Submodule } from '../shared/models/submodule';
 
 @Component({
   selector: 'app-dashboard',
@@ -93,4 +95,22 @@ export class DashboardComponent  implements OnInit, OnDestroy {
 
   }
 
+  getPermissionsRole(): Module[]{
+    let permissions: Module[] = [];
+
+    this.role.permissions.forEach((module: Module) => {
+      let permissionsSubmodule: Submodule[] = [];
+      const submodules: Submodule[] = module.submodules;
+
+      if(module.access){
+        submodules.forEach((submodule: Submodule) => {
+          if(submodule.access) permissionsSubmodule.push(submodule);
+        });
+
+        module.submodules = permissionsSubmodule;
+        permissions.push(module);
+      }
+    });
+    return permissions;
+  }
 }
