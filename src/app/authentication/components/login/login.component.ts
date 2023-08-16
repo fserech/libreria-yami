@@ -5,6 +5,7 @@ import { AuthService } from 'src/app/shared/services/auth/auth.service';
 import { fadeInOutAnimation } from 'src/app/shared/animations/fade-in-out.animation';
 import { BaseForm } from 'src/app/shared/classes/base-form';
 import { Observable } from 'rxjs';
+import { ToastService } from 'src/app/shared/services/toast/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -19,7 +20,8 @@ export class LoginComponent extends BaseForm  implements OnInit {
   constructor(
     protected formBuilder: FormBuilder,
     private route: Router,
-    private authService: AuthService) {
+    private authService: AuthService,
+    private toastService: ToastService) {
       super(formBuilder)
     }
 
@@ -50,7 +52,13 @@ export class LoginComponent extends BaseForm  implements OnInit {
       const password = this.form.get('password').value;
       this.authService.login(email, password)
         .then(result => {
-          console.log(result);
+          const emailVerified: boolean = result.user.emailVerified;
+          if(emailVerified){
+            this.route.navigate(['/dashboard'])
+          }else{
+            this.toastService.warning('El email del usuario no se encuentra verificado, revisa la bandeja principal o spam para verificar el correo elctronico')
+          }
+
           this.loadForm(false);
         })
         .catch(error => {

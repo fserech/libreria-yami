@@ -7,6 +7,7 @@ export interface UserFirestore {
   nickname: string;  // Apodo
   gender: 'M' | 'F'; // Género ('M' para masculino, 'F' para femenino)
   roleRef: DocumentReference; // Referencia al documento de rol (debe ser un DocumentReference de Firebase)
+  active: boolean;
 }
 
 export interface UserData {
@@ -16,5 +17,6 @@ export interface UserData {
   userName: string;  // Nombre de usuario
   nickname: string;  // Apodo
   gender: 'M' | 'F'; // Género ('M' para masculino, 'F' para femenino)
+  active: boolean;
   roleRef: string; // Referencia al documento de rol (debe ser un DocumentReference de Firebase)
 }

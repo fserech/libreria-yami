@@ -10,6 +10,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { InputComponent } from './components/input/input.component';
 import { SelectComponent } from './components/select/select.component';
 import { RadioButtonComponent } from './components/radio-button/radio-button.component';
+import { ToggleComponent } from './components/toggle/toggle.component';
 
 
 
@@ -19,7 +20,8 @@ import { RadioButtonComponent } from './components/radio-button/radio-button.com
     PageWidgetsComponent,
     InputComponent,
     SelectComponent,
-    RadioButtonComponent
+    RadioButtonComponent,
+    ToggleComponent
   ],
   imports: [
     CommonModule,
@@ -37,7 +39,8 @@ import { RadioButtonComponent } from './components/radio-button/radio-button.com
     RouterModule,
     InputComponent,
     SelectComponent,
-    RadioButtonComponent
+    RadioButtonComponent,
+    ToggleComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

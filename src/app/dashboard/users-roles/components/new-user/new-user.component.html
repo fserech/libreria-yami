@@ -77,9 +77,21 @@
                       [options]="{
                         resolver: 'roles',
                         label: 'label',
-                        value: 'id' }">
+                        value: 'uid' }">
                     </app-select>
                   </ion-col>
+                  <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="3" size-xl="3">
+                    <app-toggle
+                      [form]="userForm"
+                      name="active"
+                      label="Activo"
+                      [disabled]="false"
+                      [load]="load">
+                    </app-toggle>
+                  </ion-col>
+                </ion-row>
+
+                <ion-row>
                   <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="3" size-xl="3">
                     <app-radio-button
                       [form]="userForm"
@@ -97,7 +109,7 @@
                   </ion-col>
                 </ion-row>
 
-                <ion-row>
+                <ion-row *ngIf="!load">
                   <ion-col>
                     <ion-button shape="round" [disabled]="userForm.invalid" (click)="saveUserData()">Guardar usuario</ion-button>
                   </ion-col>

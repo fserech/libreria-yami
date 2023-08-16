@@ -23,21 +23,32 @@ async newUserEmailAndPassword(user: UserData){
 
   if (result.user) {
     await result.user.sendEmailVerification();
-    await this.registerUserInFirestore(user);
+    await this.registerUserInFirestore(user, result.user.uid);
   } else {
     this.toastService.error('No se pudo obtener el usuario después del registro.')
   }
 }
 
-private async registerUserInFirestore(user: UserData): Promise<void> {
+private async registerUserInFirestore(user: UserData, uid: string): Promise<void> {
 const userFirestore: UserFirestore = {
   email: user.email,
   userName: user.userName,
   nickname: user.nickname,
   gender: user.gender,
+  active: user.active,
   roleRef: this.dashboardService.getDocumentReference(ROLES_COLLECTION_NAME, user.roleRef)
 };
-  await this.firestore.collection(USERS_COLLECTION_NAME).doc(user.uid).set(userFirestore);
+  await this.firestore.collection(USERS_COLLECTION_NAME).doc(uid).set(userFirestore);
+}
+
+getUser(uid: string){ }
+
+getUserLocal(){
+  return this.auth.authState;
+}
+
+logout() {
+  return this.auth.signOut();
 }
 
 }

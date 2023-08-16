@@ -6,7 +6,6 @@ import { fadeInOutAnimation } from 'src/app/shared/animations/fade-in-out.animat
 import { BaseForm } from 'src/app/shared/classes/base-form';
 import { Observable } from 'rxjs';
 import { UserData } from 'src/app/shared/models/user';
-import { RolesService } from '../../services/roles.service';
 import { Role } from '../../models/role';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
 import { UsersService } from '../../services/users.service';
@@ -18,8 +17,6 @@ import { UsersService } from '../../services/users.service';
   styleUrls: ['./new-user.component.scss'],
   animations: [ fadeInOutAnimation ]
 })
-
-// user: UserData;
 
 export class NewUserComponent  implements OnInit {
 
@@ -33,7 +30,6 @@ export class NewUserComponent  implements OnInit {
 
   constructor(
     private formBuilder: FormBuilder,
-    private rolesService: RolesService,
     private toastService: ToastService,
     private usersService: UsersService) {
     this.userForm = this.formBuilder.group({
@@ -43,20 +39,25 @@ export class NewUserComponent  implements OnInit {
       nickname: ['', Validators.required],
       gender: ['', Validators.required],
       roleRef: ['', Validators.required],
+      active: [false],
     });
   }
 
-  ngOnInit(): void {
-  }
+  ngOnInit(): void {}
 
   saveUserData() {
     this.load = true;
     if (this.userForm.valid) {
       const userData: UserData = this.userForm.value;
       this.usersService.newUserEmailAndPassword(userData)
-      .then(response => {console.log(response); this.load = false;this.userForm.reset();})
-      .catch(error => {console.log(error); this.load = false;this.userForm.reset();})
-
+      .then(response => {
+        console.log(response);
+        this.load = false;
+        this.userForm.reset();})
+      .catch(error => {
+        console.log(error);
+        this.load = false;
+        this.userForm.reset();})
     }
   }
 }

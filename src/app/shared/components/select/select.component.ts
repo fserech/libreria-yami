@@ -42,7 +42,6 @@ export class SelectComponent  implements OnInit {
   }
 
   ngOnInit() {
-
   }
 
   onInputChange(event: any) {
