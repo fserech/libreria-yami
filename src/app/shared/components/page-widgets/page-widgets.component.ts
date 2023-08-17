@@ -18,6 +18,7 @@ export class PageWidgetsComponent  implements OnInit, OnDestroy {
   role: Role;
   module: Module;
   load: boolean = false;
+  user: UserData;
 
   subscriptions: Subscription[] = [];
   subscriptionsRole: Subscription;
@@ -30,8 +31,8 @@ export class PageWidgetsComponent  implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.load = true;
-    const user: UserData = JSON.parse(localStorage.getItem('user'));
-    this.subscriptionsRole = this.dashboardService.getDocumentByIdRealTime(ROLES_COLLECTION_NAME, user.roleRef)
+    this.user = JSON.parse(localStorage.getItem('user'));
+    this.subscriptionsRole = this.dashboardService.getDocumentByIdRealTime(ROLES_COLLECTION_NAME, this.user.roleRef)
     .subscribe({
       next: (role: any) => {
         this.role = role;

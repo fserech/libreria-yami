@@ -1,11 +1,11 @@
 import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { UsersService } from './users-roles/services/users.service';
 import { DashboardService } from '../shared/services/dashboard/dashboard.service';
-import { ROLES_COLLECTION_NAME, USERS_COLLECTION_NAME } from '../shared/constants/collections-name-firebase';
+import { ROLES_COLLECTION_NAME } from '../shared/constants/collections-name-firebase';
 import { UserData, UserFirestore } from '../shared/models/user';
 import { Role } from './users-roles/models/role';
 import { Subscription } from 'rxjs';
-import { MenuController } from '@ionic/angular';
+import { MenuController, Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Module } from '../shared/models/module';
 import { Submodule } from '../shared/models/submodule';
@@ -18,18 +18,22 @@ import { Location } from '@angular/common';
 })
 export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
 
-  user: UserFirestore
+  // user: UserFirestore
+  user: UserData
   role: Role;
   load: boolean = false;
-  permissions: Module[] = [];
-  permissionsFooter: Module[] = [];
-  subscriptions: Subscription[] = [];
-
-  icon: string = '';
+  // darkMode = false;
+  themeToggle = false;
   showButtonBack: boolean = false;
   buttonBackText: boolean = false;
-  title: string = 'titulo';
 
+  title: string = 'titulo';
+  icon: string = '';
+
+  permissions: Module[] = [];
+  permissionsFooter: Module[] = [];
+
+  subscriptions: Subscription[] = [];
   subscriptionsRole: Subscription;
 
 
@@ -39,7 +43,8 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
     private menuCtrl: MenuController,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private location: Location) { }
+    private location: Location,
+    private platform: Platform) { }
 
   ngAfterViewInit(): void {
     this.cdr.detectChanges();
@@ -48,6 +53,13 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     this.load = true;
     this.getRoleUser();
+    // this.applyDarkMode();
+
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    this.initializeDarkTheme(prefersDark.matches);
+    // Listen for changes to the prefers-color-scheme media query
+    prefersDark.addEventListener('change', (mediaQuery) => this.initializeDarkTheme(mediaQuery.matches));
+
   }
 
   ngOnDestroy() {
@@ -55,8 +67,8 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getRoleUser(){
-    const user: UserData = JSON.parse(localStorage.getItem('user'));
-    this.subscriptionsRole = this.dashboardService.getDocumentByIdRealTime(ROLES_COLLECTION_NAME, user.roleRef)
+    this.user = JSON.parse(localStorage.getItem('user'));
+    this.subscriptionsRole = this.dashboardService.getDocumentByIdRealTime(ROLES_COLLECTION_NAME, this.user.roleRef)
     .subscribe({
       next: (role: any) => {
         this.role = role;
@@ -86,11 +98,6 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
       this.usersService.logout();
       this.location.ngOnDestroy();
     }
-  }
-
-  navigateRoute(path: string){
-    this.router.navigate([path]);
-    this.hideMenu();
   }
 
   getPermissionsRole(): Module[]{
@@ -132,4 +139,32 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
     if(userData){ return false }
     return true;
   }
+
+
+  initializeDarkTheme(isDark) {
+    this.themeToggle = isDark;
+    this.toggleDarkTheme(isDark);
+  }
+
+  toggleChange(ev) {
+    this.toggleDarkTheme(ev.detail.checked);
+  }
+
+  toggleDarkTheme(shouldAdd) {
+    document.body.classList.toggle('dark', shouldAdd);
+  }
+
+  // toggleDarkMode(darkmode: boolean) {
+  //   this.darkMode = darkmode;
+  //   this.applyDarkMode();
+  //   this.cdr.detectChanges(); // Forzar detección de cambios
+  // }
+
+  // private applyDarkMode() {
+  //   if (this.darkMode) {
+  //     document.body.classList.add('dark-theme');
+  //   } else {
+  //     document.body.classList.remove('dark-theme');
+  //   }
+  // }
 }

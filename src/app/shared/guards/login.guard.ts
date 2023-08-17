@@ -19,8 +19,8 @@ export class LoginGuard implements CanActivate {
     return this.authService.isAuth().pipe(
       tap((status) => {
         if (status) {
-          console.log(status);
-          this.toastService.info('Ya estas autenticado');
+          // console.log(status);
+          // this.toastService.info('Ya estas autenticado');
           this.router.navigate(['/dashboard']);
         }
       }),

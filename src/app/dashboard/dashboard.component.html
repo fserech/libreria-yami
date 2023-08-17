@@ -10,15 +10,22 @@
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-      <ion-list class="rounded-4">
+      <ion-list class="rounded-4" [inset]="true">
 
         <ion-item *ngFor="let module of permissions" (click)="navigateModule(module)">
               <ion-icon *ngIf="module.access" class="icon-menu" name="{{ module.icon }}"></ion-icon>
              <ion-label *ngIf="module.access" routerLinkActive="active-link" color="medium">{{ module.label }}</ion-label>
         </ion-item>
 
+        <ion-item>
+          <ion-icon class="icon-menu-static" name="{{ themeToggle ? 'sunny' : 'moon'}}" color="{{ themeToggle ? 'warning' : 'medium' }}"></ion-icon>
+          <ion-toggle mode="ios" [(ngModel)]="themeToggle" (ionChange)="toggleChange($event)" justify="space-between">
+            <ion-label color="medium">Modo oscuro</ion-label>
+          </ion-toggle>
+        </ion-item>
+
         <ion-item class="bg-primary" (click)="logout()">
-          <ion-icon class="icon-menu" name="log-out-outline" color="danger"></ion-icon>
+          <ion-icon class="icon-menu-static" name="log-out-outline" color="danger"></ion-icon>
           <ion-label color="danger">Cerrar sesión</ion-label>
         </ion-item>
 
