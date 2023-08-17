@@ -4,8 +4,6 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { AuthService } from '../services/auth/auth.service';
 import { ToastService } from '../services/toast/toast.service';
-// import { AuthService } from 'src/app/authentication/pages/services/auth.service';
-// import { ToastService } from '../services/toast.service';
 
 
 @Injectable({
@@ -24,7 +22,7 @@ export class AuthGuard implements CanActivate {
           tap( status => {
             if ( !status ) {
               this.toastService.info('Inicia sesión para continuar');
-              this.router.navigate(['/autenticacion']);
+              this.router.navigate(['/auth/login']);
             }
           })
         );

@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LocaleFilesJsonService } from '../../services/locale-files-json/locale-files-json.service';
 import { Role } from 'src/app/dashboard/users-roles/models/role';
@@ -7,17 +7,20 @@ import { Module } from '../../models/module';
 import { Submodule } from '../../models/submodule';
 import { UserData } from '../../models/user';
 import { DashboardService } from '../../services/dashboard/dashboard.service';
-
+import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-page-widgets',
   templateUrl: './page-widgets.component.html',
   styleUrls: ['./page-widgets.component.scss'],
 })
-export class PageWidgetsComponent  implements OnInit {
+export class PageWidgetsComponent  implements OnInit, OnDestroy {
   submodules: Submodule[] = [];
   role: Role;
   module: Module;
   load: boolean = false;
+
+  subscriptions: Subscription[] = [];
+  subscriptionsRole: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -28,7 +31,7 @@ export class PageWidgetsComponent  implements OnInit {
   ngOnInit() {
     this.load = true;
     const user: UserData = JSON.parse(localStorage.getItem('user'));
-    this.dashboardService.getDocumentByIdRealTime(ROLES_COLLECTION_NAME, user.roleRef)
+    this.subscriptionsRole = this.dashboardService.getDocumentByIdRealTime(ROLES_COLLECTION_NAME, user.roleRef)
     .subscribe({
       next: (role: any) => {
         this.role = role;
@@ -39,6 +42,11 @@ export class PageWidgetsComponent  implements OnInit {
         console.log(error);
         this.load = false;
       }});
+      this.subscriptions.push(this.subscriptionsRole);
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
   }
 
   getModuleRoute(): string{

@@ -9,6 +9,7 @@ import { MenuController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Module } from '../shared/models/module';
 import { Submodule } from '../shared/models/submodule';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-dashboard',
@@ -29,12 +30,16 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
   buttonBackText: boolean = false;
   title: string = 'titulo';
 
+  subscriptionsRole: Subscription;
+
+
   constructor(
     private usersService: UsersService,
     private dashboardService: DashboardService,
     private menuCtrl: MenuController,
     private router: Router,
-    private cdr: ChangeDetectorRef) { }
+    private cdr: ChangeDetectorRef,
+    private location: Location) { }
 
   ngAfterViewInit(): void {
     this.cdr.detectChanges();
@@ -51,7 +56,7 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
 
   getRoleUser(){
     const user: UserData = JSON.parse(localStorage.getItem('user'));
-    this.dashboardService.getDocumentByIdRealTime(ROLES_COLLECTION_NAME, user.roleRef)
+    this.subscriptionsRole = this.dashboardService.getDocumentByIdRealTime(ROLES_COLLECTION_NAME, user.roleRef)
     .subscribe({
       next: (role: any) => {
         this.role = role;
@@ -63,6 +68,8 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
         console.log(error);
         this.load = false;
       }});
+
+      this.subscriptions.push(this.subscriptionsRole);
   }
 
   showMenu() {
@@ -74,11 +81,11 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
   }
 
   logout(){
-    // const success = this.cleanLocalStorage();
-    // if(success){
-    //   this.authService.logout();
-    //   this.location.ngOnDestroy();
-    // }
+    const success = this.cleanLocalStorage();
+    if(success){
+      this.usersService.logout();
+      this.location.ngOnDestroy();
+    }
   }
 
   navigateRoute(path: string){
