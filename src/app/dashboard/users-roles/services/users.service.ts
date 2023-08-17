@@ -1,10 +1,13 @@
 import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
 import { ROLES_COLLECTION_NAME, USERS_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { UserData, UserFirestore } from 'src/app/shared/models/user';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +18,8 @@ constructor(
     private auth: AngularFireAuth,
     private firestore: AngularFirestore,
     private dashboardService: DashboardService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private router: Router
 ) { }
 
 async newUserEmailAndPassword(user: UserData){
@@ -48,7 +52,18 @@ getUserLocal(){
 }
 
 logout() {
+  if (this.isAuthUser()){
+    const success = this.auth.signOut()
+    .then(() => this.router.navigate(['/']))
+    .catch(error => console.log('Error al cerrar sesión:', error));
+  }
   return this.auth.signOut();
+}
+
+isAuthUser(): Observable<boolean> {
+  return this.auth.authState.pipe(
+    map(user => !!user)
+  );
 }
 
 }

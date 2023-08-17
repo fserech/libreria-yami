@@ -121,9 +121,9 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
   }
 
   navigateModule(module: Module){
+    console.log('ruta: dashboard/' + module.path);
     this.hideMenu();
-    // this.router.navigate(['dashboard/'+ module.path], { queryParams: { module: JSON.stringify(module) }});
-    this.router.navigate(['dashboard/'+ module.path]);
+    this.router.navigate(['dashboard/' + module.path]);
   }
 
   cleanLocalStorage(): boolean{
