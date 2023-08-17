@@ -18,14 +18,14 @@
         </ion-item>
 
         <ion-item>
-          <ion-icon class="icon-menu-static" name="{{ themeToggle ? 'sunny' : 'moon'}}" color="{{ themeToggle ? 'warning' : 'medium' }}"></ion-icon>
+          <ion-icon class="icon-menu" name="{{ themeToggle ? 'sunny' : 'moon'}}" color="{{ themeToggle ? 'warning' : 'medium' }}"></ion-icon>
           <ion-toggle mode="ios" [(ngModel)]="themeToggle" (ionChange)="toggleChange($event)" justify="space-between">
             <ion-label color="medium">Modo oscuro</ion-label>
           </ion-toggle>
         </ion-item>
 
         <ion-item class="bg-primary" (click)="logout()">
-          <ion-icon class="icon-menu-static" name="log-out-outline" color="danger"></ion-icon>
+          <ion-icon class="icon-menu" name="log-out-outline" color="danger"></ion-icon>
           <ion-label color="danger">Cerrar sesión</ion-label>
         </ion-item>
 
