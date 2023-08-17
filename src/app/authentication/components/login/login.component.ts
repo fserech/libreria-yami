@@ -6,6 +6,10 @@ import { fadeInOutAnimation } from 'src/app/shared/animations/fade-in-out.animat
 import { BaseForm } from 'src/app/shared/classes/base-form';
 import { Observable } from 'rxjs';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
+import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
+import { USERS_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
+import { UserData, UserFirestore } from 'src/app/shared/models/user';
+import { Role } from 'src/app/dashboard/users-roles/models/role';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +25,8 @@ export class LoginComponent extends BaseForm  implements OnInit {
     protected formBuilder: FormBuilder,
     private route: Router,
     private authService: AuthService,
-    private toastService: ToastService) {
+    private toastService: ToastService,
+    private dashboardService: DashboardService) {
       super(formBuilder)
     }
 
@@ -54,11 +59,32 @@ export class LoginComponent extends BaseForm  implements OnInit {
         .then(result => {
           const emailVerified: boolean = result.user.emailVerified;
           if(emailVerified){
-            this.route.navigate(['/dashboard'])
+
+            this.dashboardService.getDocumentByIdToPromise(USERS_COLLECTION_NAME, result.user.uid).then(
+              (user: UserFirestore) => {
+                this.dashboardService.getDataDocumentReference(user.roleRef).then(
+                  (roleUser: Role) => {
+                    const userData: UserData = {
+                      uid: result.user.uid,
+                      email: user.email,
+                      userName: user.userName,
+                      nickname: user.nickname,
+                      gender: user.gender,
+                      active: user.active,
+                      roleRef: roleUser.uid
+                    }
+                    localStorage.setItem('user', JSON.stringify(userData));
+                    this.route.navigate(['/dashboard']);
+                  })
+                  .catch(error => {
+                    console.log(error)
+                  });
+              },
+              error => {console.log(error)}
+            ).catch();
           }else{
             this.toastService.warning('El email del usuario no se encuentra verificado, revisa la bandeja principal o spam para verificar el correo elctronico')
           }
-
           this.loadForm(false);
         })
         .catch(error => {

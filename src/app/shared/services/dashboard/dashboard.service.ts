@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Action, AngularFirestore, DocumentChangeAction, DocumentReference, DocumentSnapshot } from '@angular/fire/compat/firestore';
 import { Observable, map } from 'rxjs';
-
+import firebase from 'firebase/compat/app';
 @Injectable({
   providedIn: 'root'
 })
@@ -37,10 +37,30 @@ getDocumentById(collection: string, uid: string): Observable<any> {
   );
 }
 
+async getDocumentByIdToPromise(collection: string, uid: string): Promise<any> {
+  try {
+    const docRef = firebase.firestore().collection(collection).doc(uid);
+    const docSnapshot = await docRef.get();
+
+    if (docSnapshot.exists) {
+      return docSnapshot.data();
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching document:', error);
+    throw error;
+  }
+}
+
+getDocumentByIdRealTime(collection: string, uid: string){
+  return this.firestore.collection(collection).doc(uid).valueChanges({idField: 'uid'});
+}
+
 getDataDocumentReference<T>(docRef: DocumentReference<T>): Promise<{}> {
   return docRef.get().then(doc => {
     if (doc.exists) {
-      return { id: doc.id, ...doc.data() };
+      return { uid: doc.id, ...doc.data() };
     } else {
       throw new Error(`El documento no existe!: ${docRef.path}`);
     }

@@ -1,0 +1,22 @@
+<ion-header #header>
+  <ion-toolbar color="primary">
+
+    <ion-buttons slot="start">
+      <ion-button slot="start" name="add" (click)="showMenu()">
+        <ion-icon  slot="icon-only"name="menu-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+
+    <ion-title *ngIf="!load" class="text-center">
+      {{ title }}
+      <ion-icon *ngIf="!showButtonBack" class="" style="font-size:20px;" [name]="icon"></ion-icon>
+    </ion-title>
+
+    <ion-back-button *ngIf="showButtonBack && !load"  slot="end"
+      defaultHref="/"
+      [text]="buttonBackText"
+      [icon]="'chevron-back-outline'">
+    </ion-back-button>
+
+  </ion-toolbar>
+</ion-header>

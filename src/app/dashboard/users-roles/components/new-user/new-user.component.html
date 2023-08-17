@@ -1,3 +1,8 @@
+<app-header
+title="Usuarios"
+[load]="load"
+[showButtonBack]="true">
+</app-header>
 <ion-content class="ion-padding">
 
   <ion-grid>
@@ -104,7 +109,7 @@
                       [values]="genderList"
                       [options]="{
                       label: 'label',
-                      value: 'id' }">
+                      value: 'value' }">
                     </app-radio-button>
                   </ion-col>
                 </ion-row>

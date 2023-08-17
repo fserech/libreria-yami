@@ -1,8 +1,8 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { UsersService } from './users-roles/services/users.service';
 import { DashboardService } from '../shared/services/dashboard/dashboard.service';
-import { USERS_COLLECTION_NAME } from '../shared/constants/collections-name-firebase';
-import { UserFirestore } from '../shared/models/user';
+import { ROLES_COLLECTION_NAME, USERS_COLLECTION_NAME } from '../shared/constants/collections-name-firebase';
+import { UserData, UserFirestore } from '../shared/models/user';
 import { Role } from './users-roles/models/role';
 import { Subscription } from 'rxjs';
 import { MenuController } from '@ionic/angular';
@@ -15,7 +15,7 @@ import { Submodule } from '../shared/models/submodule';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
 })
-export class DashboardComponent  implements OnInit, OnDestroy {
+export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
 
   user: UserFirestore
   role: Role;
@@ -24,48 +24,45 @@ export class DashboardComponent  implements OnInit, OnDestroy {
   permissionsFooter: Module[] = [];
   subscriptions: Subscription[] = [];
 
+  icon: string = '';
+  showButtonBack: boolean = false;
+  buttonBackText: boolean = false;
+  title: string = 'titulo';
+
   constructor(
     private usersService: UsersService,
     private dashboardService: DashboardService,
     private menuCtrl: MenuController,
-    private router: Router) { }
+    private router: Router,
+    private cdr: ChangeDetectorRef) { }
+
+  ngAfterViewInit(): void {
+    this.cdr.detectChanges();
+  }
 
   ngOnInit() {
     this.load = true;
-    this.usersService.getUserLocal().subscribe({
-      next: (user: any) => {
-        console.log(user);
-        if (user) {
-          this.getInformationUserFirestore(user.uid);
-        } else {
-          console.log('Usuario no autenticado');
-        }
-      },
-      error: error => {console.log(error)},
-    })
+    this.getRoleUser();
   }
 
   ngOnDestroy() {
     this.subscriptions.forEach(subscription => subscription.unsubscribe());
   }
 
-  getInformationUserFirestore(uid: string){
-    this.dashboardService.getDocumentById(USERS_COLLECTION_NAME, uid).subscribe({
-      next: (user: UserFirestore) => {
-        console.log('user: ', user);
-        const roleRef = user.roleRef;
-        this.dashboardService.getDataDocumentReference(roleRef).then((role: Role) => {
-          this.role = role;
-          console.log('role: ', this.role)
-          console.log('permissions: ', this.getPermissionsRole())
-          this.permissions = this.getPermissionsRole();
-          this.permissionsFooter = this.getPermissionsMenuFooter();
-          this.load = false;
-        });
-
+  getRoleUser(){
+    const user: UserData = JSON.parse(localStorage.getItem('user'));
+    this.dashboardService.getDocumentByIdRealTime(ROLES_COLLECTION_NAME, user.roleRef)
+    .subscribe({
+      next: (role: any) => {
+        this.role = role;
+        this.permissions = this.getPermissionsRole();
+        this.permissionsFooter = this.getPermissionsMenuFooter();
+        this.load = false;
       },
-      error: error => {console.log(error)}
-    });
+      error: (error: any) => {
+        console.log(error);
+        this.load = false;
+      }});
   }
 
   showMenu() {
@@ -89,16 +86,6 @@ export class DashboardComponent  implements OnInit, OnDestroy {
     this.hideMenu();
   }
 
-  navigateModule(item: any){
-    // this.menuSidebar.forEach(module => {
-    //   const nameModule = item.name
-    //   if(module.name === nameModule && module.access){
-    //     const encodedParam = JSON.stringify(module.submodules)
-    //     this.router.navigate([module.path], { queryParams: { param: encodedParam } });
-    //   }
-    // });
-  }
-
   getPermissionsRole(): Module[]{
     let permissions: Module[] = [];
 
@@ -110,7 +97,6 @@ export class DashboardComponent  implements OnInit, OnDestroy {
         submodules.forEach((submodule: Submodule) => {
           if(submodule.access) permissionsSubmodule.push(submodule);
         });
-
         module.submodules = permissionsSubmodule;
         permissions.push(module);
       }
@@ -122,17 +108,21 @@ export class DashboardComponent  implements OnInit, OnDestroy {
     let permissions: Module[] = [];
 
     this.role.permissions.forEach((module: Module) => {
-      let permissionsSubmodule: Submodule[] = [];
-      // const submodules: Submodule[] = module.submodules;
-      if(module.access && module.menuFooter){
-        // submodules.forEach((submodule: Submodule) => {
-        //   if(submodule.access) permissionsSubmodule.push(submodule);
-        // });
-
-        // module.submodules = permissionsSubmodule;
-        permissions.push(module);
-      }
+      if(module.access && module.menuFooter)permissions.push(module);
     });
     return permissions;
+  }
+
+  navigateModule(module: Module){
+    this.hideMenu();
+    // this.router.navigate(['dashboard/'+ module.path], { queryParams: { module: JSON.stringify(module) }});
+    this.router.navigate(['dashboard/'+ module.path]);
+  }
+
+  cleanLocalStorage(): boolean{
+    localStorage.clear();
+    const userData: UserData = JSON.parse(localStorage.getItem('user'));
+    if(userData){ return false }
+    return true;
   }
 }

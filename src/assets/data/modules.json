@@ -141,7 +141,7 @@
         "name":"shopping-add",
         "label":"Nueva compra",
         "path": "/shopping/new",
-        "icon": "add-outline",
+        "icon": "bag-add-outline",
         "order": 1,
         "badge":false,
         "access": false,

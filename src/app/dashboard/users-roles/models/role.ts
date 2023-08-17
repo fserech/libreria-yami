@@ -1,7 +1,7 @@
 import { Module } from "src/app/shared/models/module";
 
 export interface Role {
-  id?: string;
+  uid?: string;
   key: string;
   name: string;
   label: string;

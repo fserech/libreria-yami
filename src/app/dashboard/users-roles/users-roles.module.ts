@@ -7,6 +7,7 @@ import { NewRolComponent } from './components/new-rol/new-rol.component';
 import { NewUserComponent } from './components/new-user/new-user.component';
 import { ViewRolesComponent } from './components/view-roles/view-roles.component';
 import { ViewUsersComponent } from './components/view-users/view-users.component';
+import { UsersRolesComponent } from './users-roles.component';
 
 
 @NgModule({
@@ -14,7 +15,8 @@ import { ViewUsersComponent } from './components/view-users/view-users.component
     NewRolComponent,
     NewUserComponent,
     ViewRolesComponent,
-    ViewUsersComponent
+    ViewUsersComponent,
+    UsersRolesComponent
   ],
   imports: [
     CommonModule,

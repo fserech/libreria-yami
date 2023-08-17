@@ -11,6 +11,7 @@ import { InputComponent } from './components/input/input.component';
 import { SelectComponent } from './components/select/select.component';
 import { RadioButtonComponent } from './components/radio-button/radio-button.component';
 import { ToggleComponent } from './components/toggle/toggle.component';
+import { HeaderComponent } from './components/header/header.component';
 
 
 
@@ -21,7 +22,8 @@ import { ToggleComponent } from './components/toggle/toggle.component';
     InputComponent,
     SelectComponent,
     RadioButtonComponent,
-    ToggleComponent
+    ToggleComponent,
+    HeaderComponent
   ],
   imports: [
     CommonModule,
@@ -40,7 +42,8 @@ import { ToggleComponent } from './components/toggle/toggle.component';
     InputComponent,
     SelectComponent,
     RadioButtonComponent,
-    ToggleComponent
+    ToggleComponent,
+    HeaderComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
