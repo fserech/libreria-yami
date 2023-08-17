@@ -5,8 +5,8 @@ import { ViewCategoriesComponent } from './components/view-categories/view-categ
 
 const routes: Routes = [
   {path: '',component: NewCategoryComponent },
-  {path: 'new-category',component: NewCategoryComponent },
-  {path: 'view-all-categories',component: ViewCategoriesComponent },
+  {path: 'new',component: NewCategoryComponent },
+  {path: 'all',component: ViewCategoriesComponent },
 ];
 
 @NgModule({
