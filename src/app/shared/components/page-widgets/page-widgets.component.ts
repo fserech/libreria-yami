@@ -81,6 +81,7 @@ export class PageWidgetsComponent  implements OnInit {
   }
 
   navigateToSubmodule(path: string){
+    console.log('dashboard' + path);
     this.router.navigate(['dashboard' + path]);
   }
 
