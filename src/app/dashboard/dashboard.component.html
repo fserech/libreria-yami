@@ -18,7 +18,7 @@
         </ion-item>
 
         <ion-item>
-          <ion-icon class="icon-menu" name="{{ themeToggle ? 'sunny' : 'moon'}}" color="{{ themeToggle ? 'warning' : 'medium' }}"></ion-icon>
+          <ion-icon class="icon-menu" name="{{ themeToggle ? 'moon' : 'sunny'}}" color="{{ themeToggle ? 'warning' : 'danger' }}"></ion-icon>
           <ion-toggle mode="ios" [(ngModel)]="themeToggle" (ionChange)="toggleChange($event)" justify="space-between">
             <ion-label color="medium">Modo oscuro</ion-label>
           </ion-toggle>
