@@ -4,9 +4,69 @@
   [showButtonBack]="true">
 </app-header>
 
+<!-- Contenido principal -->
 <ion-content>
-<!-- Aqui va todo el contenido de la pagina de submodulo -->
-  <h1>Titulo</h1>
-<p>soy un parrafo</p>
+  <!-- Cuadrícula para organizar elementos -->
+<ion-grid>
+  <!-- Fila centrada -->
+  <ion-row class="ion-justify-content-center">
+    <!-- Columna de tamaño variable para dispositivos de diferentes tamaños -->
+    <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+      <!-- Tarjeta con contenido -->
+      <ion-card class="rounded-4">
+        <!-- Encabezado de la tarjeta -->
+        <ion-card-header>
+          <ion-card-title>
+            <!-- Título con ícono y texto dinámico -->
+            <ion-text color="medium">
+              <h1><ion-icon name="add-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1>
+            </ion-text>
+          </ion-card-title>
+        </ion-card-header>
+        <!-- Contenido de la tarjeta -->
+        <ion-card-content class="mt-2">
+           <!-- Formulario controlado por categoryForm -->
+           <form [formGroup]="categoryForm">
+            <!-- Primera fila de campos -->
+            <ion-row>
+              <!-- Columna para el campo de nombre -->
+                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                  <app-input
+                  [form]="categoryForm"
+                    name="name"
+                    label="name"
+                    placeholder="Ingresa nombre"
+                    [required]="true"
+                  ></app-input>
+
+                </ion-col> 
+            </ion-row>
+            <ion-row>
+              <!-- Columna para el campo de rol de usuario -->
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                <app-input
+                  [form]="categoryForm"
+                  name="description"
+                    label="description"
+                    placeholder="Descripcion"
+                    [required]="true">
+                </app-input>
+              </ion-col>
+            </ion-row>
+            <!--boton guardar-->
+
+            <ion-row *ngIf="!load">
+              <ion-col>
+                <ion-button shape="round" [disabled]="categoryForm.invalid" (click)="submit()">Guardar</ion-button>
+              </ion-col>
+            </ion-row>
+
+           </form>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+
+  </ion-row>
+</ion-grid>
 
 </ion-content>

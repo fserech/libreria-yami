@@ -67,4 +67,8 @@ getDataDocumentReference<T>(docRef: DocumentReference<T>): Promise<{}> {
   });
 }
 
+saveDocument(collection: string, document: any): Promise<any> {
+  // Crea una nueva referencia en la colección y asigna los datos
+  return this.firestore.collection(collection).add(document);
+}
 }
