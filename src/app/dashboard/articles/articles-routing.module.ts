@@ -5,8 +5,8 @@ import { ViewArticlesComponent } from './components/view-articles/view-articles.
 
 const routes: Routes = [
   {path: '',component: NewArticleComponent },
-  {path: 'new-article',component: NewArticleComponent },
-  {path: 'view-all-articles',component: ViewArticlesComponent },
+  {path: 'new',component: NewArticleComponent },
+  {path: 'all',component: ViewArticlesComponent },
 ];
 
 @NgModule({
