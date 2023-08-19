@@ -12,10 +12,12 @@
       <ion-icon *ngIf="!showButtonBack" class="" style="font-size:20px;" [name]="icon"></ion-icon>
     </ion-title>
 
-    <ion-back-button *ngIf="showButtonBack && !load"  slot="end"
+    <ion-back-button
+      *ngIf="showButtonBack && !load"
+      slot="end"
       defaultHref="/"
       [text]="buttonBackText"
-      [icon]="'chevron-back-outline'">
+      icon="chevron-back-outline">
     </ion-back-button>
 
   </ion-toolbar>
