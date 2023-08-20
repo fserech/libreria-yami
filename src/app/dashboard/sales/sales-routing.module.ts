@@ -7,9 +7,9 @@ import { PageWidgetsComponent } from 'src/app/shared/components/page-widgets/pag
 
 const routes: Routes = [
   {path: '', component: PageWidgetsComponent},
-  {path: 'new-sale', component: NewSaleComponent},
-  {path: 'my-sales', component: MySalesComponent},
-  {path: 'history-sales', component: HistorySalesComponent}
+  {path: 'new', component: NewSaleComponent},
+  {path: 'day', component: MySalesComponent},
+  {path: 'all', component: HistorySalesComponent}
 ];
 
 @NgModule({
