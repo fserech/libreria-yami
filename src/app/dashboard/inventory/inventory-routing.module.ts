@@ -5,7 +5,7 @@ import { StockComponent } from './components/stock/stock.component';
 
 const routes: Routes = [
   {path: '', component: StockComponent},
-  {path: 'history-inventory', component: HistoryInventoryComponent},
+  {path: 'history', component: HistoryInventoryComponent},
   {path: 'stock', component: StockComponent}
 ];
 
