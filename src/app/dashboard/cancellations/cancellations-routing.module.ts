@@ -7,8 +7,8 @@ import { CancellationStockComponent } from './components/cancellation-stock/canc
 
 const routes: Routes = [
   {path: '',component: CancellationSalesComponent },
-  {path: 'cancellation-sales',component: CancellationSalesComponent },
-  {path: 'cancellation-shopping',component: CancellationShoppingComponent },
+  {path: 'sale',component: CancellationSalesComponent },
+  {path: 'shopping',component: CancellationShoppingComponent },
   {path: 'cancellation-stock',component: CancellationStockComponent },
 ];
 
