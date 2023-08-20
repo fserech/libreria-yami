@@ -5,8 +5,8 @@ import { NewShoppingComponent } from './components/new-shopping/new-shopping.com
 
 const routes: Routes = [
   {path: '', component: HistoryShoppingComponent},
-  {path: 'history-shopping', component: HistoryShoppingComponent},
-  {path: 'new-shopping', component: NewShoppingComponent}
+  {path: 'all', component: HistoryShoppingComponent},
+  {path: 'new', component: NewShoppingComponent}
 ];
 
 @NgModule({
