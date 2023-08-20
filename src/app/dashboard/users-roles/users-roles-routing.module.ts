@@ -10,8 +10,8 @@ const routes: Routes = [
   {path: '',component: NewRolComponent },
   {path: 'new-rol',component: NewRolComponent },
   {path: 'new-user',component: NewUserComponent, resolve: { roles: RolesResolver } },
-  {path: 'view-all-roles',component: ViewRolesComponent },
-  {path: 'view-all-users',component: ViewUsersComponent },
+  {path: 'all-role',component: ViewRolesComponent },
+  {path: 'all-user',component: ViewUsersComponent },
 ];
 
 @NgModule({
