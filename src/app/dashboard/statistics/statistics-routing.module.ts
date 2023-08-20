@@ -9,8 +9,8 @@ const routes: Routes = [
   {path: '',component: KpiSalesComponent },
   {path: 'kpi-sales',component: KpiSalesComponent },
   {path: 'kpi-shopping',component: KpiShoppingComponent },
-  {path: 'kpi-earnings',component: KpiEarningsComponent },
-  {path: 'kpi-losses',component: KpiLossesComponent },
+  {path: 'earnings',component: KpiEarningsComponent },
+  {path: 'loses',component: KpiLossesComponent },
 ];
 
 @NgModule({
