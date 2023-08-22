@@ -4,8 +4,53 @@ title="Compras"
 [showButtonBack]="true">
 </app-header>
 
-<ion-content>
-  <ion-label color="medium">
-    <h1>historial de compra</h1>
-  </ion-label>
+<ion-content class="ion-padding">
+
+  <ion-grid>
+    <ion-row class="ion-justify-content-center" >
+
+        <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+          <ion-card class="rounded-4">
+
+            <ion-card-header>
+              <ion-card-title>
+                <ion-text color="medium">
+                  <ion-label>Filtro de Compras</ion-label>
+                  <!-- <h1><ion-icon name="person-add-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1> -->
+                </ion-text>
+              </ion-card-title>
+            </ion-card-header>
+
+            <ion-card-content class="mt-2">
+              <form [formGroup]="form">
+
+                <ion-row>
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                    <app-date-picker
+                      [form]="form"
+                      name="date"
+                      label="Fecha"
+                      placeholder="Selecciona una fecha"
+                      [required]="true"
+                      [load]="load"
+                      [showTime]="false"
+                      (changes)="changeDate($event)">
+                    </app-date-picker>
+                  </ion-col>
+                </ion-row>
+
+                <!-- <ion-row *ngIf="!load">
+                  <ion-col>
+                    <ion-button shape="round" [disabled]="form.invalid" (click)="submit()">Guardar usuario</ion-button>
+                  </ion-col>
+                </ion-row> -->
+
+              </form>
+            </ion-card-content>
+
+          </ion-card>
+        </ion-col>
+    </ion-row>
+  </ion-grid>
+
 </ion-content>

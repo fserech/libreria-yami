@@ -1,0 +1,17 @@
+.ion-text-center{
+  text-align: center !important;
+}
+
+ion-modal#example-modal {
+  --width: auto !important;
+  --min-width: 300px;
+  --border-radius: 10px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+  &.show-time {
+    --height: 500px !important;
+  }
+  &:not(.show-time) {
+    --height: 405px !important;
+  }
+
+}

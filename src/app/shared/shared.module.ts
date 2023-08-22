@@ -12,8 +12,8 @@ import { SelectComponent } from './components/select/select.component';
 import { RadioButtonComponent } from './components/radio-button/radio-button.component';
 import { ToggleComponent } from './components/toggle/toggle.component';
 import { HeaderComponent } from './components/header/header.component';
-
-
+import { DatePickerComponent } from './components/date-picker/date-picker.component';
+import { DatePipe } from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -23,7 +23,8 @@ import { HeaderComponent } from './components/header/header.component';
     SelectComponent,
     RadioButtonComponent,
     ToggleComponent,
-    HeaderComponent
+    HeaderComponent,
+    DatePickerComponent
   ],
   imports: [
     CommonModule,
@@ -43,8 +44,10 @@ import { HeaderComponent } from './components/header/header.component';
     SelectComponent,
     RadioButtonComponent,
     ToggleComponent,
-    HeaderComponent
+    HeaderComponent,
+    DatePickerComponent
   ],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  providers: [DatePipe]
 })
 export class SharedModule { }
