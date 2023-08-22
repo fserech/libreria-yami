@@ -55,3 +55,25 @@
 ion-item {
   --transition: none;
 }
+
+
+/* Para campos autocompletados en general */
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:active {
+  -webkit-transition-delay: 9999s; /* Retrasa la transición */
+}
+
+/* Para campos autocompletados en modo oscuro */
+@media (prefers-color-scheme: dark) {
+  input:-webkit-autofill,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: #000 !important; /* Color del texto en modo oscuro */
+    // -webkit-text-fill-color: var(--text-color);
+    // -webkit-box-shadow: 0 0 0 1000px transparent inset !important; /* Fondo en modo oscuro */
+    -webkit-box-shadow: none;
+  }
+}

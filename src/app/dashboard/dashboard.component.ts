@@ -94,7 +94,10 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
   }
 
   logout(){
+    const darkMode = localStorage.getItem('darkMode');
+    console.log(darkMode)
     const success = this.cleanLocalStorage();
+    if(darkMode === 'true')localStorage.setItem('darkMode', 'true')
     if(success){
       this.usersService.logout();
       this.location.ngOnDestroy();
