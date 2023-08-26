@@ -4,7 +4,7 @@ title="Compras"
 [showButtonBack]="true">
 </app-header>
 
-<ion-content class="ion-padding">
+<!-- <ion-content class="ion-padding">
 
   <ion-grid>
     <ion-row class="ion-justify-content-center" >
@@ -16,7 +16,6 @@ title="Compras"
               <ion-card-title>
                 <ion-text color="medium">
                   <ion-label>Filtro de Compras</ion-label>
-                  <!-- <h1><ion-icon name="person-add-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1> -->
                 </ion-text>
               </ion-card-title>
             </ion-card-header>
@@ -25,7 +24,7 @@ title="Compras"
               <form [formGroup]="form">
 
                 <ion-row>
-                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6" class="m-auto">
                     <app-date-picker
                       [form]="form"
                       name="date"
@@ -39,12 +38,6 @@ title="Compras"
                   </ion-col>
                 </ion-row>
 
-                <!-- <ion-row *ngIf="!load">
-                  <ion-col>
-                    <ion-button shape="round" [disabled]="form.invalid" (click)="submit()">Guardar usuario</ion-button>
-                  </ion-col>
-                </ion-row> -->
-
               </form>
             </ion-card-content>
 
@@ -53,4 +46,61 @@ title="Compras"
     </ion-row>
   </ion-grid>
 
+</ion-content> -->
+
+<ion-content>
+  <ion-segment
+    [(ngModel)]="segmentSelected"
+    class="sticky-top"
+    swipe-gesture="true"
+    [scrollable]="true">
+    <ion-segment-button *ngFor="let segment of segmentList" [value]="segment.name">
+      <ion-icon name="{{ segment.icon }}"></ion-icon>
+      <ion-label>{{segment.label}}</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <div *ngIf="segmentSelected === 'day'">
+    <ion-grid>
+      <ion-row class="ion-justify-content-center" >
+
+          <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+            <ion-card class="rounded-4">
+
+              <ion-card-content class="mt-2">
+                <form [formGroup]="form">
+
+                  <ion-row>
+                    <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6" class="m-auto">
+                      <app-date-picker
+                        [form]="form"
+                        name="date"
+                        label="Fecha de compras"
+                        placeholder="Selecciona una fecha"
+                        [required]="true"
+                        [load]="load"
+                        [showTime]="false"
+                        (changes)="changeDate($event)">
+                      </app-date-picker>
+                    </ion-col>
+                  </ion-row>
+
+                </form>
+              </ion-card-content>
+
+            </ion-card>
+          </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+
+  <div *ngIf="segmentSelected === 'month'">
+    <ion-label>Rango</ion-label>
+  </div>
+
+  <div *ngIf="segmentSelected === 'report'">
+    <ion-label>Reporte</ion-label>
+  </div>
+
 </ion-content>
+

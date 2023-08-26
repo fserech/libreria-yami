@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { ShoppingRoutingModule } from './shopping-routing.module';
@@ -16,6 +16,7 @@ import { NewShoppingComponent } from './components/new-shopping/new-shopping.com
     CommonModule,
     ShoppingRoutingModule,
     SharedModule
-  ]
+  ],
+  schemas:[CUSTOM_ELEMENTS_SCHEMA]
 })
 export class ShoppingModule { }

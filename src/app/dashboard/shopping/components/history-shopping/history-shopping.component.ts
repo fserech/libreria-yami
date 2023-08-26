@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Segments } from 'src/app/shared/models/segments';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
+
 
 @Component({
   selector: 'app-history-shopping',
@@ -13,6 +15,13 @@ export class HistoryShoppingComponent  implements OnInit {
   title: string = '';
   form: FormGroup;
   load: boolean;
+  segmentSelected = 'day';
+  segmentList: Array<Segments> = [
+    {name: 'day', label: 'Por Día', icon: 'partly-sunny-outline'},
+    {name: 'month', label: 'Por Mes', icon: 'today-outline'},
+    {name: 'report', label: 'Reporte', icon: 'document-text-outline'}
+  ]
+
 
   constructor(
     private formBuilder: FormBuilder,
@@ -30,4 +39,6 @@ export class HistoryShoppingComponent  implements OnInit {
   changeDate($event: any){
     console.log('se cambio la fecha: ', $event)
   }
+
+
 }
