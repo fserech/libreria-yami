@@ -53,7 +53,8 @@ title="Compras"
     [(ngModel)]="segmentSelected"
     class="sticky-top"
     swipe-gesture="true"
-    [scrollable]="true">
+    [scrollable]="true"
+    mode="md">
     <ion-segment-button *ngFor="let segment of segmentList" [value]="segment.name">
       <ion-icon name="{{ segment.icon }}"></ion-icon>
       <ion-label>{{segment.label}}</ion-label>
