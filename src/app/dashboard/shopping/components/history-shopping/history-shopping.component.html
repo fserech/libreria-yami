@@ -72,7 +72,7 @@ title="Compras"
                 <form [formGroup]="form">
 
                   <ion-row>
-                    <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6" class="m-auto">
+                    <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6" class="m-auto mb-0">
                       <app-date-picker
                         [form]="form"
                         name="date"
@@ -93,14 +93,83 @@ title="Compras"
           </ion-col>
       </ion-row>
     </ion-grid>
+
+    <ion-row class="ion-justify-content-center p-0 m-0">
+
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7" class="mt-0">
+        <ion-card class="rounded-4">
+          <ion-card-content class="p-0">
+            <ion-list mode="ios" class="p-0">
+              <ion-item>
+                <ion-label>
+                  <h2>Nombre articulo / Nombre marca</h2>
+                  <p>Cantidad de unidades</p>
+                </ion-label>
+
+                <ion-button
+                  fill="clear"
+                  ionTooltip="Texto del tooltip">
+                  <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
+                  <ion-icon name="close-circle-outline" color="danger"></ion-icon>
+                </ion-button>
+
+                <!-- <ion-popover trigger="hover-trigger-check" triggerAction="hover">
+                  <ng-template>
+                    <ion-content class="ion-padding">Proceso finalizado</ion-content>
+                  </ng-template>
+                </ion-popover>
+
+                <ion-popover trigger="hover-trigger-close" triggerAction="hover">
+                  <ng-template>
+                    <ion-content class="ion-padding">Pendiente ingresar a inventario</ion-content>
+                  </ng-template>
+                </ion-popover> -->
+
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+
+        </ion-card>
+      </ion-col>
+  </ion-row>
   </div>
 
   <div *ngIf="segmentSelected === 'month'">
-    <ion-label>Rango</ion-label>
+    <ion-grid>
+      <ion-row class="ion-justify-content-center" >
+
+          <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+            <ion-card class="rounded-4">
+
+              <ion-card-content class="mt-2">
+                <form [formGroup]="form">
+
+                  <ion-row>
+                    <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6" class="m-auto">
+                      <app-date-picker-month-year
+                        [form]="form"
+                        name="date"
+                        label="Mes de compras"
+                        placeholder="Selecciona mes y año"
+                        presentation="month-year"
+                        [required]="true"
+                        [load]="load"
+                        (changes)="changeDate($event)">
+                      </app-date-picker-month-year>
+                    </ion-col>
+                  </ion-row>
+
+                </form>
+              </ion-card-content>
+
+            </ion-card>
+          </ion-col>
+      </ion-row>
+    </ion-grid>
   </div>
 
   <div *ngIf="segmentSelected === 'report'">
-    <ion-label>Reporte</ion-label>
+    <ion-label>Generación de Reporte</ion-label>
   </div>
 
 </ion-content>

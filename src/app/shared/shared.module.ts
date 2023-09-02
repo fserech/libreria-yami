@@ -14,6 +14,8 @@ import { ToggleComponent } from './components/toggle/toggle.component';
 import { HeaderComponent } from './components/header/header.component';
 import { DatePickerComponent } from './components/date-picker/date-picker.component';
 import { DatePipe } from '@angular/common';
+import { DatePickerMonthYearComponent } from './components/date-picker-month-year/date-picker-month-year.component';
+import { TooltipDirective } from './directives/tooltip.directive';
 
 @NgModule({
   declarations: [
@@ -24,7 +26,9 @@ import { DatePipe } from '@angular/common';
     RadioButtonComponent,
     ToggleComponent,
     HeaderComponent,
-    DatePickerComponent
+    DatePickerComponent,
+    DatePickerMonthYearComponent,
+    TooltipDirective
   ],
   imports: [
     CommonModule,
@@ -45,7 +49,9 @@ import { DatePipe } from '@angular/common';
     RadioButtonComponent,
     ToggleComponent,
     HeaderComponent,
-    DatePickerComponent
+    DatePickerComponent,
+    DatePickerMonthYearComponent,
+    TooltipDirective
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [DatePipe]
