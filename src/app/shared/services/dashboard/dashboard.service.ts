@@ -71,4 +71,20 @@ saveDocument(collection: string, document: any): Promise<any> {
   // Crea una nueva referencia en la colección y asigna los datos
   return this.firestore.collection(collection).add(document);
 }
+
+getCategorieDocuments(collection: string): Observable<any[]> {
+  // Obtén todos los documentos de la colección
+  return this.firestore.collection(collection).valueChanges();
+}
+// getCategories() {
+//   return this.firestore.collection('categories').valueChanges();
+// }
+
+// getProducts() {
+//   return this.firestore.collection('products').valueChanges();
+// }
+
+// getArticles() {
+//   return this.firestore.collection('articles').valueChanges();
+// }
 }

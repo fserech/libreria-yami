@@ -1,12 +1,32 @@
 <app-header
-  title="Estadisticas"
-  icon="stats-chart-outline"
+  title="Categorías"
+  icon="albums-outline"
   [showButtonBack]="true">
 </app-header>
 
 <ion-content>
-<!-- Aqui va todo el contenido de la pagina de submodulo -->
-  <h1>Titulo</h1>
-<p>soy un parrafo</p>
-
+  <ion-grid>
+    <ion-row class="ion-justify-content-center">
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-text color="medium">
+                <h1><ion-icon name="albums-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1>
+              </ion-text>
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="mt-2">
+            <ion-list>
+              <ion-item *ngFor="let category of categories">
+                <ion-label>{{ category.name }}</ion-label>
+                <ion-note>{{ category.description }}</ion-note>
+                <ion-button slot="end" (click)="editCategory(category)">Editar</ion-button>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 </ion-content>
