@@ -1,0 +1,28 @@
+<ion-item>
+  <ion-textarea
+  labelPlacement="floating"
+  [label]="label"
+  [placeholder]="placeholder"
+  [formControl]="getFormControl()"
+  (keyup.enter)="addChip()"
+  [autoGrow]="true">
+  </ion-textarea>
+  <ion-button
+    shape="round"
+    name="add-circle-outline"
+    [disabled]="getFormControl().value === ''">
+    {{ labelButton }}
+  </ion-button>
+</ion-item>
+<ion-item>
+  <ion-textarea readonly
+    [autoGrow]="true"
+    label="">
+    <ng-container *ngFor="let chip of chips; trackBy: trackByFn">
+      <ion-chip>
+        <ion-label>{{ chip }}</ion-label>
+        <ion-icon name="close-circle" (click)="removeChip(chip)"></ion-icon>
+      </ion-chip>
+    </ng-container>
+  </ion-textarea>
+</ion-item>
