@@ -15,6 +15,8 @@ export class NewCategoryComponent implements OnInit {
   categoryForm: FormGroup;
   load: boolean = false;
   category: Category;
+  valuesFirestore: string[] = [];
+  keywords: string[] = [];
 
   constructor(
     private formBuilder: FormBuilder,
@@ -24,32 +26,41 @@ export class NewCategoryComponent implements OnInit {
     this.categoryForm = this.formBuilder.group({
       name: ['', Validators.required], // Cambia "categoryName" a "name"
       description: ['', Validators.required],
+      keywords: ['']
     });
   }
 
-   
   ngOnInit() {}
+
+  chipsEvent(keywords: string[]){
+    this.keywords =  keywords;
+  }
 
   submit(){
     this.load = true;
-    console.log("Guardando categoria")
-    this.category = {
-      name: this.categoryForm.controls['name'].value,
-      description: this.categoryForm.controls['description'].value
+    if(this.keywords.length > 0){
+
+      this.keywords.push(this.categoryForm.controls['name'].value.toLowerCase())
+
+      this.category = {
+        name: this.categoryForm.controls['name'].value.toLowerCase(),
+        description: this.categoryForm.controls['description'].value,
+        keywords: this.keywords
+      }
+      this.dashboardService.saveDocument(CATEGORIES_COLLECTION_NAME,this.category)
+        .then(( res: any ) => {
+          console.log(res)
+          this.categoryForm.reset();
+          this.keywords = [];
+          this.load = false;
+        })
+        .catch(( error: any ) => {
+          console.log(error)
+          this.categoryForm.reset();
+          this.keywords = [];
+          this.load = false;
+        });
     }
-    this.dashboardService.saveDocument(CATEGORIES_COLLECTION_NAME,this.category)
-      .then(( res: any ) => {
-        console.log(res)
-        this.categoryForm.reset();
-        this.load = false;
-      })
-      .catch(( error: any ) => {
-        console.log(error)
-        this.categoryForm.reset();
-        this.load = false;
-      });
   }
-
-
 }
 

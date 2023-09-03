@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Action, AngularFirestore, DocumentChangeAction, DocumentReference, DocumentSnapshot } from '@angular/fire/compat/firestore';
-import { Observable, map } from 'rxjs';
+import { Observable, map, combineLatest } from 'rxjs';
 import firebase from 'firebase/compat/app';
 @Injectable({
   providedIn: 'root'
@@ -72,19 +72,27 @@ saveDocument(collection: string, document: any): Promise<any> {
   return this.firestore.collection(collection).add(document);
 }
 
-getCategorieDocuments(collection: string): Observable<any[]> {
-  // Obtén todos los documentos de la colección
-  return this.firestore.collection(collection).valueChanges();
+findItemsCollection(collection: string, field: string, searchTerm: string){
+
+  // Divide el término de búsqueda en palabras.
+  const searchTerms = searchTerm.toLowerCase().split(' ');
+
+  // Crea un arreglo de observables, uno por cada palabra en el término de búsqueda.
+  const observables = searchTerms.map(term => {
+    return this.firestore.collection(collection, ref => {
+      return ref
+        .where(field, 'array-contains', term)
+        .limit(10);
+    }).valueChanges();
+  });
+
+  // Combina los resultados de las consultas en un solo arreglo de resultados.
+  return combineLatest(observables).pipe(
+    map(results => {
+      // Concatena todos los resultados en un solo arreglo.
+      return [].concat(...results);
+    })
+  );
 }
-// getCategories() {
-//   return this.firestore.collection('categories').valueChanges();
-// }
 
-// getProducts() {
-//   return this.firestore.collection('products').valueChanges();
-// }
-
-// getArticles() {
-//   return this.firestore.collection('articles').valueChanges();
-// }
 }

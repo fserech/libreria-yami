@@ -32,14 +32,13 @@
               <!-- Columna para el campo de nombre -->
                 <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
                   <app-input
-                  [form]="categoryForm"
+                    [form]="categoryForm"
                     name="name"
-                    label="name"
+                    label="Nombre categoria"
                     placeholder="Ingresa nombre"
                     [required]="true"
                   ></app-input>
-
-                </ion-col> 
+                </ion-col>
             </ion-row>
             <ion-row>
               <!-- Columna para el campo de rol de usuario -->
@@ -47,17 +46,33 @@
                 <app-input
                   [form]="categoryForm"
                   name="description"
-                    label="description"
-                    placeholder="Descripcion"
-                    [required]="true">
+                  label="Descripción de categoria"
+                  placeholder="Descripción"
+                  [required]="true">
                 </app-input>
+              </ion-col>
+            </ion-row>
+
+            <ion-row>
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                <app-input-chips
+                  [form]="categoryForm"
+                  name="keywords"
+                  label="Palabras clave"
+                  placeholder="Palabras clave"
+                  [values]="valuesFirestore"
+                  (changes)="chipsEvent($event)">
+                </app-input-chips>
               </ion-col>
             </ion-row>
             <!--boton guardar-->
 
             <ion-row *ngIf="!load">
               <ion-col>
-                <ion-button shape="round" [disabled]="categoryForm.invalid" (click)="submit()">Guardar</ion-button>
+                <ion-button
+                  shape="round"
+                  [disabled]="categoryForm.invalid || this.keywords.length === 0"
+                  (click)="submit()">Guardar</ion-button>
               </ion-col>
             </ion-row>
 

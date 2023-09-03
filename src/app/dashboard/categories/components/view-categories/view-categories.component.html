@@ -4,24 +4,46 @@
   [showButtonBack]="true">
 </app-header>
 
-<ion-content>
+<ion-toolbar>
+  <ion-row class="row">
+    <ion-col class="m-auto d-flex col-12 align-items-center" size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
+      <ion-searchbar
+        placeholder="Buscar"
+        shape="round"
+        class="rounded-pill"
+        (ionInput)="handleInput($event)">
+      </ion-searchbar>
+      <ion-button>
+        <ion-icon class="text-white" name="search-outline"></ion-icon>
+      </ion-button>
+    </ion-col>
+  </ion-row>
+</ion-toolbar>
+<ion-content class="ion-padding">
+
   <ion-grid>
     <ion-row class="ion-justify-content-center">
-      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
         <ion-card class="rounded-4">
           <ion-card-header>
             <ion-card-title>
-              <ion-text color="medium">
+
+              <!-- <ion-text color="medium">
                 <h1><ion-icon name="albums-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1>
-              </ion-text>
+              </ion-text> -->
             </ion-card-title>
           </ion-card-header>
           <ion-card-content class="mt-2">
             <ion-list>
               <ion-item *ngFor="let category of categories">
-                <ion-label>{{ category.name }}</ion-label>
-                <ion-note>{{ category.description }}</ion-note>
-                <ion-button slot="end" (click)="editCategory(category)">Editar</ion-button>
+                <ion-label>
+                  <h2>{{ firstCapitalLetter(category.name) }}</h2>
+                  <p>{{ category.uid }}</p>
+                </ion-label>
+
+                <ion-button class="float-right" (click)="editCategory(category)">
+                  <ion-icon name="create-outline"></ion-icon>
+                </ion-button>
               </ion-item>
             </ion-list>
           </ion-card-content>

@@ -16,6 +16,7 @@ import { DatePickerComponent } from './components/date-picker/date-picker.compon
 import { DatePipe } from '@angular/common';
 import { DatePickerMonthYearComponent } from './components/date-picker-month-year/date-picker-month-year.component';
 import { TooltipDirective } from './directives/tooltip.directive';
+import { InputChipsComponent } from './components/input-chips/input-chips.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +29,8 @@ import { TooltipDirective } from './directives/tooltip.directive';
     HeaderComponent,
     DatePickerComponent,
     DatePickerMonthYearComponent,
-    TooltipDirective
+    TooltipDirective,
+    InputChipsComponent
   ],
   imports: [
     CommonModule,
@@ -51,7 +53,8 @@ import { TooltipDirective } from './directives/tooltip.directive';
     HeaderComponent,
     DatePickerComponent,
     DatePickerMonthYearComponent,
-    TooltipDirective
+    TooltipDirective,
+    InputChipsComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [DatePipe]
