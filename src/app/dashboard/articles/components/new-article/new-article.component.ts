@@ -15,6 +15,8 @@ export class NewArticleComponent implements OnInit {
   articleForm: FormGroup;
   load: boolean = false;
   article: Article;
+  valuesFirestore: string[] = [];
+  keywords: string[] = [];
 
   constructor(
     private formBuilder: FormBuilder,
@@ -22,36 +24,40 @@ export class NewArticleComponent implements OnInit {
     private dashboardService: DashboardService,
   ) {
     this.articleForm = this.formBuilder.group({
-      name: ['', Validators.required], // Cambia "categoryName" a "name"
-      mark: ['', Validators.required], 
-      categoryRef: ['', Validators.required], 
+      name: ['', Validators.required],
+      mark: ['', Validators.required],
+      categoryRef: ['', Validators.required],
+      keywords: [''],
     });
   }
 
-   
   ngOnInit() {}
 
-  submit(){
+  chipsEvent(keywords: string[]) {
+    this.keywords = keywords;
+  }
+
+  submit() {
     this.load = true;
-    // console.log("name: ",this.articleForm.controls['name'].value)
-    // console.log("mark: ", this.articleForm.controls['mark'].value)
-    // console.log("cat: ", this.articleForm.controls['categoryRef'].value)
     this.article = {
       name: this.articleForm.controls['name'].value,
       mark: this.articleForm.controls['mark'].value,
-      categoryRef: this.dashboardService.getDocumentReference(CATEGORIES_COLLECTION_NAME, this.articleForm.controls['categoryRef'].value)
-    }
-    this.dashboardService.saveDocument(ARTICLES_COLLECTION_NAME,this.article)
-      .then(( res: any ) => {
-        console.log(res)
+      categoryRef: this.dashboardService.getDocumentReference(CATEGORIES_COLLECTION_NAME, this.articleForm.controls['categoryRef'].value),
+      keywords: this.keywords,
+    };
+
+    this.dashboardService.saveDocument(ARTICLES_COLLECTION_NAME, this.article)
+      .then((res: any) => {
+        console.log(res);
         this.articleForm.reset();
+        this.keywords = [];
         this.load = false;
       })
-      .catch(( error: any ) => {
-        console.log(error)
+      .catch((error: any) => {
+        console.log(error);
         this.articleForm.reset();
+        this.keywords = [];
         this.load = false;
       });
   }
-
 }

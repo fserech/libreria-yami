@@ -60,10 +60,26 @@
                   </app-select>
                 </ion-col>
               </ion-row>
+
+              <ion-row>
+                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                  <app-input-chips
+                    [form]="articleForm"
+                    name="keywords"
+                    label="Palabras clave"
+                    placeholder="Palabras clave"
+                    [values]="valuesFirestore"
+                    (changes)="chipsEvent($event)">
+                  </app-input-chips>
+                </ion-col>
+              </ion-row>
               <!-- Otras propiedades del artículo se agregarían aquí -->
               <ion-row *ngIf="!load">
                 <ion-col>
-                  <ion-button shape="round" [disabled]="articleForm.invalid" (click)="submit()">Guardar</ion-button> 
+                  <ion-button
+                    shape="round"
+                    [disabled]="articleForm.invalid || this.keywords.length === 0"
+                    (click)="submit()">Guardar</ion-button>
                 </ion-col>
               </ion-row>
             </form>

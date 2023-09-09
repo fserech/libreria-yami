@@ -5,4 +5,5 @@ export interface Article {
     name: string;
     mark: string;
     categoryRef: DocumentReference;
+    keywords: string[];
 }
