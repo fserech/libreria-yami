@@ -38,15 +38,20 @@ export class ViewCategoriesComponent  implements OnInit {
   }
 
   deleteCategory(category: Category) {
-    // Utiliza la función deleteDocument de DashboardService para eliminar la categoría
-    this.dashboardService.DeleteDocument(CATEGORIES_COLLECTION_NAME, category.uid)
-      .then(() => {
-        // Eliminación exitosa, actualiza la lista de categorías
-        this.categories = this.categories.filter(c => c.uid !== category.uid);
-      })
-      .catch(error => {
-        console.error('Error al eliminar la categoría:', error);
-      });
+    /**1. CONSULTAR SI EL REGISTRO ES UTILIZADO EN OTRA COLECCION,
+     * 1.2. SI SE USA EN OTRA COLECCION NO SE ELIMINA
+     * 1.3. SI NO SE USA EN OTRA COLECCION O EL REGISTRO NO TIENE REFERENCIA EN OTRA COLECCION SE ELIMINA
+     * 2. ANTES DE ELIMINAR CUALQUIER REGISTRO SE DEBE MOSTRAR UN DIALOGO PREGUNTANDO AL USUARIO SI ETA SEGURO(SI/NO) */
+
+    // // Utiliza la función deleteDocument de DashboardService para eliminar la categoría
+    // this.dashboardService.DeleteDocument(CATEGORIES_COLLECTION_NAME, category.uid)
+    //   .then(() => {
+    //     // Eliminación exitosa, actualiza la lista de categorías
+    //     this.categories = this.categories.filter(c => c.uid !== category.uid);
+    //   })
+    //   .catch(error => {
+    //     console.error('Error al eliminar la categoría:', error);
+    //   });
   }
 
   handleInput(event: any){
