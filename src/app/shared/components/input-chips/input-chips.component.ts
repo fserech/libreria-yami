@@ -31,7 +31,6 @@ export class InputChipsComponent  implements OnInit, OnChanges {
   constructor() { }
 
   ngOnInit() {
-    console.log(this.values);
     this.values.length > 0 ? this.chips = this.values : this.chips = [];
   }
 

@@ -38,8 +38,6 @@ export class NewCategoryComponent implements OnInit {
       this.dashboardService.getDocumentByIdToPromise(CATEGORIES_COLLECTION_NAME, uid)
       .then((response: Category) => {
         this.record = response;
-        console.log(response);
-        console.log(this.record);
         this.categoryForm.controls['name'].setValue(this.record.name);
         this.categoryForm.controls['description'].setValue(this.record.description);
 
@@ -86,7 +84,6 @@ export class NewCategoryComponent implements OnInit {
         this.dashboardService
           .saveDocument(CATEGORIES_COLLECTION_NAME,this.record)
           .then(( response: any ) => {
-            console.log(response);
             this.reset();
           })
           .catch(( error: any ) => {
@@ -98,7 +95,6 @@ export class NewCategoryComponent implements OnInit {
         this.dashboardService
           .udpateDocument(uid, CATEGORIES_COLLECTION_NAME, this.record)
           .then((response: any) => {
-            console.log(response);
             this.reset('/dashboard/categories/all');
           })
           .catch((error: any) => {
@@ -124,22 +120,15 @@ export class NewCategoryComponent implements OnInit {
 
   copyToClipboard(text: string | undefined) {
     if (text) {
-      // Crea un elemento de textarea oculto para copiar el texto al portapapeles
       const textArea = document.createElement('textarea');
       textArea.value = text;
       document.body.appendChild(textArea);
-      // Selecciona el texto en el textarea
       textArea.select();
       textArea.setSelectionRange(0, 99999); // Para navegadores móviles
-      // Copia el texto al portapapeles
       document.execCommand('copy');
-      // Elimina el textarea temporal
       document.body.removeChild(textArea);
       this.copied = true;
-
-      // Opcional: Muestra una notificación o realiza otras acciones después de copiar
       this.toastService.success('se copio UID del registro');
-
       setTimeout(() => {
         this.copied = false;
       }, 1000); // Puedes ajustar el tiempo en milisegundos según tus preferencias
