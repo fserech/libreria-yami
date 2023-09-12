@@ -72,6 +72,17 @@ saveDocument(collection: string, document: any): Promise<any> {
   return this.firestore.collection(collection).add(document);
 }
 
+// Elimina un documento de una colección por su ID.
+DeleteDocument(collection: string, uid: string): Promise<void> {
+  return this.firestore.collection(collection).doc(uid).delete();
+}
+
+// Edita un documento en una colección por su ID.
+editDocument(collection: string, uid: string, newData: any): Promise<void> {
+  return this.firestore.collection(collection).doc(uid).update(newData);
+}
+
+
 findItemsCollection(collection: string, field: string, searchTerm: string){
 
   // Divide el término de búsqueda en palabras.

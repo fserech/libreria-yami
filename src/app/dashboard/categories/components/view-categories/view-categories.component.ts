@@ -31,7 +31,22 @@ export class ViewCategoriesComponent  implements OnInit {
   }
 
   editCategory(category: any) {
-    this.navCtrl.navigateForward('/edit-category', { state: { category } });
+    // Navega a la página 'new-category' y pasa el ID de la categoría como parte de la URL
+    this.navCtrl.navigateForward(`/dashboard/categories/edit-category/${category}`);
+  
+    
+  }
+
+  deleteCategory(category: Category) {
+    // Utiliza la función deleteDocument de DashboardService para eliminar la categoría
+    this.dashboardService.DeleteDocument(CATEGORIES_COLLECTION_NAME, category.uid)
+      .then(() => {
+        // Eliminación exitosa, actualiza la lista de categorías
+        this.categories = this.categories.filter(c => c.uid !== category.uid);
+      })
+      .catch(error => {
+        console.error('Error al eliminar la categoría:', error);
+      });
   }
 
   handleInput(event: any){

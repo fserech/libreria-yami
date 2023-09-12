@@ -40,9 +40,14 @@
                   <h2>{{ firstCapitalLetter(category.name) }}</h2>
                   <p>{{ category.uid }}</p>
                 </ion-label>
-
+            
                 <ion-button class="float-right" (click)="editCategory(category)">
                   <ion-icon name="create-outline"></ion-icon>
+                </ion-button>
+            
+                <!-- botón de eliminación -->
+                <ion-button class="float-right" (click)="deleteCategory(category)">
+                  <ion-icon name="trash-outline"></ion-icon>
                 </ion-button>
               </ion-item>
             </ion-list>

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CATEGORIES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { Category } from 'src/app/shared/models/category';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
@@ -22,6 +23,8 @@ export class NewCategoryComponent implements OnInit {
     private formBuilder: FormBuilder,
     private toastService: ToastService,
     private dashboardService: DashboardService,
+    private route: ActivatedRoute,
+
   ) {
     this.categoryForm = this.formBuilder.group({
       name: ['', Validators.required], // Cambia "categoryName" a "name"
@@ -30,7 +33,10 @@ export class NewCategoryComponent implements OnInit {
     });
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+  
+
+  }
 
   chipsEvent(keywords: string[]){
     this.keywords =  keywords;
@@ -38,7 +44,8 @@ export class NewCategoryComponent implements OnInit {
 
   submit(){
     this.load = true;
-    if(this.keywords.length > 0){
+
+     if(this.keywords.length > 0){
 
       this.keywords.push(this.categoryForm.controls['name'].value.toLowerCase())
 

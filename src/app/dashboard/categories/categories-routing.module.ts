@@ -7,6 +7,8 @@ const routes: Routes = [
   {path: '',component: NewCategoryComponent },
   {path: 'new',component: NewCategoryComponent },
   {path: 'all',component: ViewCategoriesComponent },
+  { path: 'edit-category/:id', component: NewCategoryComponent }
+
 ];
 
 @NgModule({
