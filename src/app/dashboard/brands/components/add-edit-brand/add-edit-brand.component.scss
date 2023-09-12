@@ -1,0 +1,9 @@
+ion-col {
+    text-align: center;
+  }
+
+/* Estilos para el efecto de agrandamiento */
+ion-icon.enlarged {
+  transform: scale(1.2); /* Escala el icono al 120% del tamaño original */
+  transition: transform 0.2s ease-in-out; /* Agrega una transición suave */
+}

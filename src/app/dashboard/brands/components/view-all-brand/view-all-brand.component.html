@@ -1,3 +1,61 @@
-<p>
-  view-all-brand works!
-</p>
+<app-header
+  title="Marcas"
+  icon="add-outline"
+  [showButtonBack]="true">
+</app-header>
+
+<ion-toolbar>
+  <ion-row class="row">
+    <ion-col class="m-auto d-flex col-12 align-items-center" size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
+      <ion-searchbar
+        placeholder="Buscar"
+        shape="round"
+        class="rounded-pill"
+        (ionInput)="handleInput($event)">
+      </ion-searchbar>
+      <ion-button>
+        <ion-icon class="text-white" name="search-outline"></ion-icon>
+      </ion-button>
+    </ion-col>
+  </ion-row>
+</ion-toolbar>
+<ion-content class="ion-padding">
+
+  <ion-grid>
+    <ion-row class="ion-justify-content-center">
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-text color="medium">
+                <h1><ion-icon name="albums-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1>
+              </ion-text>
+            </ion-card-title>
+            
+          </ion-card-header>
+          <ion-card-content class="mt-2">
+            <ion-list>
+              <ion-item *ngFor="let brand of brands">
+                <ion-label>
+                  <h2>{{ firstCapitalLetter(brand.name) }}</h2>
+                  <p>{{ brand.uid }}</p>
+                </ion-label>
+
+                <ion-button class="float-right" (click)="editBrand(brand)">
+                  <ion-icon name="create-outline"></ion-icon>
+                </ion-button>
+
+                <!-- botón de eliminación -->
+                <ion-button color="danger" class="float-right" (click)="deleteBrand(brand)">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </ion-button>
+              </ion-item>
+            </ion-list>
+
+            
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>
