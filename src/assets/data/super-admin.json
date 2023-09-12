@@ -329,6 +329,40 @@
           "widget": false
         }
       ]
+    },
+    {
+      "access": true,
+      "badge": false,
+      "badgeSecondary": false,
+      "icon": "logo-markdown",
+      "label": "Marcas",
+      "menuFooter": false,
+      "name": "brands",
+      "path": "brands",
+      "submodules": [
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "add-outline",
+          "label": "Agregar Marca",
+          "name": "add-brand",
+          "order": 1,
+          "path": "/brands/new",
+          "widget": false
+        },
+        {
+          "access": true,
+          "badge": false,
+          "badgeSecondary": false,
+          "icon": "albums-outline",
+          "label": "Ver Marcas",
+          "name": "all-brands",
+          "order": 2,
+          "path": "/brands/all",
+          "widget": false
+        }
+      ]
     }
   ]
 }

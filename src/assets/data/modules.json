@@ -288,5 +288,35 @@
         "widget":false
       }
     ]
+  },
+  {
+    "name":"brands",
+    "access": false,
+    "label":"Marcas",
+    "path": "brands",
+    "icon": "logo-markdown",
+    "menuFooter": false,
+    "subModules":[
+      {
+        "name":"add-brand",
+        "label":"Agregar Marca",
+        "path": "/brands/new",
+        "icon": "add-outline",
+        "order": 1,
+        "badge":false,
+        "access": false,
+        "widget":false
+      },
+      {
+        "name":"all-brands",
+        "label":"Ver Marcas",
+        "path": "/brands/all",
+        "icon": "albums-outline",
+        "order": 1,
+        "badge":false,
+        "access": false,
+        "widget":false
+      }
+    ]
   }
 ]
