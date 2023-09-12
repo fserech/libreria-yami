@@ -8,7 +8,6 @@ const routes: Routes = [
   {path: 'all',component: ViewCategoriesComponent },
   {path: ':mode/:uid', component: NewCategoryComponent },
   {path: ':mode', component: NewCategoryComponent }
-
 ];
 
 @NgModule({
