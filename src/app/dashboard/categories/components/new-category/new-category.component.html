@@ -19,9 +19,26 @@
           <ion-card-title>
             <!-- Título con ícono y texto dinámico -->
             <ion-text color="medium">
-              <h1><ion-icon name="add-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1>
+              <h1>
+                <ion-icon
+                  name="{{mode === 'new' ? 'add-outline': mode === 'edit' ? 'create-outline' : 'eye-outline'}}"
+                  style="font-size: 30px;">
+                </ion-icon>
+                {{ title }}
+              </h1>
             </ion-text>
           </ion-card-title>
+          <ion-card-subtitle
+            *ngIf="mode === 'edit'|| mode === 'edit'">
+              UID de registro: <br> {{ record?.uid }}
+              <ion-icon
+              class="m-0"
+              [class.enlarged]="copied"
+              style="font-size: 20px;"
+              color="primary"
+              name="copy-outline"
+              (click)="copyToClipboard(record?.uid)"></ion-icon>
+            </ion-card-subtitle>
         </ion-card-header>
         <!-- Contenido de la tarjeta -->
         <ion-card-content class="mt-2">
@@ -37,6 +54,7 @@
                     label="Nombre categoria"
                     placeholder="Ingresa nombre"
                     [required]="true"
+                    [load]="load"
                   ></app-input>
                 </ion-col>
             </ion-row>
@@ -48,7 +66,8 @@
                   name="description"
                   label="Descripción de categoria"
                   placeholder="Descripción"
-                  [required]="true">
+                  [required]="true"
+                  [load]="load">
                 </app-input>
               </ion-col>
             </ion-row>
@@ -56,12 +75,14 @@
             <ion-row>
               <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
                 <app-input-chips
+                  [load]="load"
                   [form]="categoryForm"
                   name="keywords"
                   label="Palabras clave"
                   placeholder="Palabras clave"
                   [values]="valuesFirestore"
-                  (changes)="chipsEvent($event)">
+                  (changes)="chipsEvent($event)"
+                  [load]="load">
                 </app-input-chips>
               </ion-col>
             </ion-row>
@@ -70,9 +91,10 @@
             <ion-row *ngIf="!load">
               <ion-col>
                 <ion-button
+                  *ngIf="mode !== 'view'"
                   shape="round"
                   [disabled]="categoryForm.invalid || this.keywords.length === 0"
-                  (click)="submit()">Guardar</ion-button>
+                  (click)="submit()">{{ mode !== 'new' ? 'Actualizar': 'Guardar'}}</ion-button>
               </ion-col>
             </ion-row>
 

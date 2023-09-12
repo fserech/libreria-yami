@@ -1,5 +1,6 @@
 <ion-item>
   <ion-textarea
+  *ngIf="!load"
   labelPlacement="floating"
   [label]="label"
   [placeholder]="placeholder"
@@ -8,13 +9,15 @@
   [autoGrow]="true">
   </ion-textarea>
   <ion-button
+    *ngIf="!load"
     shape="round"
     name="add-circle-outline"
+    (click)="addChip()"
     [disabled]="getFormControl().value === ''">
     {{ labelButton }}
   </ion-button>
 </ion-item>
-<ion-item>
+<ion-item *ngIf="!load">
   <ion-textarea readonly
     [autoGrow]="true"
     label="">

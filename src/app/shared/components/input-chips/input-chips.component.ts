@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 
 @Component({
@@ -6,10 +6,10 @@ import { FormControl, FormGroup } from '@angular/forms';
   templateUrl: './input-chips.component.html',
   styleUrls: ['./input-chips.component.scss'],
 })
-export class InputChipsComponent  implements OnInit {
+export class InputChipsComponent  implements OnInit, OnChanges {
 
   @Input() label: string;
-  @Input() values: string[] = [];
+  @Input() values: string[];
   @Input() labelButton: string = 'Agregar';
   @Input() placeholder: string;
   @Input() form: FormGroup;
@@ -20,9 +20,18 @@ export class InputChipsComponent  implements OnInit {
   @Output() changes = new EventEmitter<string[]>();
   chips: string[] = [];
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['values']) {
+      const newValues = changes['values'].currentValue as string[];
+      this.chips = newValues ? newValues : [];
+      this.changed();
+    }
+  }
+
   constructor() { }
 
   ngOnInit() {
+    console.log(this.values);
     this.values.length > 0 ? this.chips = this.values : this.chips = [];
   }
 
@@ -53,7 +62,7 @@ export class InputChipsComponent  implements OnInit {
   }
 
   removeChip(chip: string) {
-    if(chip !== 'Lista de palabras clave'){
+    if(chip !== ''){
       const index = this.chips.indexOf(chip);
       if (index !== -1) {
         this.chips.splice(index, 1);

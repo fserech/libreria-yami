@@ -32,9 +32,9 @@ export class ViewCategoriesComponent  implements OnInit {
 
   editCategory(category: any) {
     // Navega a la página 'new-category' y pasa el ID de la categoría como parte de la URL
-    this.navCtrl.navigateForward(`/dashboard/categories/edit-category/${category}`);
-  
-    
+    this.navCtrl.navigateForward(`/dashboard/categories/edit/${category.uid}`);
+
+
   }
 
   deleteCategory(category: Category) {

@@ -43,7 +43,8 @@ async getDocumentByIdToPromise(collection: string, uid: string): Promise<any> {
     const docSnapshot = await docRef.get();
 
     if (docSnapshot.exists) {
-      return docSnapshot.data();
+      const documentData = docSnapshot.data() as any;
+      return { uid: docSnapshot.id, ...documentData };
     } else {
       return null;
     }
@@ -77,9 +78,10 @@ DeleteDocument(collection: string, uid: string): Promise<void> {
   return this.firestore.collection(collection).doc(uid).delete();
 }
 
-// Edita un documento en una colección por su ID.
-editDocument(collection: string, uid: string, newData: any): Promise<void> {
-  return this.firestore.collection(collection).doc(uid).update(newData);
+udpateDocument(uid: string, collection: string, document: any){
+  if(document.uid)delete document.uid;
+  const collectionRef = this.firestore.collection(collection);
+  return collectionRef.doc(uid).set(document, { merge: true });
 }
 
 

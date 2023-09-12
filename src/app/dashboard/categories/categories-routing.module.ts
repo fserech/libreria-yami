@@ -5,9 +5,9 @@ import { ViewCategoriesComponent } from './components/view-categories/view-categ
 
 const routes: Routes = [
   {path: '',component: NewCategoryComponent },
-  {path: 'new',component: NewCategoryComponent },
   {path: 'all',component: ViewCategoriesComponent },
-  { path: 'edit-category/:id', component: NewCategoryComponent }
+  {path: ':mode/:uid', component: NewCategoryComponent },
+  {path: ':mode', component: NewCategoryComponent }
 
 ];
 
