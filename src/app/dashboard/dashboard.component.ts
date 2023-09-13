@@ -18,11 +18,9 @@ import { Location } from '@angular/common';
 })
 export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
 
-  // user: UserFirestore
   user: UserData
   role: Role;
   load: boolean = false;
-  // darkMode = false;
   themeToggle = false;
   showButtonBack: boolean = false;
   buttonBackText: boolean = false;
@@ -53,7 +51,6 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     this.load = true;
     this.getRoleUser();
-    // this.applyDarkMode();
 
     const darkModeEnabled = JSON.parse(localStorage.getItem('darkMode'));
     const mode: string = darkModeEnabled ? '(prefers-color-scheme: dark)' : '(prefers-color-scheme: light)';
@@ -74,6 +71,7 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
       next: (role: any) => {
         this.role = role;
         this.permissions = this.getPermissionsRole();
+
         this.permissionsFooter = this.getPermissionsMenuFooter();
         this.load = false;
       },
@@ -119,6 +117,20 @@ export class DashboardComponent  implements OnInit, OnDestroy, AfterViewInit {
         permissions.push(module);
       }
     });
+
+    permissions.sort((a, b) => {
+      const nameA = a.name.toLowerCase();
+      const nameB = b.name.toLowerCase();
+
+      if (nameA < nameB) {
+        return -1;
+      }
+      if (nameA > nameB) {
+        return 1;
+      }
+      return 0;
+    });
+
     return permissions;
   }
 
