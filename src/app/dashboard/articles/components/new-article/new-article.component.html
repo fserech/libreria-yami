@@ -1,91 +1,127 @@
 <app-header
-  title="Articulos"
+  title="Insumos"
   icon="add-outline"
   [showButtonBack]="true">
 </app-header>
 
+<!-- Contenido principal -->
 <ion-content>
-  <ion-grid>
-    <ion-row class="ion-justify-content-center">
-      
-      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
-        <ion-card class="rounded-4">
-          <ion-card-header>
-            <ion-card-title>
-              <ion-text color="medium">
-                <h1><ion-icon name="add-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1>
-              </ion-text>
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content class="mt-2">
-            <form [formGroup]="articleForm">
-              <ion-row>
-                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+  <!-- Cuadrícula para organizar elementos -->
+<ion-grid>
+  <!-- Fila centrada -->
+  <ion-row class="ion-justify-content-center">
+    <!-- Columna de tamaño variable para dispositivos de diferentes tamaños -->
+    <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+      <!-- Tarjeta con contenido -->
+      <ion-card class="rounded-4">
+        <!-- Encabezado de la tarjeta -->
+        <ion-card-header>
+          <ion-card-title>
+            <!-- Título con ícono y texto dinámico -->
+            <ion-text color="medium">
+              <h1>
+                <ion-icon
+                  name="{{mode === 'new' ? 'add-outline': mode === 'edit' ? 'create-outline' : 'eye-outline'}}"
+                  style="font-size: 30px;">
+                </ion-icon>
+                {{ title }}
+              </h1>
+            </ion-text>
+          </ion-card-title>
+          <ion-card-subtitle
+            *ngIf="mode === 'edit'|| mode === 'edit'">
+              UID de insumo: <br> {{ record?.uid }}
+              <ion-icon
+              class="m-0"
+              [class.enlarged]="copied"
+              style="font-size: 20px;"
+              color="primary"
+              name="copy-outline"
+              (click)="copyToClipboard(record?.uid)"></ion-icon>
+            </ion-card-subtitle>
+        </ion-card-header>
+        <!-- Contenido de la tarjeta -->
+        <ion-card-content class="mt-2">
+           <!-- Formulario controlado por categoryForm -->
+           <form [formGroup]="articleForm">
+            <!-- Primera fila de campos -->
+            <ion-row>
+              <!-- Columna para el campo de nombre -->
+                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
                   <app-input
-                    [load]="load"
                     [form]="articleForm"
                     name="name"
                     label="Nombre"
-                    placeholder="Ingresa el nombre del artículo"
+                    placeholder="Ingresa nombre"
                     [required]="true"
+                    [load]="load"
                   ></app-input>
                 </ion-col>
-                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
-                  <app-input
-                    [load]="load"
-                    [form]="articleForm"
-                    name="mark"
-                    label="Marca"
-                    placeholder="Ingresa la marca"
-                    [required]="true">
+            </ion-row>
+            <ion-row>
+              <!-- Columna para el campo de rol de usuario -->
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                <app-input
+                  [form]="articleForm"
+                  name="description"
+                  label="Descripción Insumo"
+                  placeholder="Descripción"
+                  [required]="true"
+                  [load]="load">
+                </app-input>
+              </ion-col>
+            </ion-row>
 
-                  </app-input>
-                </ion-col>
-              </ion-row>
-              <ion-row>
-                
-                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
-                  <app-select
-                    [form]="articleForm"
-                    name="categoryRef"
-                    label="Categorias"
-                    placeholder="Selecciona una categoria"
-                    [required]="true"
-                    [disabled]="false"
-                    [load]="load"
-                    [options]="{
-                      resolver: 'categories',
-                      label: 'name',
-                      value: 'uid' }">
-                  </app-select>
-                </ion-col>
-              </ion-row>
+            <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+              <app-select
+                [form]="articleForm"
+                name="categoryRef"
+                label="Categorias"
+                placeholder="Selecciona una categoria"
+                [required]="true"
+                [disabled]="false"
+                [load]="load"
+                [options]="{
+                  resolver: 'categories',
+                  label: 'name',
+                  value: 'uid' }">
+              </app-select>
+            </ion-col>
 
-              <ion-row>
-                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
-                  <app-input-chips
-                    [form]="articleForm"
-                    name="keywords"
-                    label="Palabras clave"
-                    placeholder="Palabras clave"
-                    [values]="valuesFirestore"
-                    (changes)="chipsEvent($event)">
-                  </app-input-chips>
-                </ion-col>
-              </ion-row>
-              <!-- Otras propiedades del artículo se agregarían aquí -->
-              <ion-row *ngIf="!load">
-                <ion-col>
-                  <ion-button
-                    shape="round"
-                    [disabled]="articleForm.invalid || this.keywords.length === 0"
-                    (click)="submit()">Guardar</ion-button>
-                </ion-col>
-              </ion-row>
-            </form>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+            <ion-row>
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                <app-input-chips
+                  [load]="load"
+                  [form]="articleForm"
+                  name="keywords"
+                  label="Palabras clave"
+                  placeholder="Palabras clave"
+                  [values]="valuesFirestore"
+                  (changes)="chipsEvent($event)"
+                  [load]="load"
+                  [pattern]="reguexText"
+                  patternHint="Solo se aceptan caracteres alfanumericos sin espacios">
+                </app-input-chips>
+              </ion-col>
+            </ion-row>
+            <!--boton guardar-->
+
+            <ion-row *ngIf="!load">
+              <ion-col>
+                <ion-button
+                  *ngIf="mode !== 'view'"
+                  shape="round"
+                  [disabled]="articleForm.invalid || this.keywords.length === 0"
+                  (click)="submit()">{{ mode !== 'new' ? 'Actualizar': 'Guardar'}}</ion-button>
+              </ion-col>
+            </ion-row>
+
+           </form>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+
+  </ion-row>
+</ion-grid>
+
 </ion-content>
