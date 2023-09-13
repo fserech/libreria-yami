@@ -288,7 +288,7 @@
         "widget":false
       },
       {
-        "access": true,
+        "access": false,
         "badge": false,
         "badgeSecondary": false,
         "icon": "refresh-outline",
@@ -327,6 +327,40 @@
         "badge":false,
         "access": false,
         "widget":false
+      }
+    ]
+  },
+  {
+    "name": "products",
+    "access": false,
+    "label": "Productos",
+    "path": "products",
+    "icon": "file-tray-full-outline",
+    "menuFooter": false,
+    "badge": false,
+    "badgeSecondary": false,
+    "submodules": [
+      {
+        "name": "add-product",
+        "label": "Agregar Producto",
+        "path": "/products/new",
+        "badgeSecondary": false,
+        "icon": "add-outline",
+        "order": 1,
+        "badge": false,
+        "access": false,
+        "widget": false
+      },
+      {
+        "name": "all-products",
+        "label": "Ver Productos",
+        "path": "/products/all",
+        "badgeSecondary": false,
+        "icon": "list-outline",
+        "order": 2,
+        "badge": false,
+        "access": false,
+        "widget": false
       }
     ]
   }
