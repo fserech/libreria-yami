@@ -9,6 +9,8 @@ import { FormControl, FormGroup } from '@angular/forms';
 export class InputChipsComponent  implements OnInit, OnChanges {
 
   @Input() label: string;
+  @Input() patternHint: string;
+  @Input() pattern: RegExp;
   @Input() values: string[];
   @Input() labelButton: string = 'Agregar';
   @Input() placeholder: string;
@@ -48,9 +50,10 @@ export class InputChipsComponent  implements OnInit, OnChanges {
   }
 
   addChip() {
-    const value = this.getFormControl().value;
+    const control = this.getFormControl();
+    const value = control.value;
 
-    if(value){
+    if(value && control.valid){
       const value = this.getFormControl().value.trim();
     if(value !== '' && value !== null && value !== undefined && !this.chips.includes(value.toLowerCase())){
       this.chips.push(value);

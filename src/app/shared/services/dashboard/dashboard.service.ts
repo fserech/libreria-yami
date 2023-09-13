@@ -13,8 +13,8 @@ getDocumentReference(collection: string, id: string): DocumentReference {
   return this.firestore.collection(collection).doc(id).ref;
 }
 
-getAllItemsCollection(collection: string): Observable<any[]> {
-  return this.firestore.collection(collection).snapshotChanges().pipe(
+getAllItemsCollection(collection: string, fieldOrder: string): Observable<any[]> {
+  return this.firestore.collection(collection, ref => ref.orderBy(fieldOrder)).snapshotChanges().pipe(
     map(actions => {
       return actions.map((action: DocumentChangeAction<unknown>) => {
         const data = (action.payload.doc.data() as any) || {};
@@ -84,28 +84,31 @@ udpateDocument(uid: string, collection: string, document: any){
   return collectionRef.doc(uid).set(document, { merge: true });
 }
 
+searchByArrayString(collection: string, field: string, searchTerm: string, fieldOrder: string){
 
-findItemsCollection(collection: string, field: string, searchTerm: string){
+  searchTerm.toLowerCase();
+  const valueArray = searchTerm.split(' ');
+  if(valueArray.length > 0){
+    return this.firestore
+    .collection(collection, ref => ref
+    .where(field, '>=', valueArray))
+    .valueChanges();
+  }else{
+    return this.firestore
+    .collection(collection, ref => ref
+    .orderBy(fieldOrder))
+    .valueChanges();
+  }
+}
 
-  // Divide el término de búsqueda en palabras.
-  const searchTerms = searchTerm.toLowerCase().split(' ');
-
-  // Crea un arreglo de observables, uno por cada palabra en el término de búsqueda.
-  const observables = searchTerms.map(term => {
-    return this.firestore.collection(collection, ref => {
-      return ref
-        .where(field, 'array-contains', term)
-        .limit(10);
-    }).valueChanges();
-  });
-
-  // Combina los resultados de las consultas en un solo arreglo de resultados.
-  return combineLatest(observables).pipe(
-    map(results => {
-      // Concatena todos los resultados en un solo arreglo.
-      return [].concat(...results);
-    })
-  );
+searchForField(collection: string, field: string, value: string) {
+  const valorNormalizado = value.toLowerCase();
+  return this.firestore
+    .collection(collection, (ref) =>
+      ref.where(field, '>=', valorNormalizado)
+         .where(field, '<=', valorNormalizado + '\uf8ff')
+    )
+    .valueChanges();
 }
 
 }

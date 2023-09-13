@@ -11,7 +11,7 @@ export class RolesResolver implements Resolve<any> {
     constructor(protected service: DashboardService) {}
 
     resolve(route: ActivatedRouteSnapshot): any {
-        return this.service.getAllItemsCollection(ROLES_COLLECTION_NAME);
+        return this.service.getAllItemsCollection(ROLES_COLLECTION_NAME, 'label');
     }
 
 }

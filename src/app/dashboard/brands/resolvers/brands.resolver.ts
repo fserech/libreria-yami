@@ -11,7 +11,7 @@ export class BrandsResolver implements Resolve<any> {
     constructor(protected service: DashboardService) {}
 
     resolve(route: ActivatedRouteSnapshot): any {
-        return this.service.getAllItemsCollection(BRANDS_COLLECTION_NAME);
+        return this.service.getAllItemsCollection(BRANDS_COLLECTION_NAME, 'name');
     }
 
 }

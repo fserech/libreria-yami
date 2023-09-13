@@ -11,7 +11,7 @@ export class CategoriesResolver implements Resolve<any> {
     constructor(protected service: DashboardService) {}
 
     resolve(route: ActivatedRouteSnapshot): any {
-        return this.service.getAllItemsCollection(CATEGORIES_COLLECTION_NAME);
+        return this.service.getAllItemsCollection(CATEGORIES_COLLECTION_NAME, 'name');
     }
 
 }

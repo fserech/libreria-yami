@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CATEGORIES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
+import { REGEX_TEXT_WITHOUT_SPACES } from 'src/app/shared/constants/reguex';
 import { Category } from 'src/app/shared/models/category';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
@@ -20,6 +21,7 @@ export class NewCategoryComponent implements OnInit {
   keywords: string[] = [];
   record: Category = null;
   mode: string = 'view';
+  reguexText:RegExp = REGEX_TEXT_WITHOUT_SPACES;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -62,7 +64,7 @@ export class NewCategoryComponent implements OnInit {
     this.categoryForm = this.formBuilder.group({
       name: ['', Validators.required],
       description: ['', Validators.required],
-      keywords: ['']
+      keywords: ['', Validators.pattern(this.reguexText)]
     });
   }
 

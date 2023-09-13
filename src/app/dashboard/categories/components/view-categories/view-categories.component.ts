@@ -19,11 +19,9 @@ export class ViewCategoriesComponent  implements OnInit {
   ) { }
 
   ngOnInit() {
-    // Llama a la función getCategorieDocuments
-    this.dashboardService.getAllItemsCollection(CATEGORIES_COLLECTION_NAME)
+    this.dashboardService.getAllItemsCollection(CATEGORIES_COLLECTION_NAME, 'name')
     .subscribe({
       next: (categories: Category[]) => {
-        console.log('categories: ', categories);
         this.categories = categories;
       },
       error: error => {console.log(error);}
@@ -31,7 +29,6 @@ export class ViewCategoriesComponent  implements OnInit {
   }
 
   editCategory(category: any) {
-    // Navega a la página 'new-category' y pasa el ID de la categoría como parte de la URL
     this.navCtrl.navigateForward(`/dashboard/categories/edit/${category.uid}`);
 
 
@@ -56,7 +53,8 @@ export class ViewCategoriesComponent  implements OnInit {
 
   handleInput(event: any){
     const query = event.target.value.toLowerCase();
-    this.dashboardService.findItemsCollection(CATEGORIES_COLLECTION_NAME, 'keywords', query)
+
+    this.dashboardService.searchByArrayString(CATEGORIES_COLLECTION_NAME, 'keywords', query, 'name')
       .subscribe({
         next: (response: Category[]) => {
           this.categories = response;

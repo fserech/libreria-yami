@@ -82,7 +82,9 @@
                   placeholder="Palabras clave"
                   [values]="valuesFirestore"
                   (changes)="chipsEvent($event)"
-                  [load]="load">
+                  [load]="load"
+                  [pattern]="reguexText"
+                  patternHint="Solo se aceptan caracteres alfanumericos sin espacios">
                 </app-input-chips>
               </ion-col>
             </ion-row>

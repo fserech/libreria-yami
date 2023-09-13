@@ -13,7 +13,7 @@ export class ViewArticlesComponent  implements OnInit {
 
   articles: Article[] = [];
   title: string = 'Ver articulos';
-  
+
 
   constructor(
     private dashboardService: DashboardService,
@@ -22,7 +22,7 @@ export class ViewArticlesComponent  implements OnInit {
 
   ngOnInit() {
     // Llama a la función getArticleDocuments
-    this.dashboardService.getAllItemsCollection(ARTICLES_COLLECTION_NAME)
+    this.dashboardService.getAllItemsCollection(ARTICLES_COLLECTION_NAME, 'name')
     .subscribe({
       next: (articles: Article[]) => {
         console.log('articles: ', articles);
@@ -37,16 +37,16 @@ export class ViewArticlesComponent  implements OnInit {
   }
 
   handleInput(event: any){
-    const query = event.target.value.toLowerCase();
-    this.dashboardService.findItemsCollection(ARTICLES_COLLECTION_NAME, 'keywords', query)
-      .subscribe({
-        next: (response: Article[]) => {
-          this.articles = response;
-        },
-        error: (error: any) => {
-          console.log(error);
-        }
-      });
+    // const query = event.target.value.toLowerCase();
+    // this.dashboardService.findItemsCollection(ARTICLES_COLLECTION_NAME, 'keywords', query)
+    //   .subscribe({
+    //     next: (response: Article[]) => {
+    //       this.articles = response;
+    //     },
+    //     error: (error: any) => {
+    //       console.log(error);
+    //     }
+    //   });
   }
   firstCapitalLetter(cadena: string): string {
     return cadena.charAt(0).toUpperCase() + cadena.slice(1);

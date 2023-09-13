@@ -1,13 +1,16 @@
 <ion-item>
-  <ion-textarea
+  <ion-input
   *ngIf="!load"
   labelPlacement="floating"
   [label]="label"
   [placeholder]="placeholder"
   [formControl]="getFormControl()"
   (keyup.enter)="addChip()"
-  [autoGrow]="true">
-  </ion-textarea>
+  [pattern]="pattern"
+  [errorText]="patternHint"
+  [helperText]="patternHint"
+  [autoGrow]="false">
+  </ion-input>
   <ion-button
     *ngIf="!load"
     shape="round"

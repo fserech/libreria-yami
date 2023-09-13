@@ -25,7 +25,7 @@ export class ViewAllBrandComponent implements OnInit {
 
   ngOnInit() {
     // Llama a la función para obtener todas las marcas
-    this.dashboardService.getAllItemsCollection(BRANDS_COLLECTION_NAME)
+    this.dashboardService.getAllItemsCollection(BRANDS_COLLECTION_NAME, 'name')
       .subscribe({
         next: (brands: Brand[]) => {
           console.log('brands: ', brands);
@@ -35,7 +35,7 @@ export class ViewAllBrandComponent implements OnInit {
           console.log(error);
         }
       });
-      
+
   }
 
   editBrand(brand: Brand) {
@@ -49,16 +49,16 @@ export class ViewAllBrandComponent implements OnInit {
   }
 
   handleInput(event: any) {
-    const query = event.target.value.toLowerCase();
-    this.dashboardService.findItemsCollection(BRANDS_COLLECTION_NAME, 'keywords', query)
-      .subscribe({
-        next: (response: Brand[]) => {
-          this.brands = response;
-        },
-        error: (error: any) => {
-          console.log(error);
-        }
-      });
+    const value = event.target.value.toLowerCase();
+    this.dashboardService.searchForField(BRANDS_COLLECTION_NAME, 'name', value)
+    .subscribe({
+          next: (response: Brand[]) => {
+            this.brands = response;
+          },
+          error: (error: any) => {
+            console.log(error);
+          }
+        });
   }
 
   firstCapitalLetter(cadena: string): string {
