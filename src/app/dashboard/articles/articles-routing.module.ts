@@ -6,8 +6,9 @@ import { CategoriesResolver } from './resolvers/categories.resolver';
 
 const routes: Routes = [
   {path: '',component: NewArticleComponent },
-  {path: 'new',component: NewArticleComponent, resolve: {categories: CategoriesResolver} },
   {path: 'all',component: ViewArticlesComponent },
+  {path: ':mode/:uid', component: NewArticleComponent , resolve: {categories: CategoriesResolver}  },
+  {path: ':mode', component: NewArticleComponent , resolve: {categories: CategoriesResolver} },
 ];
 
 @NgModule({

@@ -1,5 +1,5 @@
 <app-header
-title="Articulos"
+title="Insumos"
 [load]="false"
 [showButtonBack]="true">
 </app-header>
@@ -41,8 +41,13 @@ title="Articulos"
                   <p>{{ article.uid }}</p>
                 </ion-label>
 
-                <ion-button class="float-right" (click)="editArticles(article)">
+                <ion-button class="float-right" (click)="editArticle(article)">
                   <ion-icon name="create-outline"></ion-icon>
+                </ion-button>
+
+                <!-- botón de eliminación -->
+                <ion-button color="danger" class="float-right" (click)="deleteArticle(article)">
+                  <ion-icon name="trash-outline"></ion-icon>
                 </ion-button>
               </ion-item>
             </ion-list>
@@ -52,4 +57,3 @@ title="Articulos"
     </ion-row>
   </ion-grid>
 </ion-content>
-
