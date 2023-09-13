@@ -37,7 +37,7 @@ export class NewArticleComponent implements OnInit {
     if(uid && this.mode !== 'new'){
       this.load = true;
       this.title = (this.mode === 'view') ? 'Visualizar Insumo' : 'Editar Insumo';
-      this.dashboardService.getDocumentByIdToPromise(CATEGORIES_COLLECTION_NAME, uid)
+      this.dashboardService.getDocumentByIdToPromise(ARTICLES_COLLECTION_NAME, uid)
       .then((response: Article) => {
         this.record = response;
         this.articleForm.controls['name'].setValue(this.record.name);
