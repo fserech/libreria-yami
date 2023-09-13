@@ -11,7 +11,7 @@
         "name":"inventory-history",
         "label":"Historial",
         "path": "/inventory/history",
-        "icon": "newspaper-outline",
+        "icon": "refresh-outline",
         "order": 1,
         "badge":false,
         "access": false,
@@ -62,14 +62,14 @@
   {
     "name":"articles",
     "access": false,
-    "label":"Productos",
+    "label":"Insumos",
     "path": "articles",
     "icon": "library-outline",
     "menuFooter": false,
     "subModules":[
       {
         "name":"articles-add",
-        "label":"Nuevo producto",
+        "label":"Nuevo Insumo",
         "path": "/articles/new",
         "icon": "add-outline",
         "order": 1,
@@ -79,7 +79,7 @@
       },
       {
         "name":"articles-all",
-        "label":"Ver Productos",
+        "label":"Ver Insumos",
         "path": "/articles/all",
         "icon": "list-outline",
         "order": 2,
@@ -109,9 +109,9 @@
       },
       {
         "name":"sales-add",
-        "label":"Nuevo venta",
+        "label":"Nueva venta",
         "path": "/sales/new",
-        "icon": "bag-add-outline",
+        "icon": "storefront-outline",
         "order": 2,
         "badge":false,
         "access": false,
@@ -121,7 +121,7 @@
         "name":"sales-all",
         "label":"Historial",
         "path": "/sales/all",
-        "icon": "newspaper-outline",
+        "icon": "refresh-outline",
         "order": 3,
         "badge": false,
         "access": false,
@@ -286,6 +286,17 @@
         "badge":false,
         "access": false,
         "widget":false
+      },
+      {
+        "access": true,
+        "badge": false,
+        "badgeSecondary": false,
+        "icon": "refresh-outline",
+        "label": "Historial",
+        "name": "cancellations-history",
+        "order": 3,
+        "path": "/cancellations/history",
+        "widget": false
       }
     ]
   },
