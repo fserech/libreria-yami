@@ -56,15 +56,23 @@ export class ViewArticlesComponent  implements OnInit {
   handleInput(event: any){
     const query = event.target.value.toLowerCase();
 
-    this.dashboardService.searchByArrayString(ARTICLES_COLLECTION_NAME, 'keywords', query, 'name')
-      .subscribe({
-        next: (response: Article[]) => {
+    this.dashboardService.searchForField(ARTICLES_COLLECTION_NAME, 'name', query)
+      .subscribe(
+        (response: any[]) => {
           this.articles = response;
         },
-        error: (error: any) => {
+        (error: any) => {
           console.log(error);
         }
-      });
+      //   {
+      //   next: (response: Article[]) => {
+      //     this.articles = response;
+      //   },
+      //   error: (error: any) => {
+      //     console.log(error);
+      //   }
+      // }
+      );
   }
 
   firstCapitalLetter(cadena: string): string {

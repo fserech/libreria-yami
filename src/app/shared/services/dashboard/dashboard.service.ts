@@ -87,17 +87,25 @@ udpateDocument(uid: string, collection: string, document: any){
 searchByArrayString(collection: string, field: string, searchTerm: string, fieldOrder: string){
 
   searchTerm.toLowerCase();
-  const valueArray = searchTerm.split(' ');
+  let valueArray: string[] = [];
+  (searchTerm !== '') ? valueArray = searchTerm.split(' ') : valueArray = [] ;
+
+  console.log('Array evaluado:', valueArray);
   if(valueArray.length > 0){
+    console.log('Entro al Array');
     return this.firestore
     .collection(collection, ref => ref
-    .where(field, '>=', valueArray))
-    .valueChanges();
+    .where(field, '>=', valueArray)
+    // .where(field, 'array-contains-any', valueArray)
+    // .where(field, '<=', valueArray + '\uf8ff')
+    )
+    .valueChanges({idField: 'uid'});
   }else{
+    console.log('No entro al Array');
     return this.firestore
     .collection(collection, ref => ref
     .orderBy(fieldOrder))
-    .valueChanges();
+    .valueChanges({idField: 'uid'});
   }
 }
 
@@ -108,7 +116,7 @@ searchForField(collection: string, field: string, value: string) {
       ref.where(field, '>=', valorNormalizado)
          .where(field, '<=', valorNormalizado + '\uf8ff')
     )
-    .valueChanges();
+    .valueChanges({idField: 'uid'});
 }
 
 }

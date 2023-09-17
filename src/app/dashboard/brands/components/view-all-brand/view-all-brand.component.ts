@@ -51,14 +51,22 @@ export class ViewAllBrandComponent implements OnInit {
   handleInput(event: any) {
     const value = event.target.value.toLowerCase();
     this.dashboardService.searchForField(BRANDS_COLLECTION_NAME, 'name', value)
-    .subscribe({
-          next: (response: Brand[]) => {
-            this.brands = response;
-          },
-          error: (error: any) => {
-            console.log(error);
-          }
-        });
+    .subscribe(
+      (response: any[]) => {
+        this.brands = response;
+      },
+      (error: any) => {
+        console.log(error);
+      }
+      // {
+      //     next: (response: Brand[]) => {
+      //       this.brands = response;
+      //     },
+      //     error: (error: any) => {
+      //       console.log(error);
+      //     }
+      //   }
+        );
   }
 
   firstCapitalLetter(cadena: string): string {

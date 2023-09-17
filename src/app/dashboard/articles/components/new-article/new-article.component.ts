@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ARTICLES_COLLECTION_NAME, CATEGORIES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { REGEX_TEXT_WITHOUT_SPACES } from 'src/app/shared/constants/reguex';
 import { Article } from 'src/app/shared/models/article';
+import { Category } from 'src/app/shared/models/category';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
 
@@ -39,11 +40,17 @@ export class NewArticleComponent implements OnInit {
       this.title = (this.mode === 'view') ? 'Visualizar Insumo' : 'Editar Insumo';
       this.dashboardService.getDocumentByIdToPromise(ARTICLES_COLLECTION_NAME, uid)
       .then((response: Article) => {
+
         this.record = response;
         this.articleForm.controls['name'].setValue(this.record.name);
         this.articleForm.controls['description'].setValue(this.record.description);
-        this.articleForm.controls['categoryRef'].setValue(this.record.categoryRef);
         const indexToRemove = this.record.keywords.indexOf(this.record.name.toLowerCase());
+
+        this.dashboardService
+        .getDataDocumentReference(this.record.categoryRef)
+        .then((doc: Category) => this.articleForm.controls['categoryRef'].setValue(doc.uid))
+        .catch((error: any) => {console.log(error)});
+
         if (indexToRemove !== -1) {
           this.record.keywords.splice(indexToRemove, 1);
         }
@@ -56,7 +63,7 @@ export class NewArticleComponent implements OnInit {
       });
     }
 
-    
+
   }
 
   ngOnInit() {}
@@ -109,7 +116,7 @@ export class NewArticleComponent implements OnInit {
       }
     }
 
-   
+
   }
   reset(route?: string){
     this.articleForm.reset();

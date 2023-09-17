@@ -30,8 +30,6 @@ export class ViewCategoriesComponent  implements OnInit {
 
   editCategory(category: any) {
     this.navCtrl.navigateForward(`/dashboard/categories/edit/${category.uid}`);
-
-
   }
 
   deleteCategory(category: Category) {
@@ -55,14 +53,24 @@ export class ViewCategoriesComponent  implements OnInit {
     const query = event.target.value.toLowerCase();
 
     this.dashboardService.searchByArrayString(CATEGORIES_COLLECTION_NAME, 'keywords', query, 'name')
-      .subscribe({
-        next: (response: Category[]) => {
+      .subscribe(
+        (response: any[]) => {
+          console.log(response);
           this.categories = response;
         },
-        error: (error: any) => {
+        (error: any) => {
           console.log(error);
         }
-      });
+      //   {
+      //   next: (response: Category[]) => {
+      //     this.categories = response;
+      //     console.log(response);
+      //   },
+      //   error: (error: any) => {
+      //     console.log(error);
+      //   }
+      // }
+      );
   }
 
   firstCapitalLetter(cadena: string): string {
