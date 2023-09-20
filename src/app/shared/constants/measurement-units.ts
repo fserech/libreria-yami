@@ -1,0 +1,17 @@
+export const MEASUREMENT_UNITS: any[] = [
+  { value: 'L', label: 'Litro' },
+  { value: 'LB', label: 'Libra' },
+  { value: 'C', label: 'Caja' },
+  { value: 'CM', label: 'Centimetro' },
+  { value: 'P', label: 'Paquete' },
+  { value: 'PLG', label: 'Pulgada' },
+  { value: 'M', label: 'Metro' },
+  { value: 'U', label: 'Unidad' },
+  { value: 'Y', label: 'Yarda' }
+];
+
+export const WHOLESALE_MEASUREMENT_UNITS_: any[] = [
+  { value: 'C', label: 'Caja' },
+  { value: 'P', label: 'Paquete' },
+  { value: 'R', label: 'Rollo' }
+];
