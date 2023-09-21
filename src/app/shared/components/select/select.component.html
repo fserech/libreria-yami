@@ -1,14 +1,28 @@
 <ion-list class="m-auto" *ngIf="!load">
   <!-- <ion-label>{{ label }}<ion-text *ngIf="required" color="{{ getFormControl().valid ? 'success' : 'danger'}}"> *</ion-text></ion-label> -->
   <ion-item [disabled]="disabled" class="no-border">
-    <ion-select *ngIf="this.values.length === 0" label="{{ required ? label + '*' : label }}" label-placement="floating" fill="solid"
+    <ion-select
+      *ngIf="this.values.length === 0"
+      class="ion-select"
+      [multiple]="multiple"
+      [mode]="multiple ? 'ios' : 'md'"
+      label="{{ required ? label + '*' : label }}"
+      label-placement="floating"
+      fill="clear"
       [formControl]="getFormControl()"
       interface="popover"
       placeholder="{{placeholder}}">
       <ion-select-option *ngFor="let role of dataList$ | async" [value]="role[options.value]">{{ role[options.label] }}</ion-select-option>
     </ion-select>
 
-    <ion-select *ngIf="this.values.length > 0" label="{{ required ? label + '*' : label }}" label-placement="floating" fill="solid"
+    <ion-select
+    *ngIf="this.values.length > 0"
+    class="ion-select"
+    [multiple]="multiple"
+    [mode]="multiple ? 'ios' : 'md'"
+    label="{{ required ? label + '*' : label }}"
+    label-placement="floating"
+    fill="clear"
     [formControl]="getFormControl()"
     interface="popover"
     placeholder="{{placeholder}}">

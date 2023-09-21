@@ -1,3 +1,26 @@
 .ion-text-center{
   text-align: center !important;
 }
+
+ion-input.ion-text-center{
+  --highlight-color-focused: var(--ion-color-medium-shade);
+  --highlight-color-valid: var(--global-color-valid);
+}
+
+
+
+// Estilo para ion-input
+ion-input.sc-ion-input-md-h {
+  // color: var(--ion-color-medium-shade);
+  // color: var(--ion-color-step-700, #373737);
+}
+
+// Estilo para ion-input deshabilitado
+ion-input.input-disabled.sc-ion-input-md-h{
+  border-radius: 10px;
+  border: 1px;
+  border-style: dashed;
+  border-width: 2px;
+  padding: 5px !important;
+  opacity: 1 !important;
+}

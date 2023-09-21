@@ -8,6 +8,7 @@ title="Prodcutos"
 <ion-grid>
   <ion-row class="ion-justify-content-center">
     <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+
       <ion-card class="rounded-4">
         <ion-card-header>
           <ion-card-title>
@@ -33,6 +34,14 @@ title="Prodcutos"
               (click)="copyToClipboard(record?.uid)"></ion-icon>
             </ion-card-subtitle>
         </ion-card-header>
+      </ion-card>
+
+      <ion-card class="rounded-4">
+        <ion-card-header>
+          <ion-card-subtitle>
+            Información General de Producto
+          </ion-card-subtitle>
+        </ion-card-header>
 
         <ion-card-content class="mt-2">
            <form [formGroup]="form">
@@ -42,7 +51,7 @@ title="Prodcutos"
                   <app-input
                     [form]="form"
                     name="name"
-                    label="Nombre de producto"
+                    label="Nombre"
                     placeholder="Ingresa nombre de producto"
                     [required]="true"
                     [load]="load"
@@ -53,8 +62,8 @@ title="Prodcutos"
                   <app-input
                     [form]="form"
                     name="description"
-                    label="Descripción de producto"
-                    placeholder="Descripción"
+                    label="Descripción"
+                    placeholder="Ingresa nombre de descripción producto"
                     [required]="true"
                     [load]="load">
                   </app-input>
@@ -64,16 +73,6 @@ title="Prodcutos"
 
             <!-- inputs -->
             <ion-row>
-              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
-                <app-input
-                  [form]="form"
-                  name="priceSale"
-                  label="Precio de venta"
-                  placeholder="Precio venta en Quetzales(Q)"
-                  [required]="true"
-                  [load]="load">
-                </app-input>
-              </ion-col>
 
               <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
                 <app-select
@@ -91,47 +90,99 @@ title="Prodcutos"
               </app-select>
               </ion-col>
 
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                <app-select
+                  [form]="form"
+                  name="brands"
+                  label="Marcas"
+                  placeholder="Selecciona las marcas del producto"
+                  [required]="true"
+                  [multiple]="true"
+                  [disabled]="false"
+                  [load]="load"
+                  [options]="{
+                  resolver: 'brands',
+                  label: 'name',
+                  value: 'uid'}">
+              </app-select>
+              </ion-col>
+
             </ion-row>
 
-            <!-- inputs and toggle-->
+            <!-- inputs -->
             <ion-row>
-              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
-                <app-input
-                  [form]="form"
-                  name="priceSale"
-                  label="Precio de venta"
-                  placeholder="Precio venta en Quetzales(Q)"
-                  [required]="true"
-                  [load]="load">
-                </app-input>
-              </ion-col>
-              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+
+              <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="3" size-xl="3">
                 <app-toggle
                   [form]="form"
-                  name="package"
-                  label="Se compra por mayor?"
+                  name="active"
+                  label="Activo"
                   [disabled]="false"
                   [load]="load">
                 </app-toggle>
-                <!-- <app-input
-                  [form]="form"
-                  name="stock"
-                  label="Stock de producto"
-                  placeholder="Stock de producto"
-                  [required]="true"
-                  [load]="load"
-                ></app-input> -->
               </ion-col>
+
             </ion-row>
-            <!-- https://ionicframework.com/docs/api/select#multiple-selection -->
+
+           </form>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card class="rounded-4">
+        <ion-card-header>
+          <ion-card-subtitle>
+            Configuraciones extra del producto
+            </ion-card-subtitle>
+        </ion-card-header>
+
+        <ion-card-content class="mt-2">
+           <form [formGroup]="form">
+
+            <!-- inputs and toggle-->
+            <ion-row>
+
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                <app-select
+                  [form]="form"
+                  name="unitMeasurement"
+                  label="Unidad de medida de producto"
+                  placeholder="Unidad de medida de producto"
+                  [required]="true"
+                  [disabled]="false"
+                  [load]="load"
+                  [values]="measurement_units"
+                  [options]="{
+                  label: 'label',
+                  value: 'value' }">
+              </app-select>
+              </ion-col>
+
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                <app-select
+                  [form]="form"
+                  name="typeWholesaleUnitMeasure"
+                  label="Tipo Unidad de medida por mayor"
+                  placeholder="Tipo Unidad de medida por mayor"
+                  [required]="true"
+                  [disabled]="false"
+                  [load]="load"
+                  [values]="wholesale_measurement_units"
+                  [options]="{
+                  label: 'label',
+                  value: 'value' }">
+              </app-select>
+              </ion-col>
+
+            </ion-row>
+
             <!-- inputs -->
             <ion-row>
-              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+              <ion-col *ngIf="this.form.controls['typeWholesaleUnitMeasure'].valid" size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
                 <app-input
-                  [form]="formP"
-                  name="price"
-                  label="Precio de paquete, caja, fardo etc."
-                  placeholder="Ingresa nombre de producto"
+                  [form]="form"
+                  name="name"
+                  [label]="'Cantidad de unidades de ' + getTypeWholesaleUnitMeasure(this.form.controls['typeWholesaleUnitMeasure'].value)"
+                  [placeholder]="'Cantidad de unidades de ' + getTypeWholesaleUnitMeasure(this.form.controls['typeWholesaleUnitMeasure'].value)"
                   [required]="true"
                   [load]="load"
                 ></app-input>
@@ -139,13 +190,14 @@ title="Prodcutos"
 
               <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
                 <app-input
-                  [form]="formP"
-                  name="units"
-                  label="Descripción de producto"
-                  placeholder="Descripción"
+                  [form]="form"
+                  name="priceSale"
+                  label="Precio de venta"
+                  placeholder="Precio de venta"
+                  help="Solo se aceptan números enteros o numeros con un máximo de 2 decimales"
                   [required]="true"
-                  [load]="load">
-                </app-input>
+                  [load]="load"
+                ></app-input>
               </ion-col>
           </ion-row>
 
@@ -163,6 +215,7 @@ title="Prodcutos"
            </form>
         </ion-card-content>
       </ion-card>
+
     </ion-col>
 
   </ion-row>

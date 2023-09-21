@@ -3,7 +3,8 @@ import { DocumentReference } from '@angular/fire/compat/firestore';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PRODUCTS_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
-import { MEASUREMENT_UNITS, WHOLESALE_MEASUREMENT_UNITS_ } from 'src/app/shared/constants/measurement-units';
+import { MEASUREMENT_UNITS, WHOLESALE_MEASUREMENT_UNITS } from 'src/app/shared/constants/measurement-units';
+import { REGUEX_COIN_QTZ } from 'src/app/shared/constants/reguex';
 import { PackageInfo, Product } from 'src/app/shared/models/product';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
@@ -17,7 +18,6 @@ export class NewProductComponent  implements OnInit {
 
   title: string = 'Nuevo Producto';
   form: FormGroup;
-  formP: FormGroup;
   load: boolean = false;
   copied: boolean = false;
   record: Product = null;
@@ -25,7 +25,8 @@ export class NewProductComponent  implements OnInit {
   routeBack: string = '/dashboard/products';
   routeBackAll: string = '/dashboard/products/all';
   measurement_units: any[] = MEASUREMENT_UNITS;
-  wholesale_measurement_units: any[] = WHOLESALE_MEASUREMENT_UNITS_;
+  wholesale_measurement_units: any[] = WHOLESALE_MEASUREMENT_UNITS;
+  regexCoin: RegExp = REGUEX_COIN_QTZ;
 
   constructor(
     private fb: FormBuilder,
@@ -57,20 +58,19 @@ export class NewProductComponent  implements OnInit {
 
   getFiles(){
     this.form = this.fb.group({
-      name: ['', Validators.required],
-      description: ['', Validators.required],
+      name: ['', [Validators.required, Validators.min(2)]],
+      description: ['', [Validators.required, Validators.min(2)]],
       category: ['', Validators.required],
-      brand: ['', Validators.required],
+      brands: ['', Validators.required],
       stock: { value: 0, disabled: true},
       unitMeasurement: ['', Validators.required],
-      priceSale: ['', Validators.required],
-      package: [false, Validators.required],
+      typeWholesaleUnitMeasure: ['', Validators.required],
+      priceSale: ['Q00.00', [Validators.required, Validators.pattern(this.regexCoin)]],
+      active: [false, Validators.required],
     });
-    this.formP = this.fb.group({
-      price: ['', Validators.required],
-      unitPrice: ['', Validators.required],
-      units: ['', Validators.required]
-    });
+    if(this.mode === 'new' || this.mode === 'view'){
+      this.form.controls['priceSale'].disable();
+    }
   }
 
   reset(route?: string){
@@ -94,7 +94,6 @@ export class NewProductComponent  implements OnInit {
       stock: this.form.controls['0'].value,
       unitMeasurement: this.form.controls['unitMeasurement'].value,
       priceSale: this.form.controls['priceSale'].value,
-      // package?: PackageInfo;
     }
 
     if(this.mode == 'new'){
@@ -140,6 +139,11 @@ export class NewProductComponent  implements OnInit {
       }, 1000); // Puedes ajustar el tiempo en milisegundos según tus preferencias
 
     }
+  }
+
+
+  getTypeWholesaleUnitMeasure(value: string):string{
+    return this.wholesale_measurement_units.find((element: any) => value === element.value).label;
   }
 
 

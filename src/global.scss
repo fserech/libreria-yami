@@ -96,3 +96,6 @@ input:-webkit-autofill:active {
   transform: translateY(0);
 }
 
+.native-input[disabled] {
+  opacity: 0.9 !important;
+}

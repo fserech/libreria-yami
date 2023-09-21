@@ -28,6 +28,7 @@ export class SelectComponent  implements OnInit {
   @Input() type: string;
 
   @Input() disabled = false;
+  @Input() multiple = false;
   @Input() required = false;
   @Input() load = false;
 

@@ -10,8 +10,9 @@ export const MEASUREMENT_UNITS: any[] = [
   { value: 'Y', label: 'Yarda' }
 ];
 
-export const WHOLESALE_MEASUREMENT_UNITS_: any[] = [
+export const WHOLESALE_MEASUREMENT_UNITS: any[] = [
   { value: 'C', label: 'Caja' },
   { value: 'P', label: 'Paquete' },
-  { value: 'R', label: 'Rollo' }
+  { value: 'R', label: 'Rollo' },
+  { value: 'B', label: 'Bolsa' }
 ];

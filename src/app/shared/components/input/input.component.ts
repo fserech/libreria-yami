@@ -22,7 +22,6 @@ export class InputComponent implements OnInit {
   @Input() name: string;
   @Input() type: string;
   @Input() patternHint = '';
-  @Input() disabled = false;
   @Input() required = false;
   @Input() load = false;
   @Input() help: string;
@@ -46,6 +45,11 @@ export class InputComponent implements OnInit {
     } else {
       throw new Error(`No se encontró el control con el nombre '${this.name}' en el formulario.`);
     }
+  }
+
+  isControlDisabled(): boolean {
+    const control = this.getFormControl();
+    return control.disabled;
   }
 
 }

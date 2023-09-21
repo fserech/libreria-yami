@@ -1,18 +1,21 @@
 <ion-item  *ngIf="!load" class="no-border">
   <ion-input
+    class="ion-input ion-text-center"
     fill="clear"
     mode="md"
+    color="medium"
     [type]="type"
     [formControl]="getFormControl()"
     [placeholder]="placeholder"
     (ionChange)="onInputChange($event)"
     [errorText]="label + ' invalido'"
-    helperText="{{help}}"
-    labelPlacement="floating"
-    style="text-align: center; display: block; margin: 0 auto;">
+    helperText="{{isControlDisabled() ? '' : help}}"
+    labelPlacement="floating">
     <div slot="label" color="primary">{{ required ? label + '*' : label }}</div>
   </ion-input>
   <ion-icon *ngIf="icon.show" [name]="icon" color="medium" slot="end"></ion-icon>
+  <ion-icon *ngIf="!icon.show && getFormControl().valid" name="checkmark-circle-outline" style="color: var(--global-color-valid);" slot="end"></ion-icon>
+  <ion-icon *ngIf="!icon.show && getFormControl().invalid" name="close-circle-outline" color="danger" slot="end"></ion-icon>
 </ion-item>
 
 <ion-list *ngIf="load">
