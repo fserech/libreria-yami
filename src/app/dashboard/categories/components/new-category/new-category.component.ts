@@ -64,18 +64,17 @@ export class NewCategoryComponent implements OnInit {
     this.categoryForm = this.formBuilder.group({
       name: ['', Validators.required],
       description: ['', Validators.required],
-      keywords: ['', Validators.pattern(this.reguexText)]
+      // keywords: ['', Validators.pattern(this.reguexText)]
     });
   }
 
-  chipsEvent(keywords: string[]){
-    this.keywords =  keywords;
-  }
+  // chipsEvent(keywords: string[]){
+  //   this.keywords =  keywords;
+  // }
 
   submit(){
     this.load = true;
-     if(this.keywords.length > 0){
-      this.keywords.push(this.categoryForm.controls['name'].value.toLowerCase());
+    
 
       this.record = {
         name: this.categoryForm.controls['name'].value.toLowerCase(),
@@ -103,7 +102,7 @@ export class NewCategoryComponent implements OnInit {
             console.log(error);
             this.reset('/dashboard/categories/all');
           });
-      }
+      
     }
   }
 
