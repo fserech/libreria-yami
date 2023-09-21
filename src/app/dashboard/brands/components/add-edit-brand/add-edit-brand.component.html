@@ -1,7 +1,8 @@
+<!-- Encabezado de la página -->
 <app-header
-  title="Marcas"
-  icon="add-outline"
-  [showButtonBack]="true">
+  title="Marcas"     
+  icon="add-outline" 
+  [showButtonBack]="true"> 
 </app-header>
 
 <!-- Contenido principal -->
@@ -21,16 +22,16 @@
               <ion-text color="medium">
                 <h1>
                   <ion-icon
-                    name="{{ mode === 'new' ? 'add-outline' : mode === 'edit' ? 'create-outline' : 'eye-outline' }}"
+                    name="{{ mode === 'new' ? 'add-outline' : mode === 'edit' ? 'create-outline' : 'eye-outline' }}" 
                     style="font-size: 30px;">
                   </ion-icon>
-                  {{ title }}
+                  {{ title }} <!-- Título dinámico basado en la variable 'title' -->
                 </h1>
               </ion-text>
             </ion-card-title>
             <ion-card-subtitle
-              *ngIf="mode === 'edit'|| mode === 'edit'">
-                UID de marca: <br> {{ record?.uid }}
+              *ngIf="mode === 'edit'|| mode === 'edit'"> <!-- Muestra el subtítulo solo si 'mode' es 'edit' -->
+                UID de marca: <br> {{ record?.uid }} <!-- Muestra el UID de la marca y permite copiarlo al portapapeles -->
                 <ion-icon
                 class="m-0"
                 [class.enlarged]="copied"
@@ -72,61 +73,39 @@
                 </ion-col>
               </ion-row>
 
-              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
-                <ion-content color = "ligth">
-                  
+              <!-- Columna para el campo de categoría -->
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">  
+                
                 <app-select
                   [form]="brandForm"
-                  name="articleRef"
-                  label="Insumos"
-                  placeholder="Selecciona insumo"
+                  name="categoryRef"
+                  label="Categoria"
+                  placeholder="Selecciona categoria"
                   [required]="true"
                   [disabled]="false"
                   [load]="load"
                   [options]="{
-                    resolver: 'articles',
+                    resolver: 'categories',
                     label: 'name',
                     value: 'uid' }">
-                </app-select>
-              </ion-content>
+                 </app-select>
               </ion-col>
-          
               
-
-              <ion-row>
-                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
-                  <app-input-chips
-                    [load]="load"
-                    [form]="brandForm"
-                    name="keywords"
-                    label="Palabras clave"
-                    placeholder="Palabras clave"
-                    [values]="valuesFirestore"
-                    (changes)="chipsEvent($event)"
-                    [load]="load"
-                    [pattern]="reguexText"
-                    patternHint="Solo se aceptan caracteres alfanuméricos sin espacios">
-                  </app-input-chips>
-                </ion-col>
-              </ion-row>
+              
               <!-- Botón de guardar -->
-
               <ion-row *ngIf="!load">
                 <ion-col>
                   <ion-button
                     *ngIf="mode !== 'view'"
                     shape="round"
-                    [disabled]="brandForm.invalid || this.keywords.length === 0"
+                    [disabled]="brandForm.invalid"
                     (click)="submit()">{{ mode !== 'new' ? 'Actualizar' : 'Guardar'}}</ion-button>
                 </ion-col>
               </ion-row>
-
              </form>
           </ion-card-content>
         </ion-card>
       </ion-col>
-
     </ion-row>
   </ion-grid>
-
 </ion-content>

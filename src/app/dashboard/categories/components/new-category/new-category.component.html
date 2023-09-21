@@ -72,7 +72,7 @@
               </ion-col>
             </ion-row>
 
-            <ion-row>
+            <!-- <ion-row>
               <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
                 <app-input-chips
                   [load]="load"
@@ -87,7 +87,7 @@
                   patternHint="Solo se aceptan caracteres alfanumericos sin espacios">
                 </app-input-chips>
               </ion-col>
-            </ion-row>
+            </ion-row> -->
             <!--boton guardar-->
 
             <ion-row *ngIf="!load">
@@ -95,7 +95,7 @@
                 <ion-button
                   *ngIf="mode !== 'view'"
                   shape="round"
-                  [disabled]="categoryForm.invalid || this.keywords.length === 0"
+                  [disabled]="categoryForm.invalid "
                   (click)="submit()">{{ mode !== 'new' ? 'Actualizar': 'Guardar'}}</ion-button>
               </ion-col>
             </ion-row>
