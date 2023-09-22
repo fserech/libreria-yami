@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ARTICLES_COLLECTION_NAME, BRANDS_COLLECTION_NAME, CATEGORIES_COLLECTION_NAME} from 'src/app/shared/constants/collections-name-firebase';
+import { BRANDS_COLLECTION_NAME, CATEGORIES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { REGEX_TEXT_WITHOUT_SPACES } from 'src/app/shared/constants/reguex';
-import { Category } from 'src/app/shared/models/category';
 import { Brand } from 'src/app/shared/models/brand';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
@@ -23,9 +22,7 @@ export class AddEditBrandComponent implements OnInit {
   keywords: string[] = [];
   record: Brand = null;
   mode: string = 'view';
-  reguexText: RegExp = REGEX_TEXT_WITHOUT_SPACES;
-  selectedCategories: { [key: string]: boolean } = {}; // Objeto para rastrear categorías seleccionadas
-  
+ 
 
   constructor(
     private formBuilder: FormBuilder,
@@ -33,7 +30,6 @@ export class AddEditBrandComponent implements OnInit {
     private dashboardService: DashboardService,
     private route: ActivatedRoute,
     private router: Router,
-    
   ) {
     const uid = this.route.snapshot.params['uid'];
     this.mode = this.route.snapshot.params['mode'];
@@ -46,13 +42,6 @@ export class AddEditBrandComponent implements OnInit {
           this.record = response;
           this.brandForm.controls['name'].setValue(this.record.name);
           this.brandForm.controls['description'].setValue(this.record.description);
-         
-
-          this.dashboardService
-        .getDataDocumentReference(this.record.categoryRef)
-        .then((doc: Category) => this.brandForm.controls['categoryRef'].setValue(doc.uid))
-        .catch((error: any) => {console.log(error)});
-
           this.load = false;
         })
         .catch((error: any) => {
@@ -68,7 +57,6 @@ export class AddEditBrandComponent implements OnInit {
     this.brandForm = this.formBuilder.group({
       name: ['', Validators.required],
       description: ['', Validators.required],
-      categoryRef: ['', Validators.required],
       
     });
   }
@@ -78,7 +66,6 @@ export class AddEditBrandComponent implements OnInit {
     this.record = {
       name: this.brandForm.controls['name'].value.toLowerCase(),
       description: this.brandForm.controls['description'].value,
-      categoryRef: this.dashboardService.getDocumentReference(CATEGORIES_COLLECTION_NAME,this.brandForm.controls['categoryRef'].value),
       
     };
     if (this.mode == 'new') {
@@ -131,9 +118,4 @@ export class AddEditBrandComponent implements OnInit {
       }, 1000); // Puedes ajustar el tiempo en milisegundos según tus preferencias
     }
   }
- 
-  
- 
-  }
-
-
+}
