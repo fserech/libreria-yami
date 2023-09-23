@@ -72,26 +72,7 @@
                   </app-input>
                 </ion-col>
               </ion-row>
-
-              <!-- Columna para el campo de categoría -->
-              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">  
-                
-                <app-select
-                  [form]="brandForm"
-                  name="categoryRef"
-                  label="Categoria"
-                  placeholder="Selecciona categoria"
-                  [required]="true"
-                  [disabled]="false"
-                  [load]="load"
-                  [options]="{
-                    resolver: 'categories',
-                    label: 'name',
-                    value: 'uid' }">
-                 </app-select>
-              </ion-col>
-              
-              
+          
               <!-- Botón de guardar -->
               <ion-row *ngIf="!load">
                 <ion-col>
