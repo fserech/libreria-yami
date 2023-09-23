@@ -19,7 +19,7 @@ export class ToastService {
       mode:'ios',
       buttons: [
         {
-          text: 'Cerrar',
+          text: 'Aceptar',
           role: 'cancel'
         }
       ]

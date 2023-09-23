@@ -68,6 +68,17 @@ getDataDocumentReference<T>(docRef: DocumentReference<T>): Promise<{}> {
   });
 }
 
+async getDataDocumentReferenceModelAny<T>(docRef: DocumentReference<T>) {
+  const doc = await docRef.get();
+
+  if (doc.exists) {
+    return { uid: doc.id, ...doc.data() };
+  } else {
+    throw new Error(`El documento no existe!: ${docRef.path}`);
+  }
+}
+
+
 saveDocument(collection: string, document: any): Promise<any> {
   // Crea una nueva referencia en la colección y asigna los datos
   return this.firestore.collection(collection).add(document);

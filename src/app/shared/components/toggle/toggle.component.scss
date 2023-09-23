@@ -1,0 +1,22 @@
+ion-toggle.ion-toggle {
+  // border: 1px #0009 dashed;
+  // border-radius: 10px;
+  // border-width: 2px;
+  // padding: 5px !important;
+  // opacity: 0.5 !important;
+}
+
+ion-toggle.toggle-disabled {
+  margin: 0;
+  height: 50px;
+  border-radius: 10px;
+  // border: 1px dashed rgba(var(--ion-text-color-rgb), 0.9);
+  // border: 1px;
+  border-style: dashed;
+  border-width: 2px;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  opacity: 0.8 !important;
+}

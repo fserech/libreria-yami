@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { NavController } from '@ionic/angular';
 import { PRODUCTS_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { Product } from 'src/app/shared/models/product';
@@ -15,7 +16,8 @@ export class ViewProductsComponent  implements OnInit {
 
   constructor(
     private dashboardService: DashboardService,
-    private navCtrl: NavController
+    private navCtrl: NavController,
+    private router: Router
   ) { }
 
   ngOnInit() {
@@ -28,11 +30,12 @@ export class ViewProductsComponent  implements OnInit {
     });
   }
 
-  
-  editProduct(product: any) {
-    this.navCtrl.navigateForward(`/dashboard/products/edit/${product.uid}`);
 
-
+  editProduct(product: Product) {
+    // console.log(product.uid)
+    const uid = product.uid;
+    this.router.navigate([`/dashboard/products/edit/${uid}`]);
+    // this.navCtrl.navigateForward(`/dashboard/products/edit/${product.uid}`);
   }
 
   deleteProduct(product: Product){

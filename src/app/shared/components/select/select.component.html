@@ -28,6 +28,9 @@
     placeholder="{{placeholder}}">
     <ion-select-option *ngFor="let role of values" [value]="role[options.value]">{{ role[options.label] }}</ion-select-option>
   </ion-select>
+
+  <ion-icon *ngIf="!icon.show && getFormControl().valid && !load && !isControlDisabled()" name="checkmark-circle-outline" style="color: var(--global-color-valid);" slot="end"></ion-icon>
+  <ion-icon *ngIf="!icon.show && getFormControl().invalid && !load && !isControlDisabled()" name="close-circle-outline" color="danger" slot="end"></ion-icon>
   </ion-item>
 </ion-list>
 

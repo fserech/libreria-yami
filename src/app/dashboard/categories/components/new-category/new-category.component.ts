@@ -62,19 +62,14 @@ export class NewCategoryComponent implements OnInit {
 
   getFiles(){
     this.categoryForm = this.formBuilder.group({
-      name: ['', Validators.required],
-      description: ['', Validators.required],
-      // keywords: ['', Validators.pattern(this.reguexText)]
+      name: ['', [Validators.required]],
+      description: ['', [Validators.required]]
     });
   }
 
-  // chipsEvent(keywords: string[]){
-  //   this.keywords =  keywords;
-  // }
-
   submit(){
     this.load = true;
-    
+
 
       this.record = {
         name: this.categoryForm.controls['name'].value.toLowerCase(),
@@ -102,7 +97,7 @@ export class NewCategoryComponent implements OnInit {
             console.log(error);
             this.reset('/dashboard/categories/all');
           });
-      
+
     }
   }
 

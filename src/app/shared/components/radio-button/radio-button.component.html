@@ -1,15 +1,10 @@
-<!-- <ion-label>Genero<ion-text color="danger"> *</ion-text></ion-label>
-<ion-radio-group formControlName="gender">
-  <ion-item *ngFor="let gender of genderList">
-    <ion-radio mode="md" [value]="gender.value">{{ gender.label }}</ion-radio>
-  </ion-item>
-</ion-radio-group> -->
-
 <ion-item>
   <ion-label *ngIf="!load" color="medium">{{ required ? label + '*' : label }}</ion-label>
 <ion-label *ngIf="load" color="medium">
   <p class="text-center"> <ion-skeleton-text [animated]="true" style="width: 80%; height: 20px;" class="rounded-3"></ion-skeleton-text> </p>
 </ion-label>
+  <ion-icon *ngIf="getFormControl().valid && !load && !isControlDisabled()" name="checkmark-circle-outline" style="color: var(--global-color-valid);" slot="end"></ion-icon>
+  <ion-icon *ngIf="getFormControl().invalid && !load && !isControlDisabled()" name="close-circle-outline" color="danger" slot="end"></ion-icon>
 </ion-item>
 
 <ion-radio-group *ngIf="values.length > 0 && !load" [formControl]="getFormControl()">

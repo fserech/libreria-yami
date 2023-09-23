@@ -1,6 +1,6 @@
 <app-header
-title="Prodcutos"
-[load]="false"
+title="Productos"
+[load]="load"
 [showButtonBack]="true">
 </app-header>
 
@@ -13,17 +13,22 @@ title="Prodcutos"
         <ion-card-header>
           <ion-card-title>
             <ion-text color="medium">
-              <h1>
+              <h1 *ngIf="!load">
                 <ion-icon
                   name="{{mode === 'new' ? 'add-outline': mode === 'edit' ? 'create-outline' : 'eye-outline'}}"
                   style="font-size: 30px;">
                 </ion-icon>
                 {{ title }}
+
               </h1>
+              <h1 *ngIf="load">
+                <ion-skeleton-text *ngIf="load" class="m-auto" [animated]="true" style="width: 42%; height: 30px; border-radius: 10px;"></ion-skeleton-text>
+              </h1>
+
             </ion-text>
           </ion-card-title>
           <ion-card-subtitle
-            *ngIf="mode === 'edit'|| mode === 'edit'">
+            *ngIf="mode === 'view' && !load || mode === 'edit' && !load">
               UID de Producto: <br> {{ record?.uid }}
               <ion-icon
               class="m-0"
@@ -32,6 +37,17 @@ title="Prodcutos"
               color="primary"
               name="copy-outline"
               (click)="copyToClipboard(record?.uid)"></ion-icon>
+            </ion-card-subtitle>
+
+            <ion-card-subtitle
+            *ngIf="load && this.mode !== 'new'">
+              <h1 *ngIf="load">
+                <ion-skeleton-text *ngIf="load" class="m-auto" [animated]="true" style="width: 110px; height: 15px; border-radius: 10px;"></ion-skeleton-text>
+              </h1>
+              <div *ngIf="load" class="d-flex row align-items-center justify-content-center">
+                <ion-skeleton-text *ngIf="load" class="m-0" [animated]="true" style="width: 175px; height: 20px; border-radius: 10px;"></ion-skeleton-text>
+                <ion-skeleton-text *ngIf="load" class="m-0 mb-2" [animated]="true" style="width: 10px; height: 20px; border-radius: 5px;"></ion-skeleton-text>
+              </div>
             </ion-card-subtitle>
         </ion-card-header>
       </ion-card>
@@ -55,6 +71,10 @@ title="Prodcutos"
                     placeholder="Ingresa nombre de producto"
                     [required]="true"
                     [load]="load"
+                    [maxlength]="50"
+                    [minlength]="2"
+                    [counter]="true"
+                    [help]="getMessageApp('TEXT')"
                   ></app-input>
                 </ion-col>
 
@@ -65,7 +85,11 @@ title="Prodcutos"
                     label="Descripción"
                     placeholder="Ingresa nombre de descripción producto"
                     [required]="true"
-                    [load]="load">
+                    [load]="load"
+                    [maxlength]="100"
+                    [minlength]="2"
+                    [counter]="true"
+                    [help]="getMessageApp('TEXT')">
                   </app-input>
                 </ion-col>
 
@@ -112,7 +136,7 @@ title="Prodcutos"
             <!-- inputs -->
             <ion-row>
 
-              <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="3" size-xl="3">
+              <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="6" size-xl="6">
                 <app-toggle
                   [form]="form"
                   name="active"
@@ -122,6 +146,65 @@ title="Prodcutos"
                 </app-toggle>
               </ion-col>
 
+            </ion-row>
+
+           </form>
+        </ion-card-content>
+
+      </ion-card>
+
+      <ion-card class="rounded-4">
+        <ion-card-header>
+          <ion-card-subtitle>
+            Configuraciones de stock de producto
+            </ion-card-subtitle>
+        </ion-card-header>
+
+        <ion-card-content class="mt-2">
+           <form [formGroup]="form">
+
+            <!-- inputs -->
+            <ion-row>
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                <app-input
+                  [form]="form"
+                  name="stock"
+                  label="Stock de producto"
+                  placeholder="Stock de producto"
+                  [required]="true"
+                  [load]="load"
+                  [help]="getMessageApp('FLOAT')"
+                ></app-input>
+              </ion-col>
+            </ion-row>
+
+            <!-- inputs -->
+            <ion-row>
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                <app-input
+                  [form]="form"
+                  name="stockMin"
+                  label="Stock mínimo"
+                  placeholder="Stock mínimo"
+                  [required]="true"
+                  [load]="load"
+                  [help]="getMessageApp('FLOAT')"
+                  (changes)="validateStockMinMax()">
+                </app-input>
+              </ion-col>
+
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                <app-input
+                  [form]="form"
+                  name="stockMax"
+                  label="Stock máximo"
+                  placeholder="Stock máximo"
+                  [required]="true"
+                  [load]="load"
+                  [help]="getMessageApp('FLOAT')"
+                  (changes)="validateStockMinMax()">
+                </app-input>
+              </ion-col>
             </ion-row>
 
            </form>
@@ -180,11 +263,15 @@ title="Prodcutos"
               <ion-col *ngIf="this.form.controls['typeWholesaleUnitMeasure'].valid" size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
                 <app-input
                   [form]="form"
-                  name="name"
-                  [label]="'Cantidad de unidades de ' + getTypeWholesaleUnitMeasure(this.form.controls['typeWholesaleUnitMeasure'].value)"
-                  [placeholder]="'Cantidad de unidades de ' + getTypeWholesaleUnitMeasure(this.form.controls['typeWholesaleUnitMeasure'].value)"
+                  name="unitsPackage"
+                  [label]="'Cantidad de ' + getUnitMeasure(this.form.controls['unitMeasurement'].value) +' de ' + getTypeWholesaleUnitMeasure(this.form.controls['typeWholesaleUnitMeasure'].value)"
+                  [placeholder]="'Cantidad de ' + getUnitMeasure(this.form.controls['unitMeasurement'].value) +' de ' + getTypeWholesaleUnitMeasure(this.form.controls['typeWholesaleUnitMeasure'].value)"
                   [required]="true"
+                  [minlength]="1"
+                  [maxlength]="6"
+                  [counter]="true"
                   [load]="load"
+                  [help]="getMessageApp('FLOAT')"
                 ></app-input>
               </ion-col>
 
@@ -194,12 +281,12 @@ title="Prodcutos"
                   name="priceSale"
                   label="Precio de venta"
                   placeholder="Precio de venta"
-                  help="Solo se aceptan números enteros o numeros con un máximo de 2 decimales"
                   [required]="true"
                   [load]="load"
+                  [help]="getMessageApp('FLOAT')"
                 ></app-input>
               </ion-col>
-          </ion-row>
+            </ion-row>
 
             <!--footer card-->
             <ion-row *ngIf="!load">

@@ -17,10 +17,13 @@ ion-input.sc-ion-input-md-h {
 
 // Estilo para ion-input deshabilitado
 ion-input.input-disabled.sc-ion-input-md-h{
+  // background-color: var(--global-background-disabled);
+  height: 50px;
   border-radius: 10px;
   border: 1px;
   border-style: dashed;
   border-width: 2px;
   padding: 5px !important;
-  opacity: 1 !important;
+  opacity: 0.9 !important;
 }
+

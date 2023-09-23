@@ -5,13 +5,18 @@ http://ionicframework.com/docs/theming/ */
  * Dark Colors
  * -------------------------------------------
  */
+
 :root{
-  --ion-text-color: #0006;
+  --ion-text-color: #0009;
   --ion-text-color-rgb: 0, 0, 0;
   --global-color-valid: #53a653;
+  --scrollbar-thumb-color: #FFA500;
+  --scrollbar-track-color: #CCCCCC;
+  // --global-background-disabled: #0009;
 }
 
  body.dark {
+  // --global-background-disabled: #fff9;
   --ion-color-primary: #428cff;
   --ion-color-primary-rgb: 66, 140, 255;
   --ion-color-primary-contrast: #ffffff;
@@ -131,7 +136,7 @@ http://ionicframework.com/docs/theming/ */
   --ion-text-color: #fff9;
   --ion-text-color-rgb: 255, 255, 255;
 
-  --ion-border-color: #222222;
+  // --ion-border-color: #222222;
 
   --ion-color-step-50: #1e1e1e;
   --ion-color-step-100: #2a2a2a;

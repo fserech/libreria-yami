@@ -34,4 +34,8 @@ export class ToggleComponent  implements OnInit {
     }
   }
 
+  isControlDisabled(): boolean {
+    const control = this.getFormControl();
+    return control.disabled;
+  }
 }

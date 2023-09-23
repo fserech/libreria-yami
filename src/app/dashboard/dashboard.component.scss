@@ -12,9 +12,38 @@
 }
 
 ion-menu::part(backdrop) {
-  background-color: rgba(0, 0, 0, 1);
+  // background-color: rgba(0, 0, 0, 1);
 }
 
 ion-menu::part(container) {
   border-radius: 0 20px 20px 0;
 }
+
+ion-menu::part(::-webkit-scrollbar) {
+  border-radius: 10px;
+  background: red;
+}
+
+
+// ion-content.scroll{
+
+// }
+
+
+
+// ion-content {
+//   overflow: auto;
+//   &::-webkit-scrollbar {
+//     display: none;
+//   }
+// }
+
+// .scroll-content {
+//   /* Estilos para el contenido centrado */
+//   display: flex;
+//   flex-direction: column;
+//   justify-content: center;
+//   align-items: center;
+
+//   /* Añade otros estilos según sea necesario */
+// }

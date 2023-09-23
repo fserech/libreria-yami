@@ -57,4 +57,9 @@ export class SelectComponent  implements OnInit {
       throw new Error(`No se encontró el control con el nombre '${this.name}' en el formulario.`);
     }
   }
+
+  isControlDisabled(): boolean {
+    const control = this.getFormControl();
+    return control.disabled;
+  }
 }

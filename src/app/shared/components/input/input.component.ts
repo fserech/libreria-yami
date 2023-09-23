@@ -25,6 +25,11 @@ export class InputComponent implements OnInit {
   @Input() required = false;
   @Input() load = false;
   @Input() help: string;
+  @Input() maxlength: number = 80;
+  @Input() min: number = null;
+  @Input() max: number = null;
+  @Input() minlength: number;
+  @Input() counter: boolean;
 
   @Output() changes = new EventEmitter<string>();
 

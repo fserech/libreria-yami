@@ -1,3 +1,13 @@
 ion-select.ion-select{
   --highlight-color-valid: var(--global-color-valid);
 }
+
+ion-select.select-disabled, .item-select-disabled ion-label {
+  height: 50px;
+  border-radius: 10px;
+  border: 1px;
+  border-style: dashed;
+  border-width: 2px;
+  padding: 5px !important;
+  opacity: 0.9 !important;
+}

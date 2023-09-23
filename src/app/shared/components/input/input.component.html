@@ -5,12 +5,18 @@
     mode="md"
     color="medium"
     [type]="type"
+    [counter]="counter"
+    [maxlength]="maxlength"
+    [minlength]="minlength"
+    [min]="min"
+    [max]="max"
     [formControl]="getFormControl()"
     [placeholder]="placeholder"
-    (ionChange)="onInputChange($event)"
+    (ionInput)="onInputChange($event)"
     [errorText]="label + ' invalido'"
     helperText="{{isControlDisabled() ? '' : help}}"
-    labelPlacement="floating">
+    labelPlacement="floating"
+    autocomplete="nope">
     <div slot="label" color="primary">{{ required ? label + '*' : label }}</div>
   </ion-input>
   <ion-icon *ngIf="icon.show" [name]="icon" color="medium" slot="end"></ion-icon>

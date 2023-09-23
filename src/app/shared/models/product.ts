@@ -1,20 +1,19 @@
 import { DocumentReference } from '@angular/fire/compat/firestore';
+import { Category } from './category';
 
 export interface Product {
   uid?: string;
   name: string;
   description: string;
-  brandsRef: DocumentReference[];
+  brandsRef: string[];
   categoryRef: DocumentReference;
   stock: string;
+  stockMin: string;
+  stockMax: string;
   unitMeasurement: string;
+  typeWholesaleUnitMeasure: string;
+  unitsPackage: string;
   priceSale: string;
-  package?: PackageInfo;
-}
-
-export interface PackageInfo {
-  priceTotal: string;
-  units: string;
-  unitPrice: string;
-  cost: string;
+  active: boolean;
+  createAt: Date;
 }
