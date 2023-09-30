@@ -4,10 +4,11 @@ import { NewSaleComponent } from './components/new-sale/new-sale.component';
 import { HistorySalesComponent } from './components/history-sales/history-sales.component';
 import { MySalesComponent } from './components/my-sales/my-sales.component';
 import { PageWidgetsComponent } from 'src/app/shared/components/page-widgets/page-widgets.component';
+import { ProductsResolver } from 'src/app/shared/resolvers/products.resolver';
 
 const routes: Routes = [
   {path: '', component: PageWidgetsComponent},
-  {path: 'new', component: NewSaleComponent},
+  {path: 'new', component: NewSaleComponent,resolve: {products: ProductsResolver}},
   {path: 'day', component: MySalesComponent},
   {path: 'all', component: HistorySalesComponent}
 ];

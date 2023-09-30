@@ -16,4 +16,5 @@ export interface Product {
   priceSale: string;
   active: boolean;
   createAt: Date;
+  isSelected: boolean;
 }

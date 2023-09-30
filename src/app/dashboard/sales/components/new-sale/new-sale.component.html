@@ -5,7 +5,213 @@ title="Ventas"
 </app-header>
 
 <ion-content>
-  <ion-label color="medium">
-    <h1>nueva venta</h1>
-  </ion-label>
+  <ion-grid>
+    <ion-row class="ion-justify-content-center">
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-text color="medium">
+                <h1 *ngIf="!load">
+                  <ion-icon
+                  name="{{mode === 'new' ? 'add-outline': mode === 'edit' ? 'create-outline' : 'eye-outline'}}"
+                  style="font-size: 30px;">
+                </ion-icon>
+                {{ title }}
+                </h1>
+                <h1 *ngIf="load">
+                <ion-skeleton-text *ngIf="load" class="m-auto" [animated]="true" style="width: 42%; height: 30px; border-radius: 10px;"></ion-skeleton-text>
+              </h1>
+              </ion-text>
+            </ion-card-title>
+            <!-- asignacion de subtitulo -->
+            <ion-card-subtitle
+            *ngIf="mode === 'view' && !load || mode === 'edit' && !load">
+              UID de Sale: <br> {{ record?.uid }}
+              <ion-icon
+              class="m-0"
+              [class.enlarged]="copied"
+              style="font-size: 20px;"
+              color="primary"
+              name="copy-outline"
+              (click)="copyToClipboard(record?.uid)"></ion-icon>
+            </ion-card-subtitle>
+            <ion-card-subtitle
+            *ngIf="load && this.mode !== 'new'">
+              <h1 *ngIf="load">
+                <ion-skeleton-text *ngIf="load" class="m-auto" [animated]="true" style="width: 110px; height: 15px; border-radius: 10px;"></ion-skeleton-text>
+              </h1>
+              <div *ngIf="load" class="d-flex row align-items-center justify-content-center">
+                <ion-skeleton-text *ngIf="load" class="m-0" [animated]="true" style="width: 175px; height: 20px; border-radius: 10px;"></ion-skeleton-text>
+                <ion-skeleton-text *ngIf="load" class="m-0 mb-2" [animated]="true" style="width: 10px; height: 20px; border-radius: 5px;"></ion-skeleton-text>
+              </div>
+            </ion-card-subtitle>
+          </ion-card-header>
+        </ion-card>
+
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-subtitle>
+              Datos del Client
+            </ion-card-subtitle>
+          </ion-card-header>
+  
+          <ion-card-content class="mt-2">
+             <form [formGroup]="form">
+              <!-- inputs -->
+              <ion-row>
+                <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                  <app-toggle
+                    [form]="form"
+                    name="nit"
+                    label="Activo"
+                    [disabled]="false"
+                    [load]="load">
+                  </app-toggle>
+                </ion-col>
+                <!-- <ion-row>
+                  <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                    <ion-item>
+                      <ion-label position="floating">NIT</ion-label>
+                        <app-input
+                        formControlName="nit"
+                        type="text"
+                        [disabled]="form['activo'].value"
+                        [load]="load"
+                      ></app-input>
+                    </ion-item>
+                  </ion-col>
+                </ion-row> -->
+                </ion-row>
+              </form>
+              
+          </ion-card-content>
+         
+         </ion-card>
+  
+        <!-- asignacion del buscador  -->
+        <ion-card class="rounded-4">
+          <ion-card-header>
+         <ion-card-content class="mt-2">
+          <form [formGroup]="form">
+            <!-- inputs -->
+            <ion-row>
+       
+                <!-- Agregar el ion-searchbar para filtrar la lista de productos -->
+                <ion-toolbar>
+                  <ion-row class="row">
+                    <ion-col class="full" >
+                      <ion-searchbar
+                      placeholder="Buscar"
+                      shape="round"
+                      class="rounded-pill"
+                      (ionInput)="handleInput($event)">
+                    </ion-searchbar>
+                    <ion-button>
+                      <ion-icon class="text-white" name="search-outline"></ion-icon>
+                    </ion-button>
+                    </ion-col>
+                  </ion-row>
+                  <ion-card-content class="mt-2">
+                    <ion-row>
+                      <ion-col>
+                        <h2>Nombre</h2>
+                      </ion-col>
+                      <ion-col>
+                        <h2>Descripción</h2>
+                      </ion-col>
+                      <ion-col>
+                        <h2>Stock</h2>
+                      </ion-col>
+                      <ion-col>
+                        <h2>Precio</h2>
+                      </ion-col>
+                      <ion-col>
+                        <h2>Estado</h2>
+                      </ion-col>
+                    </ion-row>
+                    <ion-list>
+                      <ion-list *ngIf="products.length > 0">
+                      <ion-item *ngFor="let product of products">
+                        <ion-col size="1">
+                          <ion-checkbox [(ngModel)]="product.isSelected" (ionChange)="toggleProduct(product)"></ion-checkbox>
+                        </ion-col>
+                        <ion-col><h2> {{ firstCapitalLetter(product.name) }}</h2></ion-col>
+                          <ion-col><p> {{ product. description }}</p></ion-col>
+                          <ion-col><p> {{ product.stock }}</p></ion-col>
+                          <ion-col><p>{{ product.priceSale }}</p></ion-col>
+                          <ion-col><p> {{ product.active }}</p></ion-col>
+                       </ion-item>
+                     </ion-list>
+                    <div *ngIf="products.length === 0">No se encontraron resultados.</div>
+                    </ion-list>
+                  </ion-card-content>
+                </ion-toolbar>
+                
+                      
+            </ion-row>
+          </form>
+        </ion-card-content>
+      </ion-card-header>
+      </ion-card>
+
+       <!-- Lista de productos filtrados -->
+       <ion-grid>
+       <ion-card class="rounded-4">
+      <ion-card-header>
+       <ion-card-content class="mt-2">
+          <!-- Elemento para mostrar la lista de productos seleccionados -->
+          <ion-row>
+            <ion-col>
+              <h2>Nombre</h2>
+            </ion-col>
+            <ion-col>
+              <h2>Cantidad</h2>
+            </ion-col>
+            <ion-col>
+              <h2>Precio</h2>
+            </ion-col>
+            <ion-col>
+              <h2>Total</h2>
+            </ion-col>
+
+          </ion-row>
+          <ion-list>
+            <ion-item *ngFor="let product of selectedProducts">
+              <ion-col><h2>{{ firstCapitalLetter(product.name) }}</h2></ion-col>
+              <ion-col>
+                <ion-input
+                 [(ngModel)]="product.quantity" 
+                 type="number" 
+                 (ionChange)="calculateTotal(product)"
+                 >
+                </ion-input>
+              </ion-col>
+              <ion-col><p>{{ product.priceSale }}</p> </ion-col>
+              <ion-col><p>{{ calculateTotal(product) }}</p></ion-col>
+             
+            </ion-item>
+          </ion-list>
+          <h2>Total</h2>
+          
+       </ion-card-content>
+       <!--footer card-->
+       <ion-row *ngIf="!load">
+        <ion-col>
+          <ion-button
+            *ngIf="mode !== 'view'"
+            shape="round"
+            [disabled]="form.invalid"
+            (click)="submit()">{{ mode !== 'new' ? 'Actualizar': 'Guardar'}}</ion-button>
+        </ion-col>
+      </ion-row>
+      </ion-card-header>
+    </ion-card>
+       </ion-grid>
+        
+      </ion-col>
+
+       
+    </ion-row>
+  </ion-grid>
 </ion-content>

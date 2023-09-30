@@ -132,7 +132,8 @@ export class NewProductComponent  implements OnInit {
       active: this.form.controls['active'].value,
       stockMin: this.form.controls['stockMin'].value,
       stockMax: this.form.controls['stockMax'].value,
-      createAt: this.mode === 'new' ? date : this.recordAux.createAt
+      createAt: this.mode === 'new' ? date : this.recordAux.createAt,
+      isSelected: this.form.controls['active'].value,
     }
     if(this.mode == 'new'){
       this.dashboardService
