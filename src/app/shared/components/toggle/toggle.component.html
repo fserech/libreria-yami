@@ -1,6 +1,6 @@
 <ion-list>
   <ion-item *ngIf="!load" [disabled]="disabled">
-    <ion-toggle [formControl]="getFormControl()" class="ion-toggle" mode="ios">{{ label }}</ion-toggle>
+    <ion-toggle [formControl]="getFormControl()" class="ion-toggle" mode="ios" (ionChange)="onInputChange($event)">{{ label }}</ion-toggle>
     <ion-icon *ngIf="getFormControl().valid && !load && !isControlDisabled()" name="checkmark-circle-outline" style="color: var(--global-color-valid);" slot="end"></ion-icon>
     <ion-icon *ngIf="getFormControl().invalid && !load && !isControlDisabled()" name="close-circle-outline" color="danger" slot="end"></ion-icon>
   </ion-item>

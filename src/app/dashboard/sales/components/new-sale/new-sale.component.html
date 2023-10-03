@@ -52,103 +52,128 @@ title="Ventas"
         <ion-card class="rounded-4">
           <ion-card-header>
             <ion-card-subtitle>
-              Datos del Client
+              Datos del Cliente
             </ion-card-subtitle>
           </ion-card-header>
-  
+
           <ion-card-content class="mt-2">
              <form [formGroup]="form">
-              <!-- inputs -->
+
               <ion-row>
-                <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
                   <app-toggle
                     [form]="form"
-                    name="nit"
-                    label="Activo"
+                    name="cf"
+                    label="Facturar a consumidor final (CF)"
                     [disabled]="false"
-                    [load]="load">
+                    [load]="load"
+                    (changes)="changeToogle($event)">
                   </app-toggle>
                 </ion-col>
-                <!-- <ion-row>
-                  <ion-col size-xs="8" size-sm="6" size-md="6" size-lg="6" size-xl="6">
-                    <ion-item>
-                      <ion-label position="floating">NIT</ion-label>
-                        <app-input
-                        formControlName="nit"
-                        type="text"
-                        [disabled]="form['activo'].value"
-                        [load]="load"
-                      ></app-input>
-                    </ion-item>
+                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="6">
+                  <app-input
+                    [form]="form"
+                    name="nit"
+                    label="NIT de cliente"
+                    placeholder="Ingresa NIT de cliente"
+                    [required]="true"
+                    [load]="load"
+                  ></app-input>
+                </ion-col>
+              </ion-row>
+
+                <ion-row>
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                    <app-input
+                      [form]="form"
+                      name="description"
+                      label="Descripción"
+                      placeholder="Ingresa Descripción de venta"
+                      [required]="true"
+                      [load]="load"
+                    ></app-input>
                   </ion-col>
-                </ion-row> -->
                 </ion-row>
               </form>
-              
+
           </ion-card-content>
-         
+
          </ion-card>
-  
+
         <!-- asignacion del buscador  -->
         <ion-card class="rounded-4">
           <ion-card-header>
          <ion-card-content class="mt-2">
           <form [formGroup]="form">
-            <!-- inputs -->
             <ion-row>
-       
-                <!-- Agregar el ion-searchbar para filtrar la lista de productos -->
-                <ion-toolbar>
-                  <ion-row class="row">
-                    <ion-col class="full" >
-                      <ion-searchbar
-                      placeholder="Buscar"
-                      shape="round"
-                      class="rounded-pill"
-                      (ionInput)="handleInput($event)">
-                    </ion-searchbar>
-                    <ion-button>
-                      <ion-icon class="text-white" name="search-outline"></ion-icon>
-                    </ion-button>
-                    </ion-col>
-                  </ion-row>
+              <ion-searchbar placeholder="Buscar producto" color="light  "></ion-searchbar>
+              <ion-toolbar>
                   <ion-card-content class="mt-2">
-                    <ion-row>
-                      <ion-col>
-                        <h2>Nombre</h2>
-                      </ion-col>
-                      <ion-col>
-                        <h2>Descripción</h2>
-                      </ion-col>
-                      <ion-col>
-                        <h2>Stock</h2>
-                      </ion-col>
-                      <ion-col>
-                        <h2>Precio</h2>
-                      </ion-col>
-                      <ion-col>
-                        <h2>Estado</h2>
-                      </ion-col>
-                    </ion-row>
                     <ion-list>
-                      <ion-list *ngIf="products.length > 0">
-                      <ion-item *ngFor="let product of products">
+                      <ion-row style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
                         <ion-col size="1">
-                          <ion-checkbox [(ngModel)]="product.isSelected" (ionChange)="toggleProduct(product)"></ion-checkbox>
                         </ion-col>
-                        <ion-col><h2> {{ firstCapitalLetter(product.name) }}</h2></ion-col>
+                        <ion-col>
+                          <ion-label color="medium"><b>Nombre</b></ion-label>
+                        </ion-col>
+                        <ion-col>
+                          <ion-label color="medium"><b>Descripción</b></ion-label>
+                        </ion-col>
+                        <ion-col>
+                          <ion-label color="medium"><b>Stock</b></ion-label>
+                        </ion-col>
+                        <ion-col>
+                          <ion-label color="medium"><b>Precio</b></ion-label>
+                        </ion-col>
+                      </ion-row>
+                    </ion-list>
+
+                    <ion-list>
+                      <ion-list style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                      <ion-item *ngFor="let product of products$ | async; ; let i = index">
+                          <ion-col size="1">
+                            <ion-checkbox
+                              *ngIf="product.active && product.stock !== '0'"
+                              [disabled]="!product.active ? true : false"
+                              mode="ios"
+                              [(ngModel)]="product.select"
+                              (ionChange)="toggleProduct($event, product)"
+                              [ngModelOptions]="{standalone: true}">
+                            </ion-checkbox>
+                            <ion-icon
+                              *ngIf="!product.active || product.stock === '0'"
+                              [id]="'hover-trigger' + i"
+                              class="float-start"
+                              size="large"
+                              [color]="product.active ? 'warning' : 'danger'"
+                              name="alert-circle-outline">
+                            </ion-icon>
+                            <ion-popover
+                              *ngIf="!product.active || product.stock === '0'"
+                              mode="ios"
+                              [trigger]="'hover-trigger' + i"
+                              triggerAction="click"
+                              side="top"
+                              size="auto"
+                              alignment="center">
+                              <ng-template>
+                                <ion-content class="ion-padding">{{ product.active ? 'Producto sin Stock' : 'Producto Inactivo'}}</ion-content>
+                              </ng-template>
+                            </ion-popover>
+
+                          </ion-col>
+                          <ion-col><h2> {{ firstCapitalLetter(product.name) }}</h2></ion-col>
+                          <!-- <ion-col><h2> {{ product.uid }}</h2></ion-col> -->
                           <ion-col><p> {{ product. description }}</p></ion-col>
                           <ion-col><p> {{ product.stock }}</p></ion-col>
-                          <ion-col><p>{{ product.priceSale }}</p></ion-col>
-                          <ion-col><p> {{ product.active }}</p></ion-col>
-                       </ion-item>
+                          <ion-col><p> Q {{ product.priceSale }}</p></ion-col>
+                      </ion-item>
                      </ion-list>
-                    <div *ngIf="products.length === 0">No se encontraron resultados.</div>
+                    <!-- <div *ngIf="products.length === 0">No se encontraron resultados.</div> -->
                     </ion-list>
                   </ion-card-content>
-                </ion-toolbar>
-                
-                      
+              </ion-toolbar>
+
             </ion-row>
           </form>
         </ion-card-content>
@@ -156,62 +181,72 @@ title="Ventas"
       </ion-card>
 
        <!-- Lista de productos filtrados -->
-       <ion-grid>
+       <ion-grid *ngIf="selectedProducts.length > 0">
        <ion-card class="rounded-4">
       <ion-card-header>
        <ion-card-content class="mt-2">
-          <!-- Elemento para mostrar la lista de productos seleccionados -->
           <ion-row>
-            <ion-col>
+            <ion-col size="5">
               <h2>Nombre</h2>
             </ion-col>
-            <ion-col>
+            <ion-col size="2">
               <h2>Cantidad</h2>
             </ion-col>
-            <ion-col>
+            <ion-col size="1">
               <h2>Precio</h2>
             </ion-col>
-            <ion-col>
-              <h2>Total</h2>
+            <ion-col size="2">
+              <h2>Sub Total</h2>
+            </ion-col>
+            <ion-col size="1">
             </ion-col>
 
           </ion-row>
           <ion-list>
             <ion-item *ngFor="let product of selectedProducts">
-              <ion-col><h2>{{ firstCapitalLetter(product.name) }}</h2></ion-col>
-              <ion-col>
+              <ion-col size="5"><h2>{{ firstCapitalLetter(product.name) }}</h2></ion-col>
+              <!-- <ion-col size="5"><h2>{{ product.uid }}</h2></ion-col> -->
+              <ion-col size="2">
                 <ion-input
-                 [(ngModel)]="product.quantity" 
-                 type="number" 
-                 (ionChange)="calculateTotal(product)"
-                 >
+                  min="1"
+                  max="{{product.stock}}"
+                 [(ngModel)]="product.units"
+                 type="number"
+                 (ionChange)="calculateSubtotal(product)">
                 </ion-input>
               </ion-col>
-              <ion-col><p>{{ product.priceSale }}</p> </ion-col>
-              <ion-col><p>{{ calculateTotal(product) }}</p></ion-col>
-             
+              <ion-col size="1"><p>Q {{ product.priceSale }}</p> </ion-col>
+              <ion-col size="2"><p>Q {{ calculateSubtotal(product).toFixed(2) }}</p></ion-col>
+              <ion-col size="1">
+                <ion-button color="danger" (click)="removeListTemp(product)">
+                  <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                </ion-button>
+              </ion-col>
+            </ion-item>
+            <ion-item>
+              <ion-col size="9"><h1>Total a pagar</h1></ion-col>
+              <ion-col size="3">Q {{ getTotalSale() }}</ion-col>
             </ion-item>
           </ion-list>
-          <h2>Total</h2>
-          
+
        </ion-card-content>
-       <!--footer card-->
+
        <ion-row *ngIf="!load">
         <ion-col>
           <ion-button
             *ngIf="mode !== 'view'"
             shape="round"
             [disabled]="form.invalid"
-            (click)="submit()">{{ mode !== 'new' ? 'Actualizar': 'Guardar'}}</ion-button>
+            (click)="submit()">{{ mode !== 'new' ? 'Generar Venta' : 'Generar Venta'}}</ion-button>
         </ion-col>
       </ion-row>
       </ion-card-header>
     </ion-card>
        </ion-grid>
-        
+
       </ion-col>
 
-       
+
     </ion-row>
   </ion-grid>
 </ion-content>

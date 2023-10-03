@@ -1,28 +1,21 @@
 import { DocumentReference } from "@angular/fire/compat/firestore";
 
-
 export interface Sale {
-    uid?: string; 
-    name: string;
-    description: string;
-    totalPrice: string; 
-    date: Date; 
-    quantity: number;
-    nit: boolean;
-    stock: string;
-    stockMin: string;
-    stockMax: string;
-    productRef: DocumentReference;
-    unitMeasurement: string;
-    typeWholesaleUnitMeasure: string;
-    unitsPackage: string;
-    priceSale: string;
-    active: boolean;
+    uid?: string;
+    nit: string;
     createAt: Date;
-    keywords: string[];
-   
-
+    description?: string;
+    total: string;
+    status: 'UNBILLED' | 'INVOICED';
+    products: ProcutSale[];
   }
-  
-  
-  
+
+export interface ProcutSale {
+  name: string;
+  price: string;
+  quantity: string;
+  unitMeasurement: string;
+
+}
+
+
