@@ -1,11 +1,72 @@
+<!-- Componente de creación de rol -->
 <app-header
-  title="Roles"
+  title="Crear Nuevo Rol"
   icon="person-add-outline"
   [showButtonBack]="true">
 </app-header>
 
-<ion-content>
-  <ion-label color="medium">
-    <h1>nuevo rol</h1>
-  </ion-label>
+<ion-content class="ion-padding">
+
+  <ion-grid>
+    <ion-row class="ion-justify-content-center">
+
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+        <ion-card class="rounded-4">
+
+          <ion-card-header>
+            <ion-card-title>
+              <ion-text color="medium">
+                <h1><ion-icon name="person-add-outline" style="font-size: 30px;"></ion-icon> Crear Nuevo Rol</h1>
+              </ion-text>
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content class="mt-2">
+            <form [formGroup]="roleForm">
+
+<!--               
+              <app-input
+              [form]="roleForm"
+              name="name"
+              label="Nombre del Rol"
+              placeholder="Ingresa el nombre del rol"
+              [required]="true"
+              [load]="load">
+              </app-input>
+
+              <app-input
+              [form]="roleForm"
+              name="key"
+              label="Clave del Rol"
+              placeholder="Ingresa la clave del rol"
+              [required]="true"
+              [load]="load">
+              </app-input>
+
+              
+              <app-input
+              [form]="roleForm"
+              name="label"
+              label="Etiqueta del Rol"
+              placeholder="Ingresa la etiqueta del rol"
+              [required]="true"
+              [load]="load">
+              </app-input> -->
+
+             
+
+              <!-- <ion-row *ngIf="!load">
+                <ion-col>
+                  <ion-button shape="round" [disabled]="roleForm.invalid" (click)="saveRoleData()">Guardar Rol</ion-button>
+                </ion-col>
+              </ion-row> -->
+
+            </form>
+          </ion-card-content>
+
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
 </ion-content>

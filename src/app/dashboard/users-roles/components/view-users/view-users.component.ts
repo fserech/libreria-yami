@@ -39,7 +39,7 @@ export class ViewUsersComponent  implements OnInit {
 
   editUser(user: UserData) {
     const uid = user.uid;
-    this.navCtrl.navigateForward([`/dashboard/users/edit/${user.uid}`]); // Asegúrate de que la ruta sea correcta para editar usuarios
+    this.navCtrl.navigateForward([`/dashboard/users-roles/edit/${user.uid}`]); // Asegúrate de que la ruta sea correcta para editar usuarios
   }
 
   deleteUser(user: UserData) {

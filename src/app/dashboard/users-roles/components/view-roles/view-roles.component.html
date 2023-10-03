@@ -4,8 +4,55 @@
   [showButtonBack]="true">
 </app-header>
 
-<ion-content>
-  <ion-label color="medium">
-    <h1>ver roles</h1>
-  </ion-label>
+<ion-toolbar>
+  <ion-row class="row">
+    <ion-col class="m-auto d-flex col-12 align-items-center" size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
+      <ion-searchbar
+        placeholder="Buscar"
+        shape="round"
+        class="rounded-pill"
+        (ionInput)="handleInput($event)"
+      ></ion-searchbar>
+      <ion-button>
+        <ion-icon class="text-white" name="search-outline"></ion-icon>
+      </ion-button>
+    </ion-col>
+  </ion-row>
+</ion-toolbar>
+<ion-content class="ion-padding">
+
+  <ion-grid>
+    <ion-row class="ion-justify-content-center">
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-title>
+              <!-- <ion-text color="medium">
+                <h1><ion-icon name="albums-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1>
+              </ion-text> -->
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="mt-2">
+            <ion-list>
+              <ion-item *ngFor="let role of roles">
+                <ion-label>
+                  <h2>{{ role.label }}</h2>
+                  <p>{{ role.key }}</p>
+                </ion-label>
+
+                <ion-button class="float-right" (click)="editRole(role)">
+                  <ion-icon name="create-outline"></ion-icon>
+                </ion-button>
+
+                <!-- botón de eliminación -->
+                <ion-button color="danger" class="float-right" (click)="deleteRole(role)">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </ion-button>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 </ion-content>
