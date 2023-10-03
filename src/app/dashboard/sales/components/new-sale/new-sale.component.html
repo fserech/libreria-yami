@@ -185,17 +185,17 @@ title="Ventas"
        <ion-card class="rounded-4">
       <ion-card-header>
        <ion-card-content class="mt-2">
-          <ion-row>
-            <ion-col size="5">
+          <ion-row class="bg-warning w-100">
+            <ion-col size="4">
               <h2>Nombre</h2>
             </ion-col>
             <ion-col size="2">
               <h2>Cantidad</h2>
             </ion-col>
-            <ion-col size="1">
+            <ion-col size="3">
               <h2>Precio</h2>
             </ion-col>
-            <ion-col size="2">
+            <ion-col size="3">
               <h2>Sub Total</h2>
             </ion-col>
             <ion-col size="1">
@@ -204,7 +204,7 @@ title="Ventas"
           </ion-row>
           <ion-list>
             <ion-item *ngFor="let product of selectedProducts">
-              <ion-col size="5"><h2>{{ firstCapitalLetter(product.name) }}</h2></ion-col>
+              <ion-col size="4"><h2>{{ firstCapitalLetter(product.name) }}</h2></ion-col>
               <!-- <ion-col size="5"><h2>{{ product.uid }}</h2></ion-col> -->
               <ion-col size="2">
                 <ion-input
@@ -215,8 +215,8 @@ title="Ventas"
                  (ionChange)="calculateSubtotal(product)">
                 </ion-input>
               </ion-col>
-              <ion-col size="1"><p>Q {{ product.priceSale }}</p> </ion-col>
-              <ion-col size="2"><p>Q {{ calculateSubtotal(product).toFixed(2) }}</p></ion-col>
+              <ion-col size="3"><p>Q {{ product.priceSale }}</p> </ion-col>
+              <ion-col size="3"><p>Q {{ calculateSubtotal(product).toFixed(2) }}</p></ion-col>
               <ion-col size="1">
                 <ion-button color="danger" (click)="removeListTemp(product)">
                   <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
