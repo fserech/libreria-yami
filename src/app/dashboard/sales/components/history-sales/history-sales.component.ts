@@ -119,44 +119,57 @@ export class HistorySalesComponent  implements OnInit {
     return formattedDate;
   }
 
+  monthString(value: string): string{
+    const date: Date = new Date(value);
+
+    if (isNaN(date.getTime())) {
+      return 'Fecha no válida';
+    }
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Los meses comienzan desde 0
+    const year = date.getFullYear();
+
+    const formattedDate = `${this.getMonth(month)} de ${year}`;
+
+    return formattedDate;
+  }
+
   getMonth(value: string): string{
-    const month = Number(value);
     let date = '';
-    switch (month) {
-      case month: 1
+    switch (value) {
+      case '01':
         date = 'Enero';
         break;
-      case month: 2
+      case '02':
         date = 'Febrero';
         break;
-      case month: 3
+      case '03':
         date = 'Marzo';
         break;
-      case month: 4
+      case '04':
         date = 'Abril';
         break;
-      case month: 5
+      case '05':
         date = 'Mayo';
         break;
-      case month: 6
+      case '06':
         date = 'Junio';
         break;
-      case month: 7
+      case '07':
         date = 'Julio';
         break;
-      case month: 8
+      case '08':
         date = 'Agosto';
         break;
-      case month: 9
+      case '09':
         date = 'Septiembre';
         break;
-      case month: 10
+      case '10':
         date = 'Octubre';
         break;
-      case month: 11
+      case '11':
         date = 'Noviembre';
         break;
-      case month: 12
+      case '12':
         date = 'Diciembre';
         break;
       default:
@@ -165,4 +178,49 @@ export class HistorySalesComponent  implements OnInit {
     }
     return date;
   }
+
+  changeMonth($event: any){
+    const value = $event.detail.value;
+    const dates = this.getFirstAndLastDayOfMonth(value);
+    const firstDate = new Date(dates.firstDate);
+    const lastDate = new Date(dates.lastDate);
+    this.getSales(firstDate, lastDate);
+  }
+
+  getFirstAndLastDayOfMonth(dateString: string): { firstDate: string, lastDate: string } {
+
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+
+    const firstDate = new Date(year, month - 1, 1);
+    const firstDateString = this.formatDateMonth(firstDate);
+    const lastDate = new Date(year, month, 0);
+    const lastDateString = this.formatDateMonth(lastDate);
+
+    return { firstDate: firstDateString, lastDate: lastDateString };
+  }
+
+  formatDateMonth(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  changeSegment($event){
+    const value = $event.detail.value;
+    const date: Date = new Date();
+    const dates = this.getFirstAndLastDayOfMonth(date.toISOString());
+    const initDate: Date = new Date(dates.firstDate);
+    const endDate: Date = new Date(dates.lastDate);
+
+    if(value === 'day')this.getSales(date, date);
+
+    if(value === 'month')this.getSales(initDate, endDate);
+  }
+
+
+
 }
