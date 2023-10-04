@@ -21,13 +21,12 @@ export class HistorySalesComponent  implements OnInit {
   value: Date = new Date();
   date: string = this.value.toISOString();
   segmentSelected = 'day';
+  load: boolean = false;
   segmentList: Array<Segments> = [
     {name: 'day', label: 'Por Día', icon: 'partly-sunny-outline'},
     {name: 'month', label: 'Por Mes', icon: 'today-outline'},
     {name: 'report', label: 'Reporte', icon: 'document-text-outline'}
   ];
-
-  load: boolean = false;
 
   constructor(
     private dashboardService: DashboardService,
