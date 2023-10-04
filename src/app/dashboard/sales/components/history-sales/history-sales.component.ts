@@ -16,7 +16,7 @@ export class HistorySalesComponent  implements OnInit {
 
   form: FormGroup;
   sales: Sale[] = [];
-  title: string = 'Historial de ventas';
+  title: string = 'Historial ventas';
   truncatedUID: string;
   value: Date = new Date();
   date: string = this.value.toISOString();
