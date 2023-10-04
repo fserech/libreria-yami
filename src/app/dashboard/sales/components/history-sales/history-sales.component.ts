@@ -25,7 +25,7 @@ export class HistorySalesComponent  implements OnInit {
   segmentList: Array<Segments> = [
     {name: 'day', label: 'Por Día', icon: 'partly-sunny-outline'},
     {name: 'month', label: 'Por Mes', icon: 'today-outline'},
-    {name: 'report', label: 'Reporte', icon: 'document-text-outline'}
+    // {name: 'report', label: 'Reporte', icon: 'document-text-outline'}
   ];
 
   constructor(
