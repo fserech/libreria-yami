@@ -124,7 +124,8 @@
                 presentation="month-year"
                 [required]="true"
                 [load]="load"
-                (changes)="changeMonth($event)">
+                (changes)="changeMonth($event)"
+                [max]="date">
               </app-date-picker-month-year>
             </ion-card-content>
           </ion-card-header>
