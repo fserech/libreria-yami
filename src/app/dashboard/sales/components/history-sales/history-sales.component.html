@@ -44,7 +44,7 @@
               <app-date-picker
                 [form]="form"
                 name="date"
-                label="Filtro por fecha"
+                label="Filtrar ventas por fecha"
                 placeholder="Selecciona una fecha"
                 [required]="true"
                 [load]="load"
@@ -98,7 +98,7 @@
 
             <ion-list *ngIf="sales.length <= 0">
               <ion-item>
-                <ion-label class="text-center">No se registraron ventas el {{ dateString(form.controls['date'].value) }}</ion-label>
+                <ion-label class="text-center text-wrap">No se registraron ventas el {{ dateString(form.controls['date'].value) }}</ion-label>
               </ion-item>
             </ion-list>
 
