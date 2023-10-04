@@ -3,7 +3,9 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NavController } from '@ionic/angular';
 import { Observable, first, map, take } from 'rxjs';
-import { Sale } from 'src/app/shared/models/sale';
+import { PRODUCTS_COLLECTION_NAME, SALES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
+import { MESSAGES_APP } from 'src/app/shared/constants/messages-app';
+import { ProductSale, Sale } from 'src/app/shared/models/sale';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
 
@@ -21,7 +23,6 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
   mode: string = 'view';
   searchTerm: string = '';
   routeBack: string = '/dashboard/sales';
-  routeBackAll: string = '/dashboard/sales/all';
   valuesFirestore: string[] = [];
   isChecked: boolean = false;
   selectedProducts: any []=[];
@@ -70,58 +71,82 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
     this.form = this.fb.group({
       cf: [false, []],
       nit: ['', [Validators.required]],
-      description: ['', []]
+      description: ['', []],
+      createAt: [new Date(), []],
+      total: ['', []],
+      status: ['UNBILLED', []],
+      products: this.fb.array([]),
     });
   }
 
-  submit(){
+  submit() {
     this.load = true;
-    const date: Date = new Date();
+    const total = this.getTotalSale();
 
+    const ProductSale = this.selectedProducts.map((product: any) => {
+      
+      return {
+        name: product.name || '', 
+        priceSale:  product.priceSale || '', 
+        units: product.units || '', 
+        unitMeasurement: product.unitMeasurement || '', 
+      };
+    });
 
-    // this.record = {
-    //   name: this.form.controls['name'].value.toLowerCase(),
-    //   description: this.form.controls['description'].value,
-    //   productRef: this.dashboardService.getDocumentReference(PRODUCTS_COLLECTION_NAME,this.form.controls['product'].value),
-    //   stock: this.mode === 'new' ? '0' : this.recordAux.stock,
-    //   unitMeasurement: this.form.controls['unitMeasurement'].value,
-    //   typeWholesaleUnitMeasure: this.form.controls['typeWholesaleUnitMeasure'].value,
-    //   priceSale: this.mode === 'new' ? '00.00' : this.recordAux.priceSale,
-    //   quantity: this.form.controls['quantity'].value,
-    //   totalPrice: this.mode === 'new' ? '00.00' : this.recordAux.priceSale,
-    //   date: this.form.controls['date'].value,
-    //   nit:  this.form.controls['active'].value,
-    //   unitsPackage: this.form.controls['unitsPackage'].value,
-    //   active: this.form.controls['active'].value,
-    //   stockMin: this.form.controls['stockMin'].value,
-    //   stockMax: this.form.controls['stockMax'].value,
-    //   createAt: this.mode === 'new' ? date : this.recordAux.createAt,
-    //   keywords: this.keywords,
-
-    // }
-    // if(this.mode == 'new'){
-    //   this.dashboardService
-    //       .saveDocument(SALES_COLLECTION_NAME,this.record)
-    //       .then(( response: any ) => {
-    //          this.reset(); })
-    //       .catch(( error: any ) => {
-    //          this.reset();
-    //          console.log(error)
-    //         });
-    // }else{
-    //   (this.mode === 'edit')
-    //   const uid = this.route.snapshot.params['uid'];
-    //   this.dashboardService
-    //     .udpateDocument(uid, SALES_COLLECTION_NAME, this.record)
-    //     .then((response: any) => {
-    //       this.reset('/dashboard/sales/all');
-    //     })
-    //     .catch((error: any) => {
-    //       this.reset('/dashboard/sales/all');
-    //     });
-    // }
-
+    const venta = {
+      nit: this.form.controls['nit'].value,
+      createAt: this.form.controls['createAt'].value,
+      description: this.form.controls['description'].value,
+      total: this.form.controls['total'].value,
+      status: this.form.controls['status'].value,
+      products: ProductSale,
+    };
+  
+    // Copia los productos seleccionados a la propiedad 'products' en this.record
+    this.record = {
+      nit: venta.nit,
+      createAt: venta.createAt,
+      description: venta.description,
+      total: total,
+      status: venta.status,
+      products: venta.products,
+    };
+  
+    // Agregar un console.log para mostrar el JSON antes de guardarlo
+    console.log('JSON a guardar en Firestore:', this.record);
+  
+    if (this.form) {
+      this.dashboardService
+        .saveDocument(SALES_COLLECTION_NAME, this.record)
+        .then((response: any) => {
+          console.log(response);
+          this.load = false;
+          this.form.reset();
+        })
+        .catch((error: any) => {
+          console.log(error);
+          this.load = false;
+          this.form.reset();
+        });
+        this.reset(this.routeBack);
+    }  this.selectedProducts.forEach((product: any) => {
+      const updatedStock = product.stock - product.units;
+      if (updatedStock >= 0) {
+        // Actualiza el stock del producto en Firestore
+        this.dashboardService.udpateDocument(product.uid, 'products', { stock: updatedStock });
+        
+      } else {
+        console.error(`No hay suficiente stock disponible para ${product.name}`);
+      
+      
+      }
+    });
+    
   }
+
+  
+
+  
 
   reset(route?: string){
     this.form.reset();
@@ -272,6 +297,9 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
         products[index].showPopover = false;
       }
     });
+  }
+  getMessageApp(code: string): string{
+    return MESSAGES_APP.find((element: any) => element.code === code).message;
   }
 
 }

@@ -7,13 +7,13 @@ export interface Sale {
     description?: string;
     total: string;
     status: 'UNBILLED' | 'INVOICED';
-    products: ProcutSale[];
+    products: ProductSale[];
   }
 
-export interface ProcutSale {
+export interface ProductSale {
   name: string;
-  price: string;
-  quantity: string;
+  priceSale: string;
+  units: string;
   unitMeasurement: string;
 
 }

@@ -3,7 +3,6 @@ title="Ventas"
 [load]="false"
 [showButtonBack]="true">
 </app-header>
-
 <ion-content>
   <ion-grid>
     <ion-row class="ion-justify-content-center">
@@ -12,40 +11,9 @@ title="Ventas"
           <ion-card-header>
             <ion-card-title>
               <ion-text color="medium">
-                <h1 *ngIf="!load">
-                  <ion-icon
-                  name="{{mode === 'new' ? 'add-outline': mode === 'edit' ? 'create-outline' : 'eye-outline'}}"
-                  style="font-size: 30px;">
-                </ion-icon>
-                {{ title }}
-                </h1>
-                <h1 *ngIf="load">
-                <ion-skeleton-text *ngIf="load" class="m-auto" [animated]="true" style="width: 42%; height: 30px; border-radius: 10px;"></ion-skeleton-text>
-              </h1>
+                <h1><ion-icon name="add-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1>
               </ion-text>
             </ion-card-title>
-            <!-- asignacion de subtitulo -->
-            <ion-card-subtitle
-            *ngIf="mode === 'view' && !load || mode === 'edit' && !load">
-              UID de Sale: <br> {{ record?.uid }}
-              <ion-icon
-              class="m-0"
-              [class.enlarged]="copied"
-              style="font-size: 20px;"
-              color="primary"
-              name="copy-outline"
-              (click)="copyToClipboard(record?.uid)"></ion-icon>
-            </ion-card-subtitle>
-            <ion-card-subtitle
-            *ngIf="load && this.mode !== 'new'">
-              <h1 *ngIf="load">
-                <ion-skeleton-text *ngIf="load" class="m-auto" [animated]="true" style="width: 110px; height: 15px; border-radius: 10px;"></ion-skeleton-text>
-              </h1>
-              <div *ngIf="load" class="d-flex row align-items-center justify-content-center">
-                <ion-skeleton-text *ngIf="load" class="m-0" [animated]="true" style="width: 175px; height: 20px; border-radius: 10px;"></ion-skeleton-text>
-                <ion-skeleton-text *ngIf="load" class="m-0 mb-2" [animated]="true" style="width: 10px; height: 20px; border-radius: 5px;"></ion-skeleton-text>
-              </div>
-            </ion-card-subtitle>
           </ion-card-header>
         </ion-card>
 
@@ -67,7 +35,8 @@ title="Ventas"
                     label="Facturar a consumidor final (CF)"
                     [disabled]="false"
                     [load]="load"
-                    (changes)="changeToogle($event)">
+                    (changes)="changeToogle($event)"
+                    >
                   </app-toggle>
                 </ion-col>
                 <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="6">
@@ -78,6 +47,10 @@ title="Ventas"
                     placeholder="Ingresa NIT de cliente"
                     [required]="true"
                     [load]="load"
+                    [maxlength]="8"
+                    [minlength]="8"
+                    [counter]="true"
+                    [help]="getMessageApp('TEXT')"
                   ></app-input>
                 </ion-col>
               </ion-row>
@@ -91,10 +64,28 @@ title="Ventas"
                       placeholder="Ingresa Descripción de venta"
                       [required]="true"
                       [load]="load"
+                      [maxlength]="50"
+                       [minlength]="2"
+                      [counter]="true"
+                     
                     ></app-input>
                   </ion-col>
                 </ion-row>
+
+                <ion-row>
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                    <ion-item>
+                      <ion-select formControlName="status" interface="popover" label="Estado">
+                        <ion-select-option value="UNBILLED">NO FACTURADA</ion-select-option>
+                        <ion-select-option value="INVOICED">FACTURADA</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                    
+                  </ion-col>
+                </ion-row>
+                
               </form>
+
 
           </ion-card-content>
 
@@ -216,6 +207,7 @@ title="Ventas"
                 </ion-input>
               </ion-col>
               <ion-col size="3"><p>Q {{ product.priceSale }}</p> </ion-col>
+              
               <ion-col size="3"><p>Q {{ calculateSubtotal(product).toFixed(2) }}</p></ion-col>
               <ion-col size="1">
                 <ion-button color="danger" (click)="removeListTemp(product)">
@@ -234,10 +226,9 @@ title="Ventas"
        <ion-row *ngIf="!load">
         <ion-col>
           <ion-button
-            *ngIf="mode !== 'view'"
             shape="round"
             [disabled]="form.invalid"
-            (click)="submit()">{{ mode !== 'new' ? 'Generar Venta' : 'Generar Venta'}}</ion-button>
+            (click)="submit()">Generar Venta</ion-button>
         </ion-col>
       </ion-row>
       </ion-card-header>
@@ -250,3 +241,4 @@ title="Ventas"
     </ion-row>
   </ion-grid>
 </ion-content>
+
