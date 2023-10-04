@@ -130,4 +130,14 @@ searchForField(collection: string, field: string, value: string) {
     .valueChanges({idField: 'uid'});
 }
 
+getDocumentsByDateRange(collection: string, initDate: Date, endDate: Date, field: string): Observable<any[]> {
+  const initDateAdjusted = new Date(initDate);
+  initDateAdjusted.setHours(0, 0, 0, 0);
+  const endDateAdjusted = new Date(endDate);
+  endDateAdjusted.setHours(23, 59, 59, 999);
+
+  return this.firestore.collection(collection, ref =>
+    ref.where(field, '>=', initDateAdjusted).where(field, '<=', endDateAdjusted)
+  ).valueChanges();
+}
 }
