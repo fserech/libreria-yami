@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { ModalController, NavController } from '@ionic/angular';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { IonInfiniteScroll, ModalController, NavController } from '@ionic/angular';
 import { SALES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { Sale } from 'src/app/shared/models/sale';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
@@ -27,6 +27,8 @@ export class HistorySalesComponent  implements OnInit {
     {name: 'month', label: 'Por Mes', icon: 'today-outline'},
     // {name: 'report', label: 'Reporte', icon: 'document-text-outline'}
   ];
+  @ViewChild(IonInfiniteScroll) infiniteScroll: IonInfiniteScroll;
+
 
   constructor(
     private dashboardService: DashboardService,
@@ -221,6 +223,23 @@ export class HistorySalesComponent  implements OnInit {
     if(value === 'month')this.getSales(initDate, endDate);
   }
 
-
+  calculateTotalSalesPrice(): number {
+    let totalPrice = 0;
+  
+    if (this.sales && this.sales.length > 0) {
+      for (const sale of this.sales) {
+        // Verificamos que 'total' sea un número válido antes de sumarlo
+        const saleTotal = parseFloat(sale.total);
+        if (!isNaN(saleTotal)) {
+          totalPrice += saleTotal;
+        }
+      }
+    }
+  
+    // Devolvemos el precio total como número con dos decimales
+    return parseFloat(totalPrice.toFixed(2));
+  }
+  
+  
 
 }

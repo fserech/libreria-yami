@@ -4,21 +4,6 @@
   [showButtonBack]="true">
 </app-header>
 
-<!-- <ion-toolbar>
-  <ion-row class="row">
-    <ion-col class="m-auto d-flex col-12 align-items-center" size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
-      <ion-searchbar
-        placeholder="Buscar"
-        shape="round"
-        class="rounded-pill"
-        (ionInput)="handleInput($event)">
-      </ion-searchbar>
-      <ion-button>
-        <ion-icon class="text-white" name="search-outline"></ion-icon>
-      </ion-button>
-    </ion-col>
-  </ion-row>
-</ion-toolbar> -->
 
 <ion-content class="ion-padding">
 
@@ -85,7 +70,7 @@
                   <p>{{ sale.description}}</p>
                 </ion-col>
                 <ion-col>
-                  <h2>{{ firstCapitalLetter(sale.total) }}</h2>
+                  <h2>Q. {{ firstCapitalLetter(sale.total) }}</h2>
                 </ion-col>
                 <ion-col>
                   <p>{{formatDate(sale.createAt) }}</p>
@@ -94,7 +79,17 @@
                   <ion-label>{{ sale.status === 'UNBILLED' ? 'No Facturada' : 'Facturada' }}</ion-label>
                 </ion-col>
               </ion-item>
+              
+              <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 10px;">
+                <ion-col>
+                  <ion-label color="medium"><b>Total de Ventas</b></ion-label>
+                </ion-col>
+                <ion-col>
+                  <ion-label color="medium"><b>Q. {{ calculateTotalSalesPrice() }}</b></ion-label>
+                </ion-col>
+              </ion-row>
             </ion-list>
+            
 
             <ion-list *ngIf="sales.length <= 0">
               <ion-item>
@@ -138,7 +133,7 @@
         <ion-card class="rounded-4">
           <ion-card-content class="mt-2">
             <ion-list  *ngIf="sales.length > 0">
-              <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 10px;">
+              <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 6px;">
                 <ion-col>
                   <ion-label color="medium"><b>Descripcion</b></ion-label>
                 </ion-col>
@@ -159,7 +154,7 @@
                   <p>{{ sale.description}}</p>
                 </ion-col>
                 <ion-col>
-                  <h2>{{ firstCapitalLetter(sale.total) }}</h2>
+                  <h2>Q. {{ firstCapitalLetter(sale.total) }}</h2>
                 </ion-col>
                 <ion-col>
                   <p>{{formatDate(sale.createAt) }}</p>
@@ -168,14 +163,23 @@
                   <ion-label>{{ sale.status === 'UNBILLED' ? 'No Facturada' : 'Facturada' }}</ion-label>
                 </ion-col>
               </ion-item>
+              
+              <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 6px;">
+                <ion-col>
+                  <ion-label color="medium"><b>Total de Ventas</b></ion-label>
+                </ion-col>
+                <ion-col>
+                  <ion-label color="medium"><b>Q. {{ calculateTotalSalesPrice() }}</b></ion-label>
+                </ion-col>
+              </ion-row>
             </ion-list>
+           
 
             <ion-list *ngIf="sales.length <= 0">
               <ion-item>
                 <ion-label class="text-center text-wrap">No se registraron ventas en {{ monthString(form.controls['date'].value) }}</ion-label>
               </ion-item>
-            </ion-list>
-
+            </ion-list>  
           </ion-card-content>
         </ion-card>
       </ion-col>
