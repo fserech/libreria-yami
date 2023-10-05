@@ -23,7 +23,7 @@ export class MySalesComponent  implements OnInit {
   segmentSelected = 'day';
   load: boolean = false;
   segmentList: Array<Segments> = [
-    {name: 'day', label: 'Por Día', icon: 'partly-sunny-outline'},
+    {name: 'day', label: 'MI DIA DE VENTA', icon: 'partly-sunny-outline'},
     // {name: 'month', label: 'Por Mes', icon: 'today-outline'},
     // {name: 'report', label: 'Reporte', icon: 'document-text-outline'}
   ];
