@@ -49,27 +49,16 @@ export class ViewCategoriesComponent  implements OnInit {
     //   });
   }
 
-  handleInput(event: any){
-    const query = event.target.value.toLowerCase();
-
-    this.dashboardService.searchByArrayString(CATEGORIES_COLLECTION_NAME, 'keywords', query, 'name')
+  handleInput(event: any) {
+    const value = event.target.value.toLowerCase();
+    this.dashboardService.searchForField(CATEGORIES_COLLECTION_NAME, 'name', value)
       .subscribe(
         (response: any[]) => {
-          console.log(response);
           this.categories = response;
         },
         (error: any) => {
           console.log(error);
         }
-      //   {
-      //   next: (response: Category[]) => {
-      //     this.categories = response;
-      //     console.log(response);
-      //   },
-      //   error: (error: any) => {
-      //     console.log(error);
-      //   }
-      // }
       );
   }
 

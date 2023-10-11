@@ -42,10 +42,9 @@ export class ViewProductsComponent  implements OnInit {
 
   }
 
-  handleInput(event: any){
-    const query = event.target.value.toLowerCase();
-
-    this.dashboardService.searchForField(PRODUCTS_COLLECTION_NAME, 'name', query)
+  handleInput(event: any) {
+    const value = event.target.value.toLowerCase();
+    this.dashboardService.searchForField(PRODUCTS_COLLECTION_NAME, 'name', value)
       .subscribe(
         (response: any[]) => {
           this.products = response;
@@ -53,14 +52,6 @@ export class ViewProductsComponent  implements OnInit {
         (error: any) => {
           console.log(error);
         }
-      //   {
-      //   next: (response: Product[]) => {
-      //     this.products = response;
-      //   },
-      //   error: (error: any) => {
-      //     console.log(error);
-      //   }
-      // }
       );
   }
 

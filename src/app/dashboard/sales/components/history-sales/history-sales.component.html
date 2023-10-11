@@ -23,7 +23,7 @@
   <ion-grid  *ngIf="segmentSelected === 'day'">
 
     <ion-row  class="ion-justify-content-center">
-      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5" class="m-auto mb-0">
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
         <ion-card class="rounded-4">
           <ion-card-header>
             <ion-card-content>
@@ -146,6 +146,10 @@
                 <ion-col>
                   <ion-label color="medium"><b>Estado</b></ion-label>
                 </ion-col>
+                <ion-col>
+                  <ion-label color="medium"><b>Id</b></ion-label>
+                </ion-col>
+
               </ion-row>
             </ion-list>
             <ion-list *ngIf="sales.length > 0">
@@ -161,6 +165,10 @@
                 </ion-col>
                 <ion-col [ngClass]="{'text-danger': !isInvoiceStatus(sale.status), 'text-success': isInvoiceStatus(sale.status)}">
                   <ion-label>{{ sale.status === 'UNBILLED' ? 'No Facturada' : 'Facturada' }}</ion-label>
+                </ion-col>
+               
+                <ion-col >
+                  <ion-icon name="eye-outline"></ion-icon>
                 </ion-col>
               </ion-item>
               
