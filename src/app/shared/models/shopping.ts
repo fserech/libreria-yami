@@ -5,7 +5,7 @@ export interface Shopping {
  uid?: string;
  createAt: Date;
  status: 'PENDING'| 'PENDING_CHARGE_STOCK' |'FINALIZED';
- description: string;
+ description?: string;
  total: string;
  bill: Bill;
  supplier: Supplier;
@@ -20,7 +20,7 @@ export interface DetailsShopping{
 }
 
 export interface ProductShopping{
-  uid:string;
+  uid: string;
   name: string;
   brand: string;
   category: string;

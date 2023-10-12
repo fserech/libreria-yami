@@ -11,11 +11,12 @@ export interface Sale {
   }
 
 export interface ProductSale {
+  uid?: string;
   name: string;
   priceSale: string;
   units: string;
   unitMeasurement: string;
-
+  date: Date;
 }
 
 

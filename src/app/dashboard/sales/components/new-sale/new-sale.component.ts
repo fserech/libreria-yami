@@ -74,79 +74,139 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
       description: ['', []],
       createAt: [new Date(), []],
       total: ['', []],
-      status: ['UNBILLED', []],
-      products: this.fb.array([]),
+      status: ['', []],
+      // products: this.fb.array([]),
     });
   }
 
-  submit() {
-    this.load = true;
-    const total = this.getTotalSale();
+  async submit() {
+    if(this.form){
+      this.load = true;
+      const date: Date = new Date();
 
-    const ProductSale = this.selectedProducts.map((product: any) => {
-      
-      return {
-        name: product.name || '', 
-        priceSale:  product.priceSale || '', 
-        units: product.units || '', 
-        unitMeasurement: product.unitMeasurement || '', 
+      this.record = {
+        nit: this.form.controls['nit'].value,
+        createAt: date,
+        total: this.getTotalSale(),
+        status: 'UNBILLED',
+        products: this.getProductSelected(),
       };
-    });
 
-    const venta = {
-      nit: this.form.controls['nit'].value,
-      createAt: this.form.controls['createAt'].value,
-      description: this.form.controls['description'].value,
-      total: this.form.controls['total'].value,
-      status: this.form.controls['status'].value,
-      products: ProductSale,
-    };
-  
-    // Copia los productos seleccionados a la propiedad 'products' en this.record
-    this.record = {
-      nit: venta.nit,
-      createAt: venta.createAt,
-      description: venta.description,
-      total: total,
-      status: venta.status,
-      products: venta.products,
-    };
-  
-    // Agregar un console.log para mostrar el JSON antes de guardarlo
-    console.log('JSON a guardar en Firestore:', this.record);
-  
-    if (this.form) {
-      this.dashboardService
-        .saveDocument(SALES_COLLECTION_NAME, this.record)
-        .then((response: any) => {
-          console.log(response);
-          this.load = false;
-          this.form.reset();
-        })
-        .catch((error: any) => {
-          console.log(error);
-          this.load = false;
-          this.form.reset();
-        });
-        this.reset(this.routeBack);
-    }  this.selectedProducts.forEach((product: any) => {
-      const updatedStock = product.stock - product.units;
-      if (updatedStock >= 0) {
-        // Actualiza el stock del producto en Firestore
-        this.dashboardService.udpateDocument(product.uid, 'products', { stock: updatedStock });
-        
-      } else {
-        console.error(`No hay suficiente stock disponible para ${product.name}`);
-      
-      
+      if(this.form.controls['description'].value !== '' &&
+         this.form.controls['description'].value !== null &&
+         this.form.controls['description'].value !== undefined){
+        this.record.description = this.form.controls['description'].value;
       }
-    });
-    
+
+      // let stock: Boolean = false;
+      // await this.checkStock().then((stockSuccess: any[]) => {
+      //   const success = stockSuccess.filter((product: any) => product.success === true);
+      //   if(success.length === this.record.products.length){}
+      // });
+      console.log(this.checkStock());
+
+    }
+
+    // Agregar un console.log para mostrar el JSON antes de guardarlo
+    // console.log('JSON a guardar en Firestore:', this.record);
+
+    // if (this.form) {
+    //   this.dashboardService
+    //     .saveDocument(SALES_COLLECTION_NAME, this.record)
+    //     .then((response: any) => {
+    //       console.log(response);
+    //       this.load = false;
+    //       this.form.reset();
+    //     })
+    //     .catch((error: any) => {
+    //       console.log(error);
+    //       this.load = false;
+    //       this.form.reset();
+    //     });
+    //     this.reset(this.routeBack);
+    // }  this.selectedProducts.forEach((product: any) => {
+    //   const updatedStock = product.stock - product.units;
+    //   if (updatedStock >= 0) {
+    //     // Actualiza el stock del producto en Firestore
+    //     this.dashboardService.udpateDocument(product.uid, 'products', { stock: updatedStock });
+
+    //   } else {
+    //     console.error(`No hay suficiente stock disponible para ${product.name}`);
+
+
+    //   }
+    // });
+
   }
 
-  
+  async checkStock(){
 
-  
+    if (this.record) {
+      const productSelected: ProductSale[] = this.record.products;
+      const stockCheck: any[] = [];
+
+      const promises = productSelected.map(async (product: ProductSale) => {
+        try {
+          const productFb: any = await this.dashboardService.getDocumentByIdToPromise(PRODUCTS_COLLECTION_NAME, product.uid);
+          const currentStock = parseFloat(productFb.stock) - parseFloat(product.units);
+
+          if (currentStock >= 0) {
+            stockCheck.push({ uid: product.uid, name: product.name, stock: currentStock.toString(), success: true });
+          } else {
+            stockCheck.push({ uid: product.uid, name: product.name, stock: currentStock.toString(), success: false });
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      });
+      await Promise.all(promises);
+      return (stockCheck.length === this.record.products.length) ? true : false;
+    }
+
+    return [];
+
+    // if(this.record){
+    //   const productSelected: ProductSale[] = this.record.products;
+    //   let stockCheck: any[] = [];
+
+    //   await productSelected.forEach((product: ProductSale, index: number) => {
+    //     this.dashboardService
+    //         .getDocumentByIdToPromise(PRODUCTS_COLLECTION_NAME, product.uid)
+    //         .then((productFb: any) => {
+    //           const currentStock = parseFloat(productFb.stock) - parseFloat(product.units);
+    //           if(currentStock >= 0){
+    //             // currentStock.toString();
+    //             stockCheck.push({uid: product.uid, name: product.name, stock: currentStock.toString(), success: true});
+    //             // this.dashboardService
+    //             //   .udpateDocument(product.uid, PRODUCTS_COLLECTION_NAME ,{stock: currentStock})
+    //             //   .then((res: any) => console.log(res))
+    //             //   .catch((error: any) => console.log(error));
+    //           }else{
+    //             stockCheck.push({uid: product.uid, name: product.name, stock: currentStock.toString(), success: false});
+    //           }
+    //         })
+    //         .catch((error: any) => {console.log(error)});
+    //   });
+    //   console.log(stockCheck);
+    // }
+  }
+
+  getProductSelected(): ProductSale[]{
+    const date: Date = new Date();
+    const productSale: ProductSale[] = this.selectedProducts.map((product: any) => {
+      const productSelect: ProductSale = {
+        uid: product.uid || '',
+        name: product.name || '',
+        priceSale:  product.priceSale || '',
+        units: product.units || '',
+        unitMeasurement: product.unitMeasurement || '',
+        date: date
+      };
+      return productSelect;
+    });
+
+    return productSale;
+  }
 
   reset(route?: string){
     this.form.reset();
@@ -201,8 +261,6 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
       if (index !== -1) {
         const updatedProducts = [...products]; // Clona el array
         updatedProducts[index] = { ...updatedProducts[index], select: select }; // Actualiza el producto
-        console.log('products: ', products);
-        console.log('products new: ', updatedProducts);
         this.products$ = null;
         this.products$ = new Observable(observer => {
           observer.next(updatedProducts);
@@ -212,8 +270,10 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
   }
 
   addProductListTemp(product: any){
+    console.log(product);
     product.units = 1;
     this.selectedProducts.push(product);
+    console.log(this.selectedProducts)
   }
 
   removeProductListTemp(product: any){
@@ -298,6 +358,7 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
       }
     });
   }
+
   getMessageApp(code: string): string{
     return MESSAGES_APP.find((element: any) => element.code === code).message;
   }
