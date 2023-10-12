@@ -36,6 +36,7 @@ export class HistorySalesComponent  implements OnInit {
     private modalController: ModalController,
     private datePipe: DatePipe,
     private formBuilder: FormBuilder,
+    
   ) {
     this.form = this.formBuilder.group({
       date: ['', Validators.required]
@@ -239,6 +240,7 @@ export class HistorySalesComponent  implements OnInit {
     // Devolvemos el precio total como número con dos decimales
     return parseFloat(totalPrice.toFixed(2));
   }
+  
   
   
 
