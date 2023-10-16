@@ -146,10 +146,6 @@
                 <ion-col>
                   <ion-label color="medium"><b>Estado</b></ion-label>
                 </ion-col>
-                <ion-col>
-                  <ion-label color="medium"><b>Id</b></ion-label>
-                </ion-col>
-
               </ion-row>
             </ion-list>
             <ion-list *ngIf="sales.length > 0">
@@ -167,9 +163,7 @@
                   <ion-label>{{ sale.status === 'UNBILLED' ? 'No Facturada' : 'Facturada' }}</ion-label>
                 </ion-col>
                
-                <ion-col >
-                  <ion-icon name="eye-outline"></ion-icon>
-                </ion-col>
+                
               </ion-item>
               
               <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 6px;">
