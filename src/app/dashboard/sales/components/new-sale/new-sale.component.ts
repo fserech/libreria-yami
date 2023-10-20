@@ -98,12 +98,14 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
         this.record.description = this.form.controls['description'].value;
       }
 
-      // let stock: Boolean = false;
-      // await this.checkStock().then((stockSuccess: any[]) => {
-      //   const success = stockSuccess.filter((product: any) => product.success === true);
-      //   if(success.length === this.record.products.length){}
-      // });
-      console.log(this.checkStock());
+      let stock: Boolean = false;
+      await this.checkStock().then((result: any) => {
+        if(result.success && result.message === 'OK'){
+
+        }else{
+          console.log(result.message)
+        }
+      });
 
     }
 
@@ -160,36 +162,41 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
         }
       });
       await Promise.all(promises);
-      return (stockCheck.length === this.record.products.length) ? true : false;
+      const successData = (stockCheck.length === this.record.products.length) ? true : false;
+      return {success: successData, message: successData ? 'OK' : 'Existen productos sin stock suficiente'};
     }
 
-    return [];
-
-    // if(this.record){
-    //   const productSelected: ProductSale[] = this.record.products;
-    //   let stockCheck: any[] = [];
-
-    //   await productSelected.forEach((product: ProductSale, index: number) => {
-    //     this.dashboardService
-    //         .getDocumentByIdToPromise(PRODUCTS_COLLECTION_NAME, product.uid)
-    //         .then((productFb: any) => {
-    //           const currentStock = parseFloat(productFb.stock) - parseFloat(product.units);
-    //           if(currentStock >= 0){
-    //             // currentStock.toString();
-    //             stockCheck.push({uid: product.uid, name: product.name, stock: currentStock.toString(), success: true});
-    //             // this.dashboardService
-    //             //   .udpateDocument(product.uid, PRODUCTS_COLLECTION_NAME ,{stock: currentStock})
-    //             //   .then((res: any) => console.log(res))
-    //             //   .catch((error: any) => console.log(error));
-    //           }else{
-    //             stockCheck.push({uid: product.uid, name: product.name, stock: currentStock.toString(), success: false});
-    //           }
-    //         })
-    //         .catch((error: any) => {console.log(error)});
-    //   });
-    //   console.log(stockCheck);
-    // }
+    return {success: false, message:'Error'};
   }
+
+  async updateStockFb(){
+    if(this.record){
+      const productSelected: ProductSale[] = this.record.products;
+      let stockCheck: any[] = [];
+
+      await productSelected.forEach((product: ProductSale, index: number) => {
+        this.dashboardService
+            .getDocumentByIdToPromise(PRODUCTS_COLLECTION_NAME, product.uid)
+            .then((productFb: any) => {
+              const currentStock = parseFloat(productFb.stock) - parseFloat(product.units);
+              if(currentStock >= 0){
+                currentStock.toString();
+                stockCheck.push({uid: product.uid, name: product.name, stock: currentStock.toString(), success: true});
+                this.dashboardService
+                  .udpateDocument(product.uid, PRODUCTS_COLLECTION_NAME ,{stock: currentStock})
+                  .then((res: any) => console.log(res))
+                  .catch((error: any) => console.log(error));
+              }else{
+                stockCheck.push({uid: product.uid, name: product.name, stock: currentStock.toString(), success: false});
+              }
+            })
+            .catch((error: any) => {console.log(error)});
+      });
+      console.log(stockCheck);
+    }
+  }
+
+
 
   getProductSelected(): ProductSale[]{
     const date: Date = new Date();
