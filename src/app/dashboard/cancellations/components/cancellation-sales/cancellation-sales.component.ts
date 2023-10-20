@@ -2,14 +2,14 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { DocumentReference } from '@angular/fire/firestore';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IonSearchbar, NavController } from '@ionic/angular';
-import { Observable, first, map, of } from 'rxjs';
-import { SALES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
+import { Observable, map } from 'rxjs';
+import { CANCELLATIONS_COLLECTION_NAME, PRODUCTS_COLLECTION_NAME, SALES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { MESSAGES_APP } from 'src/app/shared/constants/messages-app';
 import { Cancellation } from 'src/app/shared/models/cancellation';
-import { Product } from 'src/app/shared/models/product';
+
 import { ProductSale, Sale } from 'src/app/shared/models/sale';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 
@@ -22,18 +22,18 @@ export class CancellationSalesComponent  implements OnInit {
   form: FormGroup;
   load: boolean = false;
   sales: Sale[] = [];
-  products: Product[] = [];
-  record: Cancellation;
+  record: Cancellation =null;
   title: string = 'Anular Ventas';
   @ViewChild('searchBar') searchBar: IonSearchbar;
   sales$: Observable<any[]>;
-  searchText: string = '';
   searchInputNotEmpty = false;
-  selectedSales: any = true;
-  selectedSaleProducts: any []=[true]; 
   products$: Observable<any[]>;
   documentRef: DocumentReference;
-  
+  sale: Sale;
+  productsSale: ProductSale[];
+  formSale: FormGroup;
+  formProduct: FormGroup;
+  routeBack: string = '/dashboard/cancellations';
 
   constructor(
     private dashboardService: DashboardService,
@@ -51,102 +51,150 @@ export class CancellationSalesComponent  implements OnInit {
       // .filter(product => product.active === true)
       .map(sale => ({ ...sale, select: false }));
     }));
-    
     this.getFiles();
   }
  
 
   ngOnInit() {
-    this.dashboardService.getAllItemsCollection(SALES_COLLECTION_NAME, 'uid')
-  .subscribe({
-    next: (sales: Sale[]) => {
-      this.sales$ = of(sales); // Actualiza sales$ con los datos de ventas
-          console.log('Datos de ventas recibidos:', this.sales);
-    },
-    error: error => {
-      console.log('Error al obtener datos de ventas:', error);
-    }
-  });
+  
 
   }
 
   getFiles() {
     this.form = this.fb.group({
-      type: ['SALE', []],
-      comment: ['', []],
-      total: ['', []],
+      defective: [false, []],
+      comment: ['', [Validators.required]],
       status: ['PENDING', []],
       stock: [false, []],
-      
-      
     });
+
+    this.formSale = this.fb.group({
+      nit: ['', []],
+      date: ['', []],
+      description: ['', []],
+      status: ['', []],
+      total: ['Q 00.00', []],
+    });
+    this.formSale.disable();
+
+    this.formProduct = this.fb.group({
+      name: ['', []],
+      priceSale: ['', []],
+      units: ['', []],
+    });
+    this.formProduct.disable();
   }
+
+ async submit() {
+  if(this.form){
+    this.load = true;
+    this.record = {
+      type: 'SALE',
+      documentRef: null,
+      comment: this.form.controls['comment'].value,
+      status: this.form.controls['status'].value,
+    };
+   
+    
+
+    
+    this.dashboardService.saveDocument(CANCELLATIONS_COLLECTION_NAME, this.record)
+      .then((response:any) => {
+        console.log('guardado exitosamente',response);
+        this.load=false;
+        this.form.reset();
+      })
+      .catch((error) => {
+        console.log('Ocurrió un error al guardar la cancelación:', error);
+        this.load=false;
+        this.form.reset();
+      });
+      this.reset(this.routeBack);
+  } 
+  }
+  
+  
 
   handleInput(searchBar: IonSearchbar) {
-    const query = searchBar.value; 
-
-   
-    this.dashboardService.searchForField(SALES_COLLECTION_NAME, 'description', query)
-      .subscribe(
-        (response: any[]) => {
-          this.sales$ = of(response); 
-        },
-        (error: any) => {
-          console.log('Error searching sales:', error);
-        });
+    const query = searchBar.value;
+    if (query.trim() === '') {
+      console.log('Campo vacío');
+    
+  } else { 
+    this.dashboardService
+    .getDocumentByIdToPromise(SALES_COLLECTION_NAME, query)
+    .then((document: Sale) => {
+      this.sale = document;
+      this.formSale.controls['nit'].setValue(this.getLabelNIT(this.sale.nit));
+      this.formSale.controls['date'].setValue(this.formatDate(this.sale.createAt));
+      this.formSale.controls['description'].setValue(this.sale.description?this.sale.description:'');
+      this.formSale.controls['status'].setValue(this.getLabelStatus(this.sale.status));
+      this.formSale.controls['total'].setValue('Q ' + this.sale.total);
+      console.log( document)
+      console.log( this.formSale.value)
+      this.formSale.disable();
+      this.productsSale = this.sale.products;  
+    })
+    .catch((_error:any)=>{console.log('El Dato no Pertenece a Ventas')})
+}
 }
 
-submit(){
+getLabelStatus(status: string): string{
+  return (status === 'UNBILLED' ) ? 'Pendiente de Facturar' : 'Facturado';
+} 
 
+getLabelNIT(value: string): string{
+  return (value === 'CF' ) ? 'Consumidor Final (CF)' : value;
+} 
+
+async changeToogle($event: any) {
+  const valueCheck = $event.detail.checked;
+  if (valueCheck) {
+    this.form.get('status').setValue('Finalized');
+    this.form.get('comment').setValue('');
+    this.form.get('comment').disable();
+  } else {
+    this.form.get('status').setValue('Finalized');
+    this.form.get('comment').enable();
+    if (this.form.controls['sale'] && this.form.controls['sale'].value) {
+      const success = await this.returnProductToStock();
+      if (success) {
+        this.form.get('status').setValue('Canceled');
+      } else {
+        console.log('error');
+      }
+    } 
+  }
 }
 
-  
-  
-  handleInputChange(event: any) {
-    const query = event.target.value.trim(); 
-    if (query.length > 0) {
-      this.searchInputNotEmpty = true; 
-    } else {
-      this.searchInputNotEmpty = false; 
-    }
-  }
-
-  clearSearchResults() {
-    this.sales = [];
-    this.sales$ = null;
-    this.searchBar.value = '';
-  
-    // Establecer la variable searchInputNotEmpty en false para ocultar la tarjeta
-    this.searchInputNotEmpty = false;
-  }
-  
    
-  changeCheckToogle(sale: any) {
-    sale.checked = !sale.checked;
 
-    if (sale.checked) {
-      console.log('Venta deseleccionada:', sale);
-      this.selectedSales = [];
-      this.selectedSaleProducts = [];
-  
-    } else if (!sale.checked) {
-      console.log('Venta seleccionada:', sale);
-      this.selectedSales = sale;
-      this.selectedSaleProducts = sale.products;
-      
-    }
- }
 
-  changeToogle($event: any){
+// Función para devolver los productos al stock
+async returnProductToStock(){
 
-    const valueCheck = $event.detail.checked;
+  if (this.record) {
+
    
   }
-  
+
+  return null;
+}
  
+  reset(route?: string){
+    this.load = false;
+    if(route){
+      this.router.navigate([route]);
+    }else{
+      this.router.navigate(['/dashboard/cancellations']);
+    }
 
-   
+  }
 
+  defective(value: string): string{
+    return (value === 'defective' ) ? 'Producto Defectuoso' :"coment";
+  } 
+  
   formatDate(timestamp: any): string {
     const date = timestamp ? timestamp.toDate() : null;
     return this.datePipe.transform(date, 'dd/MM/yyyy HH:mm:ss') || '';
@@ -154,12 +202,5 @@ submit(){
   getMessageApp(code: string): string{
     return MESSAGES_APP.find((element: any) => element.code === code).message;
   }
-
-  removeProduct(product: any) {
-    
-    const index = this.selectedSaleProducts.indexOf(product);
-    if (index !== -1) {
-      this.selectedSaleProducts.splice(index, 1);
-    }
-  }
+  
 }

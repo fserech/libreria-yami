@@ -11,9 +11,8 @@ title="Anulacion"
         placeholder="Buscar"
         shape="round"
         class="rounded-pill"
-        (ionClear)="clearSearchResults()"
-        (ionChange)="handleInputChange($event)"
         #searchBar
+        (keyup.enter)="handleInput(searchBar)"
       >
       </ion-searchbar>
       <ion-button (click)="handleInput(searchBar)">
@@ -27,28 +26,7 @@ title="Anulacion"
   <ion-grid>
     <ion-row class="ion-justify-content-center">
       <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="5">
-        <ion-card class="rounded-4" *ngIf="searchInputNotEmpty">
-          <ion-card-content class="mt-2">
-            <ion-list>
-              <ion-item *ngFor="let sale of sales$ | async; let i = index">
-                <ion-col size="1">
-                  <ion-checkbox aria-label="Label"
-                    [(ngModel)]="sale.checked" 
-                    mode="ios"
-                    [(ngModel)]="sale.select"
-                    (ionChange)=" changeCheckToogle(sale)"
-                  >
-                  </ion-checkbox>
-                </ion-col>
-                <ion-label>
-                  <h2>{{ sale.uid }}</h2>
-                  <p>{{ sale.description }}</p>
-                </ion-label>
-              </ion-item>
-            </ion-list>
-          </ion-card-content>
-        </ion-card>
-
+      
         <!-- aignacion de targeta anulacion -->
         <ion-card class="rounded-4">
           <ion-card-header>
@@ -62,16 +40,15 @@ title="Anulacion"
                 <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
                   <app-toggle
                     [form]="form"
-                    name="stock" 
-                    label="Defectuoso"
+                    name="defective" 
+                    label="Descartar de Stock"
                     [disabled]="false"
                     [load]="load"
                     (changes)="changeToogle($event)"
                   >
-                  
                   </app-toggle>
                 </ion-col>
-                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="6">
+                <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
                   
                   <app-input
                   [form]="form"
@@ -80,13 +57,13 @@ title="Anulacion"
                   placeholder="Motivo de Anulacion"
                   [required]="true"
                   [load]="load"
-                  [maxlength]="50"
+                  [maxlength]="25"
                    [minlength]="2"
                   [counter]="true"
+                  [help]="getMessageApp('TEXT')"
                   ></app-input>
-                </ion-col>              
+                </ion-col>  
             </ion-row>
-        
           </form>
         </ion-card-content>
         </ion-card>
@@ -104,47 +81,73 @@ title="Anulacion"
           <form [formGroup]="form">
             <ion-row>
               <ion-toolbar>
-                
                 <ion-card-content class="mt-2">
-              <ion-list *ngIf="selectedSales">
-                
-                <ion-item >
-                  <ion-col>
-                    <ion-label> NIT</ion-label>
-                    <p>{{ selectedSales.nit }}</p>
-                  </ion-col>
-                  <ion-col size="5"></ion-col>
-                  <ion-col>
-                    <ion-label>Fecha de Venta</ion-label>
-                    <p>{{ formatDate(selectedSales.createAt) }}</p>
-                  </ion-col>
-                  <ion-col size="12"></ion-col>
-                </ion-item>
-                <ion-item >
-                  <ion-col>
-                    <ion-label>Estado</ion-label>
-                    <p>{{(selectedSales.status ) }}</p>
-                  </ion-col>
-                  
-                  <ion-col size="4.72"></ion-col>
-                  <ion-col >
-                    <ion-label>Total Ventas</ion-label>
-                    <p>{{ selectedSales.total }}</p>
-                  </ion-col>
-                  <ion-col size="12"></ion-col>
-                </ion-item>
-                <ion-item >
-                  <ion-col size="12">
-                    <ion-label>Descripción</ion-label>
-                    <p>{{ selectedSales.description }}</p>
-                  </ion-col>
-                </ion-item>
-            
-              </ion-list>
-          </ion-card-content>
-      
-          </ion-toolbar>
-          </ion-row>
+                  <ion-list >
+                    <ion-row>
+                      <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+                        <app-input
+                          [form]="formSale"
+                          name="nit"
+                          label="NIT"
+                          placeholder="NIT del Cliente"
+                          [required]="true"
+                          [load]="load"
+                          [counter]="true"
+                        ></app-input>
+                      </ion-col>
+                      <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+                        <app-input
+                          [form]="formSale"
+                          name="date"
+                          label="Fecha"
+                          placeholder="Fecha de Venta"
+                          [required]="true"
+                          [load]="load"
+                          [counter]="true"
+                        ></app-input>
+                      </ion-col>
+                    </ion-row>
+                    <ion-row>
+                      <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+                        <app-input
+                          [form]="formSale"
+                          name="description"
+                          label="Descripción"
+                          placeholder="Descripcion de Venta"
+                          [required]="true"
+                          [load]="load"
+                          [counter]="true"
+                        ></app-input>
+                      </ion-col>
+                      <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+                        <app-input
+                          [form]="formSale"
+                          name="status"
+                          label="Estado"
+                          placeholder="EStado de Venta"
+                          [required]="true"
+                          [load]="load"
+                          [counter]="true"
+                        ></app-input>
+                      </ion-col>
+                    </ion-row>
+                    <ion-row>
+                      <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12 " size-xl="12">
+                        <app-input
+                          [form]="formSale"
+                          name="total"
+                          label="Total"
+                          placeholder="Total de Venta"
+                          [required]="true"
+                          [load]="load"
+                          [counter]="true"
+                        ></app-input>
+                      </ion-col>
+                    </ion-row>
+                  </ion-list>
+                </ion-card-content>
+              </ion-toolbar>
+            </ion-row>
           </form>
         </ion-card-content>
        </ion-card-header>
@@ -155,53 +158,53 @@ title="Anulacion"
        <ion-card class="rounded-4">
         <ion-card-header>
           Productos Vendidos
-        </ion-card-header >
+        </ion-card-header >   
         <ion-card-content class="mt-2">
-          <ion-list *ngIf="selectedSaleProducts && selectedSaleProducts.length > 0 ">
+          <form [formGroup]="formProduct">
             <ion-row>
-              <ion-col>
-                <ion-label>Nombre</ion-label>
-              </ion-col>
-              <ion-col>
-                <ion-label>Precio</ion-label>
-              </ion-col>
-              <ion-col>
-                <ion-label>Unidades</ion-label>
-              </ion-col>
-              <ion-col>
-                <ion-label> Accion</ion-label>
-              </ion-col>
+              <ion-toolbar>
+                <ion-card class="mt-2">
+                  <ion-list>
+                    <ion-row style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                      <ion-col>
+                        <ion-label color="medium"><b>Nombre</b></ion-label>
+                      </ion-col>
+                      <ion-col>
+                        <ion-label color="medium"><b>Unidades</b></ion-label>
+                      </ion-col>
+                      <ion-col>
+                        <ion-label color="medium"><b>Precio</b></ion-label>
+                      </ion-col>
+                    </ion-row>
+                  </ion-list>
+                  <ion-list>
+                    <ion-list style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                      <ion-item *ngFor="let product of productsSale" >
+                        <ion-col><p> {{ product. name }}</p></ion-col>
+                        <ion-col><p> {{ product.units }}</p></ion-col>
+                        <ion-col><p> Q {{ product.priceSale }}</p></ion-col>
+                      </ion-item>
+                    </ion-list>
+                  </ion-list>
+
+                </ion-card>
+
+              </ion-toolbar>
             </ion-row>
-        
-            <ion-item *ngFor="let product of selectedSaleProducts">
-             
-                <ion-col>
-                  <p>{{ product.name }}</p>
-                </ion-col>
-                <ion-col>
-                  <p>{{ product.priceSale }}</p>
-                </ion-col>
-                <ion-col>
-                  <p>{{ product.units }}</p>
-                </ion-col>
-                <ion-col *ngIf="selectedSaleProducts.length">
-                  <ion-button color="danger" (click)="removeProduct(product)">
-                    <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-                  </ion-button>
-                </ion-col>
-            </ion-item>
-          </ion-list>
+          </form>
         </ion-card-content>
         <ion-row *ngIf="!load">
           <ion-col>
             <ion-button
               shape="round"
-              [disabled]="form.invalid"
+              [disabled]="form.invalid && formSale.invalid && formProduct.invalid"
               (click)="submit()">Anular Venta</ion-button>
           </ion-col>
+          
         </ion-row>
+      
        </ion-card>
-
+       
       </ion-col>
     </ion-row>
   </ion-grid>
