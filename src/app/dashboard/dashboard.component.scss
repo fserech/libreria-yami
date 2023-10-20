@@ -24,26 +24,8 @@ ion-menu::part(::-webkit-scrollbar) {
   background: red;
 }
 
+.rounded-header {
+  border-top-right-radius: 0.25rem;
+  border-bottom-right-radius: 0.25rem;
+}
 
-// ion-content.scroll{
-
-// }
-
-
-
-// ion-content {
-//   overflow: auto;
-//   &::-webkit-scrollbar {
-//     display: none;
-//   }
-// }
-
-// .scroll-content {
-//   /* Estilos para el contenido centrado */
-//   display: flex;
-//   flex-direction: column;
-//   justify-content: center;
-//   align-items: center;
-
-//   /* Añade otros estilos según sea necesario */
-// }

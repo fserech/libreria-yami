@@ -9,7 +9,217 @@ title="Compras"
     <ion-row class="ion-justify-content-center">
       <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
 
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-text color="medium">
+                <h1 *ngIf="!load">
+                  <ion-icon name="{{mode === 'new' ? 'add-outline': mode === 'edit' ? 'create-outline' : 'eye-outline'}}" style="font-size: 30px;">
+                  </ion-icon> {{ title }}
+                </h1>
+                <h1 *ngIf="load">
+                  <ion-skeleton-text *ngIf="load" class="m-auto" [animated]="true" style="width: 42%; height: 30px; border-radius: 10px;"></ion-skeleton-text>
+                </h1>
+
+              </ion-text>
+            </ion-card-title>
+
+              <ion-card-subtitle
+              *ngIf="load && this.mode !== 'new'">
+                <h1 *ngIf="load">
+                  <ion-skeleton-text *ngIf="load" class="m-auto" [animated]="true" style="width: 110px; height: 15px; border-radius: 10px;"></ion-skeleton-text>
+                </h1>
+                <div *ngIf="load" class="d-flex row align-items-center justify-content-center">
+                  <ion-skeleton-text *ngIf="load" class="m-0" [animated]="true" style="width: 175px; height: 20px; border-radius: 10px;"></ion-skeleton-text>
+                  <ion-skeleton-text *ngIf="load" class="m-0 mb-2" [animated]="true" style="width: 10px; height: 20px; border-radius: 5px;"></ion-skeleton-text>
+                </div>
+              </ion-card-subtitle>
+          </ion-card-header>
+        </ion-card>
+
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-subtitle>
+              <b>Información General de compra</b>
+            </ion-card-subtitle>
+          </ion-card-header>
+
+          <ion-card-content class="mt-2">
+             <form [formGroup]="form">
+              <!-- description -->
+              <ion-row>
+
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                    <app-input
+                      [form]="form"
+                      name="description"
+                      label="Descripción"
+                      placeholder="Ingresa descripción de compra"
+                      [required]="false"
+                      [load]="load"
+                      [maxlength]="200"
+                      [minlength]="2"
+                      [counter]="true"
+                      [help]="getMessageApp('TEXT')">
+                    </app-input>
+                  </ion-col>
+
+              </ion-row>
+             </form>
+          </ion-card-content>
+
+        </ion-card>
+
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-subtitle>
+              <b>Información de Factura Electrónica(DTE)</b>
+            </ion-card-subtitle>
+          </ion-card-header>
+
+          <ion-card-content class="mt-2">
+             <form [formGroup]="form">
+              <!-- serie, no. DTE -->
+              <ion-row>
+
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                    <app-input
+                      [form]="form"
+                      name="billSerie"
+                      label="Serie"
+                      placeholder="Ingresa serie de documento"
+                      [required]="true"
+                      [load]="load"
+                      [maxlength]="15"
+                      [minlength]="6"
+                      [counter]="true"
+                      [help]="getMessageApp('TEXT')">
+                    </app-input>
+                  </ion-col>
+
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                    <app-input
+                      [form]="form"
+                      name="billNoDTE"
+                      label="Número de DTE"
+                      placeholder="Ingresa Número de Documento Electrónico"
+                      [required]="true"
+                      [load]="load"
+                      [maxlength]="15"
+                      [minlength]="8"
+                      [counter]="true"
+                      [help]="getMessageApp('INT')">
+                    </app-input>
+                  </ion-col>
+
+              </ion-row>
+
+              <!-- billNoAuth, billNitSupplier -->
+              <ion-row>
+
+                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                  <app-input
+                    [form]="form"
+                    name="billNoAuth"
+                    label="Número de Autorización"
+                    placeholder="Ingresa número de autorización"
+                    [required]="true"
+                    [load]="load"
+                    [maxlength]="100"
+                    [minlength]="30"
+                    [counter]="true"
+                    [help]="getMessageApp('TEXT_DASHES')">
+                  </app-input>
+                </ion-col>
+
+                <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6">
+                  <app-input
+                    [form]="form"
+                    name="billNitSupplier"
+                    label="NIT de proveedor"
+                    placeholder="Ingresa NIT de proveedor"
+                    [required]="true"
+                    [load]="load"
+                    [maxlength]="10"
+                    [minlength]="5"
+                    [counter]="true"
+                    [help]="getMessageApp('INT')">
+                  </app-input>
+                </ion-col>
+
+              </ion-row>
+
+             </form>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="rounded-4">
+
+          <ion-card-header class="m-0">
+            <ion-card-subtitle>
+              <b>Selección de productos de la compra</b>
+            </ion-card-subtitle>
+            <ion-card-subtitle>
+              <ion-searchbar mode="ios" [debounce]="250" (ionInput)="handleInput($event)" placeholder="Buscar Producto"></ion-searchbar>
+            </ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content color="danger" class="m-0">
+
+            <div style="max-height: 250px;min-height: 250px; overflow: auto;">
+
+              <ion-list *ngIf="!load && results.length > 0 && !loadProduct" class="m-0 p-0" [inset]="true" style="max-height: 20%; overflow-y: auto;">
+                <ion-item *ngFor="let product of results; let index; trackBy: trackByItems"
+                  [style.opacity]="(product.active) ? (product.stock === '0') ? 0.5 : 1 : 0.4"
+                  class="ion-activatable ripple-parent item-custom"
+                  (click)="product.active && product.stock !== '0'? addProductShopping(product) : null">
+
+                  <ion-label  class="m-0 p-0">
+
+                    <h2>
+                      <ion-icon
+                      slot="start"
+                      class="m-0 p-0"
+                      [color]="getColorLabelUnits(product)"
+                      [name]="getColorLabelIconUnits(product)">
+                    </ion-icon>
+                    {{ product.name }}</h2>
+                    <p>
+                      <b>Stock:</b>
+                      <ion-text
+                        [color]="getColorLabelUnits(product)">
+                        {{ product.stock }}  {{ getUnit(product.unitMeasurement) }}
+                      </ion-text>
+                    </p>
+                  </ion-label>
+                  <ion-ripple-effect *ngIf="product.active && product.stock !== '0'" type="unbounded" class="custom-ripple"></ion-ripple-effect>
+                </ion-item>
+              </ion-list>
+
+              <ion-list *ngIf="load || loadProduct" class="m-0 p-0" [inset]="true" style="max-height: 20%; overflow-y: auto;">
+                <ion-item *ngFor="let item of (isMobile) ? [1,2,3] : [1,2,3,4,5];">
+                  <ion-label class="m-0 p-0">
+                    <h2 class="d-flex">
+                      <ion-skeleton-text animated="true" class="rounded-circle" style="width: 18px; height: 18px;"></ion-skeleton-text>
+                      <ion-skeleton-text animated="true" class="skeleton-text rounded-pill w-{{ isMobile ? '50' : '25' }} m-1 mt-0 mb-0 mr-0" style="height: 20px;"></ion-skeleton-text>
+                    </h2>
+                    <p class="d-flex">
+                      <b>Stock: </b>
+                      <ion-skeleton-text animated="true" class="skeleton-text rounded-pill w-{{ isMobile ? '50' : '25' }}  m-1 mt-0 mb-0 mr-0" style="height: 20px;"></ion-skeleton-text>
+                    </p>
+                  </ion-label>
+                  <ion-ripple-effect type="unbounded" class="custom-ripple"></ion-ripple-effect>
+                </ion-item>
+              </ion-list>
+            </div>
+
+          </ion-card-content>
+
+        </ion-card>
+
       </ion-col>
     </ion-row>
+
+
+
   </ion-grid>
 </ion-content>

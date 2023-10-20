@@ -78,7 +78,6 @@ async getDataDocumentReferenceModelAny<T>(docRef: DocumentReference<T>) {
   }
 }
 
-
 saveDocument(collection: string, document: any): Promise<any> {
   // Crea una nueva referencia en la colección y asigna los datos
   return this.firestore.collection(collection).add(document);
@@ -124,8 +123,8 @@ searchForField(collection: string, field: string, value: string) {
   const valorNormalizado = value.toLowerCase();
   return this.firestore
     .collection(collection, (ref) =>
-      ref.where(field, '>=', valorNormalizado)
-         .where(field, '<=', valorNormalizado + '\uf8ff')
+      ref.where(field, '==', valorNormalizado)
+        //  .where(field, '<=', valorNormalizado + '\uf8ff')
     )
     .valueChanges({idField: 'uid'});
 }
@@ -140,4 +139,94 @@ getDocumentsByDateRange(collection: string, initDate: Date, endDate: Date, field
     ref.where(field, '>=', initDateAdjusted).where(field, '<=', endDateAdjusted)
   ).valueChanges();
 }
+
+getItemsPageNext(collection: string, endDoc: any, limit: number, orderByField: string, directionStr: 'desc' | 'asc'): Observable<any>{
+
+  const query = this.firestore.collection(collection, ref => {
+
+    const orderedQuery = ref.orderBy(orderByField);
+
+    // return orderedQuery.startAfter(endDoc).limit(limit);
+    if (directionStr === 'desc') {
+      return orderedQuery.startAfter(endDoc).limit(limit);
+    } else if (directionStr === 'asc') {
+      return orderedQuery.startAt(endDoc).limit(limit);
+    } else {
+      throw new Error(`Invalid directionStr: ${directionStr}`);
+    }
+  });
+
+  return query.valueChanges({ idField: 'uid' });
+}
+
+getItemsPagePrevious(collection: string, firstDoc:any, limit: number, orderByField: string, directionStr: 'desc' | 'asc'){
+
+  const query = this.firestore.collection(collection, ref => {
+    const orderedQuery = ref.orderBy(orderByField);
+
+    if (directionStr === 'desc') {
+      return orderedQuery.endBefore(firstDoc).limit(limit);
+    } else if (directionStr === 'asc') {
+      return orderedQuery.endAt(firstDoc).limit(limit);
+    } else {
+      throw new Error(`Invalid directionStr: ${directionStr}`);
+    }
+  });
+
+  return query.valueChanges({ idField: 'uid' });
+  // return this.firestore
+  //   .collection(collection, ref => ref
+  //       .orderBy(orderByField, directionStr)
+  //       .startAfter(firstDoc)
+  //       .limit(limit))
+  //       .valueChanges({ idField: 'uid' });
+  // // const db = firebase.firestore().collection(collection);
+  // // return db.endBefore(firstDoc).limit(5).get();
+}
+
+
+getItemsPageNextSearch(collection: string, endDoc: any, limit: number, fieldSearch: string, value: string): Observable<any>{
+
+  const valueTemp = value.toLowerCase();
+  return this.firestore.collection(collection, (ref) => {
+
+    let query: any = ref;
+    // .orderBy(fieldSearch);
+
+    // Limitar el número de resultados
+    // query = query.limit(limit);
+    // Aplicar la condición de búsqueda en el campo especificado
+    // query = (value === '') ? query.where(fieldSearch, '>=', value) : query.where(fieldSearch, '>=', value);
+    if(value !== '') {
+      console.log('no esta vacio', value);
+      query.where(fieldSearch,'>=', valueTemp);
+      // .where(fieldSearch, '>=', valueTemp);
+    }
+
+    // Comenzar después del documento endDoc (para paginación)
+    // if (endDoc) {
+    //   query = query.startAfter(endDoc);
+    // }
+    return query;
+  }).valueChanges();
+}
+
+getItemsPagePreviousSearch(collection: string, firstDoc:any, limit: number, orderByField: string, directionStr: 'desc' | 'asc', value: string){
+
+  const query = this.firestore.collection(collection, ref => {
+
+    let orderedQuery = (value === '') ? ref.orderBy(orderByField) : ref.orderBy(orderByField).where('name','>=', value);
+
+    if (directionStr === 'desc') {
+      return orderedQuery.endBefore(firstDoc).limit(limit);
+    } else if (directionStr === 'asc') {
+      return orderedQuery.endAt(firstDoc).limit(limit);
+    } else {
+      throw new Error(`Invalid directionStr: ${directionStr}`);
+    }
+  });
+
+  return query.valueChanges({ idField: 'uid' });
+}
+
 }

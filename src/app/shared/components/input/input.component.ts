@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
 import { InputIcon } from '../../models/components/input';
 
@@ -7,7 +7,7 @@ import { InputIcon } from '../../models/components/input';
   templateUrl: './input.component.html',
   styleUrls: ['./input.component.scss']
 })
-export class InputComponent implements OnInit {
+export class InputComponent implements OnInit, AfterViewInit {
 
   @Input() options: any = {};
 
@@ -33,7 +33,11 @@ export class InputComponent implements OnInit {
 
   @Output() changes = new EventEmitter<string>();
 
-  constructor() {
+  constructor(private cdr: ChangeDetectorRef,) {
+  }
+
+  ngAfterViewInit(): void {
+    this.cdr.detectChanges();
   }
 
   ngOnInit() {

@@ -21,15 +21,16 @@ import { HttpClientModule } from '@angular/common/http'
   imports: [
     BrowserModule,
     IonicModule.forRoot(),
+    AngularFireModule.initializeApp(environment.firebase),
+    provideFirebaseApp(() => initializeApp(environment.firebase)),
+    provideFirestore(() => getFirestore()),
+    provideAuth(() => getAuth()),
+    provideStorage(() => getStorage()),
     AppRoutingModule,
     AngularFireAuthModule,
     BrowserAnimationsModule,
-    HttpClientModule,
-    provideFirebaseApp(() => initializeApp(environment.firebase)),
-    AngularFireModule.initializeApp(environment.firebase),
-    provideAuth(() => getAuth()),
-    provideFirestore(() => getFirestore()),
-    provideStorage(() => getStorage())],
+    HttpClientModule
+  ],
   providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy }],
   bootstrap: [AppComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]

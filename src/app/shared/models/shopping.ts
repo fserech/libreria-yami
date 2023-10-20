@@ -8,7 +8,7 @@ export interface Shopping {
  description?: string;
  total: string;
  bill: Bill;
- supplier: Supplier;
+//  supplier: Supplier;
  details: DetailsShopping[];
 }
 

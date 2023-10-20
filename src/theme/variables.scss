@@ -10,9 +10,8 @@ http://ionicframework.com/docs/theming/ */
   --ion-text-color: #0009;
   --ion-text-color-rgb: 0, 0, 0;
   --global-color-valid: #53a653;
-  --scrollbar-thumb-color: #FFA500;
+  --scrollbar-thumb-color: var(--ion-color-medium, #92949c);
   --scrollbar-track-color: #CCCCCC;
-  // --global-background-disabled: #0009;
 }
 
  body.dark {

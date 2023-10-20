@@ -2,36 +2,41 @@
 
   <ion-menu side="start" menuId="first" contentId="main">
     <ion-header>
-      <ion-toolbar color="primary">
+      <ion-toolbar color="primary" class="rounded-header">
         <ion-avatar slot="end" style="padding:10px">
           <img alt="Silhouette of a person's head" src="https://i.pinimg.com/originals/49/3f/a0/493fa0f13970ab3ef29375669f670451.jpg"/>
         </ion-avatar>
         <ion-title slot="">{{ user?.userName }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content class="ion-padding">
+    <ion-content class="ion-padding" style="overflow: auto;">
+      <div style="max-height: 100%;min-height: 250px; overflow: auto;" class="rounded-4 p-0">
 
-      <ion-list class="rounded-4" [inset]="true">
+        <ion-list *ngIf="!load" class="rounded-4 m-0 p-0" [inset]="true">
+          <ion-item *ngFor="let module of permissions" (click)="navigateModule(module)">
+                <ion-icon *ngIf="module.access" class="icon-menu" name="{{ module.icon }}"></ion-icon>
+               <ion-label *ngIf="module.access" routerLinkActive="active-link" color="medium">{{ module.label }}</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-icon class="icon-mode" name="{{ themeToggle ? 'moon' : 'sunny'}}" color="{{ themeToggle ? 'warning' : 'danger' }}"></ion-icon>
+            <ion-toggle mode="ios" [(ngModel)]="themeToggle" (ionChange)="toggleChange($event)" justify="space-between">
+              <ion-label color="medium">Modo oscuro</ion-label>
+            </ion-toggle>
+          </ion-item>
+          <ion-item (click)="logout()">
+            <ion-icon class="icon-menu" name="log-out-outline" color="danger"></ion-icon>
+            <ion-label color="danger">Cerrar sesión</ion-label>
+          </ion-item>
+        </ion-list>
 
-        <ion-item *ngFor="let module of permissions" (click)="navigateModule(module)">
-              <ion-icon *ngIf="module.access" class="icon-menu" name="{{ module.icon }}"></ion-icon>
-             <ion-label *ngIf="module.access" routerLinkActive="active-link" color="medium">{{ module.label }}</ion-label>
-        </ion-item>
+        <ion-list *ngIf="load" class="rounded-4 m-0 p-0" [inset]="true">
+          <ion-item *ngFor="let module of [1,2,3,4,5,6,7,8,9,10,11,12]" class="mt-2">
+            <ion-skeleton-text [animated]="true" class="rounded-circle ms-3" style="width: 35px; height: 30px;"></ion-skeleton-text>
+            <ion-skeleton-text [animated]="true" class="rounded-pill ms-2" style="height: 20px; width: 100%;"></ion-skeleton-text>
+          </ion-item>
+        </ion-list>
 
-        <ion-item>
-          <ion-icon class="icon-mode" name="{{ themeToggle ? 'moon' : 'sunny'}}" color="{{ themeToggle ? 'warning' : 'danger' }}"></ion-icon>
-          <ion-toggle mode="ios" [(ngModel)]="themeToggle" (ionChange)="toggleChange($event)" justify="space-between">
-            <ion-label color="medium">Modo oscuro</ion-label>
-          </ion-toggle>
-        </ion-item>
-
-        <ion-item class="bg-primary" (click)="logout()">
-          <ion-icon class="icon-menu" name="log-out-outline" color="danger"></ion-icon>
-          <ion-label color="danger">Cerrar sesión</ion-label>
-        </ion-item>
-
-      </ion-list>
-
+      </div>
     </ion-content>
   </ion-menu>
 
