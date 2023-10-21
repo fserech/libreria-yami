@@ -7,7 +7,7 @@ title="Compras"
 <ion-content>
   <ion-grid>
     <ion-row class="ion-justify-content-center">
-      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
+      <ion-col size-xs="12" size-sm="10" size-md="7" size-lg="8" size-xl="8">
 
         <ion-card class="rounded-4">
           <ion-card-header>
@@ -167,22 +167,22 @@ title="Compras"
 
             <div style="max-height: 250px;min-height: 250px; overflow: auto;">
 
-              <ion-list *ngIf="!load && results.length > 0 && !loadProduct" class="m-0 p-0" [inset]="true" style="max-height: 20%; overflow-y: auto;">
+              <ion-list *ngIf="!load && results.length > 0 && !loadProduct" class="m-0 p-0" [inset]="true">
                 <ion-item *ngFor="let product of results; let index; trackBy: trackByItems"
                   [style.opacity]="(product.active) ? (product.stock === '0') ? 0.5 : 1 : 0.4"
                   class="ion-activatable ripple-parent item-custom"
                   (click)="product.active && product.stock !== '0'? addProductShopping(product) : null">
 
                   <ion-label  class="m-0 p-0">
-
                     <h2>
                       <ion-icon
                       slot="start"
                       class="m-0 p-0"
                       [color]="getColorLabelUnits(product)"
                       [name]="getColorLabelIconUnits(product)">
-                    </ion-icon>
-                    {{ product.name }}</h2>
+                      </ion-icon>
+                      {{ product.name }}
+                    </h2>
                     <p>
                       <b>Stock:</b>
                       <ion-text
@@ -194,8 +194,7 @@ title="Compras"
                   <ion-ripple-effect *ngIf="product.active && product.stock !== '0'" type="unbounded" class="custom-ripple"></ion-ripple-effect>
                 </ion-item>
               </ion-list>
-
-              <ion-list *ngIf="load || loadProduct" class="m-0 p-0" [inset]="true" style="max-height: 20%; overflow-y: auto;">
+              <ion-list *ngIf="load || loadProduct" class="m-0 p-0" [inset]="true">
                 <ion-item *ngFor="let item of (isMobile) ? [1,2,3] : [1,2,3,4,5];">
                   <ion-label class="m-0 p-0">
                     <h2 class="d-flex">
@@ -210,6 +209,7 @@ title="Compras"
                   <ion-ripple-effect type="unbounded" class="custom-ripple"></ion-ripple-effect>
                 </ion-item>
               </ion-list>
+
             </div>
 
           </ion-card-content>
