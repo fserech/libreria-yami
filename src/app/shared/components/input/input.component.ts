@@ -10,14 +10,12 @@ import { InputIcon } from '../../models/components/input';
 export class InputComponent implements OnInit, AfterViewInit {
 
   @Input() options: any = {};
-
   @Input() icon: InputIcon = {
     icon: '',
     show: false
   };
   @Input() label: string;
   @Input() placeholder: string;
-
   @Input() form: FormGroup;
   @Input() name: string;
   @Input() type: string;
@@ -30,7 +28,6 @@ export class InputComponent implements OnInit, AfterViewInit {
   @Input() max: number = null;
   @Input() minlength: number;
   @Input() counter: boolean;
-
   @Output() changes = new EventEmitter<string>();
 
   constructor(private cdr: ChangeDetectorRef,) {

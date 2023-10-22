@@ -2,6 +2,11 @@ ion-col {
     text-align: center;
   }
 
+.border-dashboard{
+  border: 2px dashed var(--ion-color-medium);; // Grosor del borde y color (cambia #000 al color deseado)
+  padding: 10px;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
   border-radius: 5px;
@@ -39,3 +44,64 @@ ion-col {
 .item-custom{
   user-select: none;
 }
+
+/*Modal*/
+
+ion-modal {
+  --height: 55%;
+  --border-radius: 16px;
+  // --box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+ion-modal::part(backdrop) {
+  // background: rgba(209, 213, 219);
+  opacity: 0.2;
+}
+
+// ion-modal ion-toolbar {
+//   --background: rgb(14 116 144);
+//   --color: white;
+// }
+
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 8px;
+  text-align: left;
+  overflow: hidden;
+}
+
+th {
+  border: 1px solid #f2f2f2;
+}
+
+tr:last-child {
+  border-bottom-left-radius: 10px; /* Redondea el borde inferior izquierdo */
+  border-bottom-right-radius: 10px; /* Redondea el borde inferior derecho */
+}
+
+tr{
+  // border: 1px solid white dashed;
+  border-radius: 10px;
+}
+
+table tbody{
+  border-bottom-left-radius: 10px; /* Redondea el borde inferior izquierdo */
+  border-bottom-right-radius: 10px; /* Redondea el borde inferior derecho */
+}
+
+
+
+
+
+
+// th:first-child, th:last-child, td:first-child, td:last-child {
+//   border-radius: 0px 0px 10px 10px;
+// }

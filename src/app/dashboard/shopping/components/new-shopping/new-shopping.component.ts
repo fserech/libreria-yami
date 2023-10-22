@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { IonModal } from '@ionic/angular';
 import { PRODUCTS_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { MEASUREMENT_UNITS } from 'src/app/shared/constants/measurement-units';
 import { MESSAGES_APP } from 'src/app/shared/constants/messages-app';
@@ -17,8 +18,10 @@ import { ToastService } from 'src/app/shared/services/toast/toast.service';
 })
 export class NewShoppingComponent  implements OnInit {
 
+  @ViewChild(IonModal) modal: IonModal;
   title: string = 'Nuevo Compra';
   form: FormGroup;
+  formProductSelect: FormGroup;
   load: boolean = false;
   copied: boolean = false;
   record: Shopping = null;
@@ -32,6 +35,8 @@ export class NewShoppingComponent  implements OnInit {
   results: Product[] = [];
   isMobile: boolean;
   loadProduct: boolean;
+  currentProduct: Product = null;
+  productsSelect: {units: string, product: Product}[] = [];
 
   constructor(private fb: FormBuilder,
     private toastService: ToastService,
@@ -40,7 +45,7 @@ export class NewShoppingComponent  implements OnInit {
     private router: Router) {
       this.load = true;
       this.getFiles();
-      this.getAllPRoducts();
+      this.getAllProducts();
     }
 
   ngOnInit() {
@@ -62,7 +67,7 @@ export class NewShoppingComponent  implements OnInit {
   }
 
   getUnit(unitMeasurement: string): string{
-    const value = MEASUREMENT_UNITS.find((item: any) => item.value === unitMeasurement).label;
+    const value = MEASUREMENT_UNITS.find((item: any) => item.value === unitMeasurement)?.label;
     return unitMeasurement === 'U' ? value + 'es' : value + 's';
   }
 
@@ -76,9 +81,13 @@ export class NewShoppingComponent  implements OnInit {
       billDate: ['' , [Validators.required]],
       billNitSupplier: ['' , [Validators.required, Validators.pattern(this.regexNumberInt)]]
     });
+
+    this.formProductSelect = this.fb.group({
+      units: [1 , [Validators.required, Validators.min(1), Validators.maxLength(4), Validators.minLength(1), Validators.pattern(this.regexNumberFloat)]],
+    });
   }
 
-  getAllPRoducts(){
+  getAllProducts(){
     this.load = true;
     this.dashboardService.getAllItemsCollection(PRODUCTS_COLLECTION_NAME, 'name').subscribe({
       next: (products: Product[]) => {
@@ -95,12 +104,6 @@ export class NewShoppingComponent  implements OnInit {
   trackByItems(index: number, item: Product): string {
     return item.uid;
   }
-
-  getSelectProducts(){}
-
-  setSelectProcut(){}
-
-  removeSelectProduct(){}
 
   submit(){
     const date: Date = new Date();
@@ -158,10 +161,45 @@ export class NewShoppingComponent  implements OnInit {
   }
 
   addProductShopping(product: Product){
-    console.log(product.name);
+
+    this.currentProduct = product;
+    const unitsControl = this.formProductSelect.get('units');
+    unitsControl.clearValidators();
+    unitsControl.setValidators(
+      [
+        Validators.required, Validators.min(1),
+        Validators.max(parseFloat(Number(product.stock).toFixed(2))),
+        Validators.maxLength(4), Validators.minLength(1),
+        Validators.pattern(this.regexNumberFloat)
+      ]);
+    unitsControl.updateValueAndValidity();
+    this.modal.present();
   }
 
   checkIfMobile() {
     this.isMobile = window.innerWidth <= 768; // Define 768 como el punto de corte entre móvil y computadora
+  }
+
+  parseFloat(value: string): number{
+    return parseFloat(Number(value).toFixed(2));
+  }
+
+  getSubtotalUnitSelect(a: number, b: string): string{
+    return 'Q ' + (a * this.parseFloat(b)).toFixed(2);
+  }
+
+  add(currentProduct: Product){
+    const units: string = this.formProductSelect.controls['units'].value;
+    const product = currentProduct;
+
+    if(this.productsSelect.length > 0){
+
+      const productFind = this.productsSelect.find((item: {units: string, product: Product}) => (item.product.uid === product.uid) ? item : null);
+      if(!productFind)this.productsSelect.push({units: units, product: product });
+
+    }else{
+      this.productsSelect.push({units: units, product: product });
+    }
+    this.modal.dismiss();
   }
 }

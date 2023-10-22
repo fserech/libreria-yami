@@ -17,6 +17,7 @@ import { DatePipe } from '@angular/common';
 import { DatePickerMonthYearComponent } from './components/date-picker-month-year/date-picker-month-year.component';
 import { TooltipDirective } from './directives/tooltip.directive';
 import { InputChipsComponent } from './components/input-chips/input-chips.component';
+import { RegexpVerifyDirective } from './directives/regexpVerify.directive';
 
 @NgModule({
   declarations: [
@@ -30,7 +31,8 @@ import { InputChipsComponent } from './components/input-chips/input-chips.compon
     DatePickerComponent,
     DatePickerMonthYearComponent,
     TooltipDirective,
-    InputChipsComponent
+    InputChipsComponent,
+    RegexpVerifyDirective
   ],
   imports: [
     CommonModule,
@@ -54,7 +56,8 @@ import { InputChipsComponent } from './components/input-chips/input-chips.compon
     DatePickerComponent,
     DatePickerMonthYearComponent,
     TooltipDirective,
-    InputChipsComponent
+    InputChipsComponent,
+    RegexpVerifyDirective
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [DatePipe]
