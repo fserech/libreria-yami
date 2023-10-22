@@ -16,7 +16,8 @@
     [errorText]="label + ' invalido'"
     helperText="{{isControlDisabled() ? '' : help}}"
     labelPlacement="floating"
-    autocomplete="nope">
+    autocomplete="off"
+    [clearInput]="true">
     <div slot="label" color="primary">{{ required ? label + '*' : label }}</div>
   </ion-input>
   <ion-icon *ngIf="icon.show" [name]="icon" color="medium" slot="end"></ion-icon>

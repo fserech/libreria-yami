@@ -12,6 +12,7 @@ import { Cancellation } from 'src/app/shared/models/cancellation';
 
 import { ProductSale, Sale } from 'src/app/shared/models/sale';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
+import { ToastService } from 'src/app/shared/services/toast/toast.service';
 
 @Component({
   selector: 'app-cancellation-sales',
@@ -19,6 +20,8 @@ import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.se
   styleUrls: ['./cancellation-sales.component.scss'],
 })
 export class CancellationSalesComponent  implements OnInit {
+
+
   form: FormGroup;
   load: boolean = false;
   sales: Sale[] = [];
@@ -29,7 +32,7 @@ export class CancellationSalesComponent  implements OnInit {
   searchInputNotEmpty = false;
   products$: Observable<any[]>;
   documentRef: DocumentReference;
-  sale: Sale;
+  sale: Sale = null;
   productsSale: ProductSale[];
   formSale: FormGroup;
   formProduct: FormGroup;
@@ -43,7 +46,8 @@ export class CancellationSalesComponent  implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private firestore: AngularFirestore,
-  ) { 
+    private toastService: ToastService
+  ) {
     this.sales$ = this.route.data.pipe(map(data => {
       const sales = data['sales'] as any[];
       console.log(sales);
@@ -53,10 +57,10 @@ export class CancellationSalesComponent  implements OnInit {
     }));
     this.getFiles();
   }
- 
+
 
   ngOnInit() {
-  
+
 
   }
 
@@ -94,10 +98,10 @@ export class CancellationSalesComponent  implements OnInit {
       comment: this.form.controls['comment'].value,
       status: this.form.controls['status'].value,
     };
-   
-    
 
-    
+
+
+
     this.dashboardService.saveDocument(CANCELLATIONS_COLLECTION_NAME, this.record)
       .then((response:any) => {
         console.log('guardado exitosamente',response);
@@ -110,42 +114,50 @@ export class CancellationSalesComponent  implements OnInit {
         this.form.reset();
       });
       this.reset(this.routeBack);
-  } 
   }
-  
-  
+  }
+
+
 
   handleInput(searchBar: IonSearchbar) {
+    this.load = true;
     const query = searchBar.value;
     if (query.trim() === '') {
-      console.log('Campo vacío');
-    
-  } else { 
+      this.toastService.info('UID esta vacío, Ingresa UID')
+      this.load = false;
+  } else {
     this.dashboardService
     .getDocumentByIdToPromise(SALES_COLLECTION_NAME, query)
     .then((document: Sale) => {
-      this.sale = document;
-      this.formSale.controls['nit'].setValue(this.getLabelNIT(this.sale.nit));
-      this.formSale.controls['date'].setValue(this.formatDate(this.sale.createAt));
-      this.formSale.controls['description'].setValue(this.sale.description?this.sale.description:'');
-      this.formSale.controls['status'].setValue(this.getLabelStatus(this.sale.status));
-      this.formSale.controls['total'].setValue('Q ' + this.sale.total);
-      console.log( document)
-      console.log( this.formSale.value)
-      this.formSale.disable();
-      this.productsSale = this.sale.products;  
+
+      console.log(document);
+      if(document){
+        this.sale = document;
+        this.formSale.controls['nit'].setValue(this.getLabelNIT(this.sale.nit));
+        this.formSale.controls['date'].setValue(this.formatDate(this.sale.createAt));
+        this.formSale.controls['description'].setValue(this.sale.description?this.sale.description:'');
+        this.formSale.controls['status'].setValue(this.getLabelStatus(this.sale.status));
+        this.formSale.controls['total'].setValue('Q ' + this.sale.total);
+        this.formSale.disable();
+        this.productsSale = this.sale.products;
+        this.load = false;
+      }else{
+        this.toastService.info('No se encontro UID de venta')
+      }
     })
-    .catch((_error:any)=>{console.log('El Dato no Pertenece a Ventas')})
+    .catch((error:any) => {
+      this.toastService.info('Ocurrio un error, Intentelo más tarde')
+    })
 }
 }
 
 getLabelStatus(status: string): string{
   return (status === 'UNBILLED' ) ? 'Pendiente de Facturar' : 'Facturado';
-} 
+}
 
 getLabelNIT(value: string): string{
   return (value === 'CF' ) ? 'Consumidor Final (CF)' : value;
-} 
+}
 
 async changeToogle($event: any) {
   const valueCheck = $event.detail.checked;
@@ -163,24 +175,21 @@ async changeToogle($event: any) {
       } else {
         console.log('error');
       }
-    } 
+    }
   }
 }
-
-   
-
 
 // Función para devolver los productos al stock
 async returnProductToStock(){
 
   if (this.record) {
 
-   
+
   }
 
   return null;
 }
- 
+
   reset(route?: string){
     this.load = false;
     if(route){
@@ -193,8 +202,8 @@ async returnProductToStock(){
 
   defective(value: string): string{
     return (value === 'defective' ) ? 'Producto Defectuoso' :"coment";
-  } 
-  
+  }
+
   formatDate(timestamp: any): string {
     const date = timestamp ? timestamp.toDate() : null;
     return this.datePipe.transform(date, 'dd/MM/yyyy HH:mm:ss') || '';
@@ -202,5 +211,20 @@ async returnProductToStock(){
   getMessageApp(code: string): string{
     return MESSAGES_APP.find((element: any) => element.code === code).message;
   }
-  
+
+  getSubtotalProduct(a: string, b: string): string{
+    return 'Q ' + (parseFloat(a) * parseFloat(b)).toFixed(2);
+  }
+
+  // getTotalSale(products: ProductSale[]){
+  //   if(products.length > 0){
+  //     let total = 0;
+  //     products.forEach((product: ProductSale) => {
+  //       const subTotal = parseFloat(product.units) * parseFloat(product.priceSale);
+  //       total += parseFloat(subTotal.toFixed(2));
+  //     });
+  //     return 'Q ' + total.toFixed(2);
+  //   }
+  //   return 'Q 000.00';
+  // }
 }

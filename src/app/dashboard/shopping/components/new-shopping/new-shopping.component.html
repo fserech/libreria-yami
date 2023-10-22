@@ -163,8 +163,8 @@ title="Compras"
               <ion-searchbar mode="ios" [debounce]="250" (ionInput)="handleInput($event)" placeholder="Buscar Producto"></ion-searchbar>
             </ion-card-subtitle>
           </ion-card-header>
-          <ion-card-content color="danger" class="m-0">
 
+          <ion-card-content color="danger" class="m-0">
             <div style="max-height: 250px;min-height: 250px; overflow: auto;">
 
               <ion-list *ngIf="!load && results.length > 0 && !loadProduct" class="m-0 p-0" [inset]="true">
@@ -191,6 +191,10 @@ title="Compras"
                       </ion-text>
                     </p>
                   </ion-label>
+                  <ion-label slot="end">
+                    <h2>Precio</h2>
+                    <p>Q {{ product.priceSale }}</p>
+                  </ion-label>
                   <ion-ripple-effect *ngIf="product.active && product.stock !== '0'" type="unbounded" class="custom-ripple"></ion-ripple-effect>
                 </ion-item>
               </ion-list>
@@ -210,16 +214,170 @@ title="Compras"
                 </ion-item>
               </ion-list>
 
+              <div *ngIf="!load && results.length === 0 && !loadProduct"
+                style="max-height: 250px;min-height: 250px; width: 100%;"
+                class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
+                <ion-label>No se econtraron productos</ion-label>
+              </div>
+
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-modal>
+        <ng-template>
+          <ion-content>
+
+            <ion-toolbar color="primary">
+              <ion-title class="text-center">{{ currentProduct.name }}</ion-title>
+              <ion-buttons slot="end">
+                <ion-button (click)="modal.dismiss()">
+                  <ion-icon style="font-size: 30px;" name="close-circle-outline"></ion-icon>
+                </ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+
+            <ion-card class="rounded-4">
+              <ion-card-content>
+                <ion-row>
+                  <ion-col class="m-auto" size-xs="12" size-sm="12" size-md="12" size-lg="8" size-xl="8">
+                    <app-input
+                      [form]="formProductSelect"
+                      name="units"
+                      label="Cantidad"
+                      placeholder="Ingresa cantidad requerida"
+                      [required]="true"
+                      [load]="load"
+                      [maxlength]="4"
+                      [minlength]="1"
+                      [min]="1"
+                      [counter]="true"
+                      help="Ingrese unidades requeridas">
+                    </app-input>
+                  </ion-col>
+                </ion-row>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card class="rounded-4">
+              <ion-card-content>
+                <p class="m-0 p-0"><b>Stock Disponible:</b> {{ currentProduct.stock + ' '+ getUnit(currentProduct.unitMeasurement)}}</p>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card class="rounded-4">
+              <ion-card-content>
+                <ion-row>
+                  <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                    <h2 class="border-bottom pb-2"><b>Cantidad</b></h2>
+                    <p>{{ (formProductSelect.controls['units'].valid) ?
+                          formProductSelect.controls['units'].value + ' ' + getUnit(currentProduct.unitMeasurement) :
+                          '0 ' + getUnit(currentProduct.unitMeasurement)}} </p>
+                  </ion-col>
+                  <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                    <h2 class="border-bottom pb-2"><b>Subtotal</b></h2>
+                    <p>{{ formProductSelect.controls['units'].valid ? getSubtotalUnitSelect(formProductSelect.controls['units'].value, currentProduct.priceSale) : 'Q 00.00'}}</p>
+                    <p></p>
+                  </ion-col>
+                </ion-row>
+
+                <ion-row>
+                  <ion-col>
+                    <ion-button [disabled]="formProductSelect.controls['units'].invalid" shape="round" (click)="add(currentProduct)">Agregar</ion-button>
+                  </ion-col>
+                </ion-row>
+
+              </ion-card-content>
+            </ion-card>
+
+          </ion-content>
+        </ng-template>
+      </ion-modal>
+
+      <ion-card *ngIf="productsSelect.length > 0" class="rounded-4">
+
+        <ion-card-header class="m-0">
+          <ion-card-subtitle>
+            <b>Productos Seleccionados</b>
+          </ion-card-subtitle>
+        </ion-card-header>
+
+        <ion-card-content color="danger" class="m-0">
+          <div style="max-height: 250px;min-height: 250px; overflow: auto;">
+
+            <table class="rounded-4">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Cantidad</th>
+                  <th>Precio</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Juan Pérez</td>
+                  <td>30</td>
+                  <td>Madrid</td>
+                  <td>Madrid</td>
+                </tr>
+              </tbody>
+            </table>
+
+
+            <!-- <ion-list *ngIf="!load && productsSelect.length > 0 && !loadProduct" class="m-0 p-0" [inset]="true">
+              <ion-item>
+                <ion-label slot="start" class="m-0 p-0"><h2>Nombre</h2></ion-label>
+                <ion-label class="m-0 p-0"><h2>Cantidad</h2></ion-label>
+                <ion-label slot="end" class="m-0 p-0">Precio</ion-label>
+              </ion-item>
+
+              <ion-item *ngFor="let productSelect of productsSelect; let index"
+                [style.opacity]="(productSelect.product.active) ? (productSelect.product.stock === '0') ? 0.5 : 1 : 0.4"
+                class="ion-activatable ripple-parent item-custom"
+                (click)="productSelect.product.active && productSelect.product.stock !== '0'? addProductShopping(productSelect.product) : null">
+
+                <ion-label class="m-0 p-0">
+                  <h2>
+                    {{ productSelect.product.name }}
+                  </h2>
+
+                </ion-label>
+                <ion-label slot="end">
+                  <h2>Precio</h2>
+                  <p>Q {{ productSelect.product.priceSale }}</p>
+                </ion-label>
+              </ion-item>
+            </ion-list> -->
+
+            <ion-list *ngIf="load || loadProduct" class="m-0 p-0" [inset]="true">
+              <ion-item *ngFor="let item of (isMobile) ? [1,2,3] : [1,2,3,4,5];">
+                <ion-label class="m-0 p-0">
+                  <h2 class="d-flex">
+                    <ion-skeleton-text animated="true" class="rounded-circle" style="width: 18px; height: 18px;"></ion-skeleton-text>
+                    <ion-skeleton-text animated="true" class="skeleton-text rounded-pill w-{{ isMobile ? '50' : '25' }} m-1 mt-0 mb-0 mr-0" style="height: 20px;"></ion-skeleton-text>
+                  </h2>
+                  <p class="d-flex">
+                    <b>Stock: </b>
+                    <ion-skeleton-text animated="true" class="skeleton-text rounded-pill w-{{ isMobile ? '50' : '25' }}  m-1 mt-0 mb-0 mr-0" style="height: 20px;"></ion-skeleton-text>
+                  </p>
+                </ion-label>
+                <ion-ripple-effect type="unbounded" class="custom-ripple"></ion-ripple-effect>
+              </ion-item>
+            </ion-list>
+
+            <div *ngIf="!load && productsSelect.length === 0 && !loadProduct"
+              style="max-height: 250px;min-height: 250px; width: 100%;"
+              class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
+              <ion-label>No existen productos seleccionados</ion-label>
             </div>
 
-          </ion-card-content>
+          </div>
+        </ion-card-content>
+      </ion-card>
 
-        </ion-card>
-
-      </ion-col>
     </ion-row>
-
-
 
   </ion-grid>
 </ion-content>

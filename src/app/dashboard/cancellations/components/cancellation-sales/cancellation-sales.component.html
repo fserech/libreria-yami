@@ -4,209 +4,300 @@ title="Anulacion"
 [showButtonBack]="true">
 </app-header>
 
-<ion-toolbar>
-  <ion-row class="ion-justify-content-center">
-    <ion-col class="m-auto d-flex col-12 align-items-center" size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
-      <ion-searchbar
-        placeholder="Buscar"
-        shape="round"
-        class="rounded-pill"
-        #searchBar
-        (keyup.enter)="handleInput(searchBar)"
-      >
-      </ion-searchbar>
-      <ion-button (click)="handleInput(searchBar)">
-        <ion-icon class="text-white" name="search-outline"></ion-icon>
-      </ion-button>
-    </ion-col>
-  </ion-row>
-</ion-toolbar>
-
 <ion-content>
   <ion-grid>
+
     <ion-row class="ion-justify-content-center">
-      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="5">
-      
-        <!-- aignacion de targeta anulacion -->
-        <ion-card class="rounded-4">
-          <ion-card-header>
-            <ion-card-title>
-             Anulacion Venta
-            </ion-card-title>
-          </ion-card-header>
-        <ion-card-content class="mt-2">
-          <form [formGroup]="form">
-            <ion-row>
-                <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
-                  <app-toggle
-                    [form]="form"
-                    name="defective" 
-                    label="Descartar de Stock"
-                    [disabled]="false"
-                    [load]="load"
-                    (changes)="changeToogle($event)"
-                  >
-                  </app-toggle>
-                </ion-col>
-                <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
-                  
-                  <app-input
-                  [form]="form"
-                  name="comment"
-                  label="Comentario"
-                  placeholder="Motivo de Anulacion"
-                  [required]="true"
-                  [load]="load"
-                  [maxlength]="25"
-                   [minlength]="2"
-                  [counter]="true"
-                  [help]="getMessageApp('TEXT')"
-                  ></app-input>
-                </ion-col>  
-            </ion-row>
-          </form>
-        </ion-card-content>
+      <ion-col class="m-auto col-12 align-items-center" size-xs="12" size-sm="10" size-md="8" size-lg="6" size-xl="6">
+
+        <!-- Search -->
+        <ion-card class="m-auto w-100 rounded-4">
+          <ion-card-content>
+            <div class="d-flex ion-justify-content-center align-items-center">
+                <ion-searchbar
+                  mode="ios"
+                  placeholder="Buscar compra por UID"
+                  #searchBar
+                  (keyup.enter)="handleInput(searchBar)"
+                  value="Dm5Lc07v72WMIHwOsGXP">
+                </ion-searchbar>
+                <ion-button (click)="handleInput(searchBar)" class="m-0 p-0" style="width: 50px; height: 20px;">
+                  <ion-icon class="text-white m-0 p-0" style="font-size: 20px;" slot="icon-only" name="search"></ion-icon>
+                </ion-button>
+            </div>
+          </ion-card-content>
         </ion-card>
-        <!-- fin tarjeta anulacion -->
 
-      
-
-      <!-- asignacion de datos de venta -->
-        <ion-card class="rounded-4">
+        <!-- General Information -->
+        <ion-card class="m-auto mt-2 rounded-4 w-100">
           <ion-card-header>
-          <ion-card-subtitle>
-           Datos de la Venta
-           </ion-card-subtitle>
-         <ion-card-content class="mt-2">
-          <form [formGroup]="form">
+            <ion-card-subtitle>
+              <b>Información general de Venta</b>
+            </ion-card-subtitle>
+          </ion-card-header>
+
+          <ion-card-content>
+
+            <div *ngIf="!sale || load" style="max-height: 100px;min-height: 100px; overflow: auto;">
+              <div style="max-height: 100px;min-height: 100px; width: 100%;"
+                class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
+                <ion-label>Para visualizar datos de venta debe consultar el UID de la venta.</ion-label>
+              </div>
+            </div>
+
             <ion-row>
-              <ion-toolbar>
-                <ion-card-content class="mt-2">
-                  <ion-list >
-                    <ion-row>
-                      <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
-                        <app-input
-                          [form]="formSale"
-                          name="nit"
-                          label="NIT"
-                          placeholder="NIT del Cliente"
-                          [required]="true"
-                          [load]="load"
-                          [counter]="true"
-                        ></app-input>
-                      </ion-col>
-                      <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
-                        <app-input
-                          [form]="formSale"
-                          name="date"
-                          label="Fecha"
-                          placeholder="Fecha de Venta"
-                          [required]="true"
-                          [load]="load"
-                          [counter]="true"
-                        ></app-input>
-                      </ion-col>
-                    </ion-row>
-                    <ion-row>
-                      <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
-                        <app-input
-                          [form]="formSale"
-                          name="description"
-                          label="Descripción"
-                          placeholder="Descripcion de Venta"
-                          [required]="true"
-                          [load]="load"
-                          [counter]="true"
-                        ></app-input>
-                      </ion-col>
-                      <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
-                        <app-input
-                          [form]="formSale"
-                          name="status"
-                          label="Estado"
-                          placeholder="EStado de Venta"
-                          [required]="true"
-                          [load]="load"
-                          [counter]="true"
-                        ></app-input>
-                      </ion-col>
-                    </ion-row>
-                    <ion-row>
-                      <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12 " size-xl="12">
-                        <app-input
-                          [form]="formSale"
-                          name="total"
-                          label="Total"
-                          placeholder="Total de Venta"
-                          [required]="true"
-                          [load]="load"
-                          [counter]="true"
-                        ></app-input>
-                      </ion-col>
-                    </ion-row>
-                  </ion-list>
-                </ion-card-content>
-              </ion-toolbar>
+              <ion-col size-xs="12" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>Fecha: </b>{{ formSale.controls['date'].value }}</ion-card-subtitle>
+                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>NIT: </b>{{ formSale.controls['nit'].value }}</ion-card-subtitle>
+              </ion-col>
+              <ion-col size-xs="12" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>Estado: </b>{{ formSale.controls['status'].value }}</ion-card-subtitle>
+                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>Total: </b>{{ formSale.controls['total'].value }}</ion-card-subtitle>
+              </ion-col>
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>Descripción: </b>{{ formSale.controls['description'].value }}</ion-card-subtitle>
+              </ion-col>
+
             </ion-row>
-          </form>
-        </ion-card-content>
-       </ion-card-header>
-       </ion-card>
-       <!-- fin de datos de venta -->
 
-       <!-- Tarjeta para mostrar productos vendidos -->
-       <ion-card class="rounded-4">
-        <ion-card-header>
-          Productos Vendidos
-        </ion-card-header >   
-        <ion-card-content class="mt-2">
-          <form [formGroup]="formProduct">
-            <ion-row>
-              <ion-toolbar>
-                <ion-card class="mt-2">
-                  <ion-list>
-                    <ion-row style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
-                      <ion-col>
-                        <ion-label color="medium"><b>Nombre</b></ion-label>
-                      </ion-col>
-                      <ion-col>
-                        <ion-label color="medium"><b>Unidades</b></ion-label>
-                      </ion-col>
-                      <ion-col>
-                        <ion-label color="medium"><b>Precio</b></ion-label>
-                      </ion-col>
+
+
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Details -->
+        <ion-card class="m-auto mt-2 rounded-4 w-100">
+          <ion-card-header>
+            <ion-card-subtitle>
+              <b>Detalles de venta</b>
+            </ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+
+            <div *ngIf="!sale || sale.products.length === 0" style="max-height: 100px;min-height: 100px; overflow: auto;">
+              <div
+                style="max-height: 100px;min-height: 100px; width: 100%;"
+                class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
+                <ion-label>No existen detalles de venta</ion-label>
+              </div>
+            </div>
+
+            <ion-card class="p-0 m-0" *ngIf="!load && sale && sale.products.length > 0">
+              <ion-card-content class="m-0 p-0">
+                <ion-grid>
+
+                  <ion-row class="border-bottom fixed-top" style="border-bottom: 1px solid var(--ion-color-medium);">
+                    <ion-col size="1" class="fw-bold"><ion-label color="primary">#</ion-label></ion-col>
+                    <ion-col class="fw-bold"><ion-label color="primary">Nombre</ion-label></ion-col>
+                    <ion-col class="fw-bold"><ion-label color="primary">Cantidad</ion-label></ion-col>
+                    <ion-col class="fw-bold"><ion-label color="primary">Precio</ion-label></ion-col>
+                    <ion-col class="fw-bold"><ion-label color="primary">Subtotal</ion-label></ion-col>
+                  </ion-row>
+
+                  <div class="mt-4" style="max-height: 175px; min-height: 50px; overflow: auto;">
+                    <ion-row *ngFor="let product of sale.products; let i = index" class="border-bottom" style="border-bottom: 1px solid var(--ion-color-medium);">
+                      <ion-col size="1"><ion-label color="medium"><ion-text color="primary"><b>{{ i + 1 }}</b></ion-text></ion-label></ion-col>
+                      <ion-col><ion-label color="medium">{{ product.name }}</ion-label></ion-col>
+                      <ion-col><ion-label color="medium">{{ product.units }}</ion-label></ion-col>
+                      <ion-col><ion-label color="medium">{{ product.priceSale }}</ion-label></ion-col>
+                      <ion-col><ion-label color="medium">{{ getSubtotalProduct(product.priceSale, product.units) }}</ion-label></ion-col>
                     </ion-row>
-                  </ion-list>
-                  <ion-list>
-                    <ion-list style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
-                      <ion-item *ngFor="let product of productsSale" >
-                        <ion-col><p> {{ product. name }}</p></ion-col>
-                        <ion-col><p> {{ product.units }}</p></ion-col>
-                        <ion-col><p> Q {{ product.priceSale }}</p></ion-col>
-                      </ion-item>
-                    </ion-list>
-                  </ion-list>
+                  </div>
 
-                </ion-card>
+                  <ion-row>
+                    <ion-col size="1"><ion-label color="medium"></ion-label></ion-col>
+                    <ion-col><ion-label color="medium"></ion-label></ion-col>
+                    <ion-col><ion-label color="medium"></ion-label></ion-col>
+                    <ion-col><ion-label color="medium"><ion-text color="primary"><b>Total</b></ion-text></ion-label></ion-col>
+                    <ion-col><ion-label color="medium">Q {{ sale.total }}</ion-label></ion-col>
+                  </ion-row>
+                </ion-grid>
+              </ion-card-content>
+            </ion-card>
 
-              </ion-toolbar>
-            </ion-row>
-          </form>
-        </ion-card-content>
-        <ion-row *ngIf="!load">
-          <ion-col>
-            <ion-button
-              shape="round"
-              [disabled]="form.invalid && formSale.invalid && formProduct.invalid"
-              (click)="submit()">Anular Venta</ion-button>
-          </ion-col>
-          
-        </ion-row>
-      
-       </ion-card>
-       
+
+          </ion-card-content>
+        </ion-card>
+
       </ion-col>
     </ion-row>
+
   </ion-grid>
 </ion-content>
 
+
+<!-- <ion-row class="ion-justify-content-center">
+  <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="5">
+
+    <ion-card class="rounded-4">
+      <ion-card-header>
+        <ion-card-title>
+         Anulacion Venta
+        </ion-card-title>
+      </ion-card-header>
+    <ion-card-content class="mt-2">
+      <form [formGroup]="form">
+        <ion-row>
+            <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+              <app-toggle
+                [form]="form"
+                name="defective"
+                label="Descartar de Stock"
+                [disabled]="false"
+                [load]="load"
+                (changes)="changeToogle($event)"
+              >
+              </app-toggle>
+            </ion-col>
+            <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+
+              <app-input
+              [form]="form"
+              name="comment"
+              label="Comentario"
+              placeholder="Motivo de Anulacion"
+              [required]="true"
+              [load]="load"
+              [maxlength]="25"
+               [minlength]="2"
+              [counter]="true"
+              [help]="getMessageApp('TEXT')"
+              ></app-input>
+            </ion-col>
+        </ion-row>
+      </form>
+    </ion-card-content>
+    </ion-card>
+
+    <ion-card class="rounded-4">
+      <ion-card-header>
+      <ion-card-subtitle>
+       Datos de la Venta
+       </ion-card-subtitle>
+     <ion-card-content class="mt-2">
+      <form [formGroup]="form">
+        <ion-row>
+          <ion-toolbar>
+            <ion-card-content class="mt-2">
+              <ion-list >
+                <ion-row>
+                  <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+                    <app-input
+                      [form]="formSale"
+                      name="nit"
+                      label="NIT"
+                      placeholder="NIT del Cliente"
+                      [required]="true"
+                      [load]="load"
+                      [counter]="true"
+                    ></app-input>
+                  </ion-col>
+                  <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+                    <app-input
+                      [form]="formSale"
+                      name="date"
+                      label="Fecha"
+                      placeholder="Fecha de Venta"
+                      [required]="true"
+                      [load]="load"
+                      [counter]="true"
+                    ></app-input>
+                  </ion-col>
+                </ion-row>
+                <ion-row>
+                  <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+                    <app-input
+                      [form]="formSale"
+                      name="description"
+                      label="Descripción"
+                      placeholder="Descripcion de Venta"
+                      [required]="true"
+                      [load]="load"
+                      [counter]="true"
+                    ></app-input>
+                  </ion-col>
+                  <ion-col size-xs="12" size-sm="12" size-md="6" size-lg="12" size-xl="6">
+                    <app-input
+                      [form]="formSale"
+                      name="status"
+                      label="Estado"
+                      placeholder="EStado de Venta"
+                      [required]="true"
+                      [load]="load"
+                      [counter]="true"
+                    ></app-input>
+                  </ion-col>
+                </ion-row>
+                <ion-row>
+                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12 " size-xl="12">
+                    <app-input
+                      [form]="formSale"
+                      name="total"
+                      label="Total"
+                      placeholder="Total de Venta"
+                      [required]="true"
+                      [load]="load"
+                      [counter]="true"
+                    ></app-input>
+                  </ion-col>
+                </ion-row>
+              </ion-list>
+            </ion-card-content>
+          </ion-toolbar>
+        </ion-row>
+      </form>
+    </ion-card-content>
+   </ion-card-header>
+   </ion-card>
+   <ion-card class="rounded-4">
+    <ion-card-header>
+      Productos Vendidos
+    </ion-card-header >
+    <ion-card-content class="mt-2">
+      <form [formGroup]="formProduct">
+        <ion-row>
+          <ion-toolbar>
+            <ion-card class="mt-2">
+              <ion-list>
+                <ion-row style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                  <ion-col>
+                    <ion-label color="medium"><b>Nombre</b></ion-label>
+                  </ion-col>
+                  <ion-col>
+                    <ion-label color="medium"><b>Unidades</b></ion-label>
+                  </ion-col>
+                  <ion-col>
+                    <ion-label color="medium"><b>Precio</b></ion-label>
+                  </ion-col>
+                </ion-row>
+              </ion-list>
+              <ion-list>
+                <ion-list style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                  <ion-item *ngFor="let product of productsSale" >
+                    <ion-col><p> {{ product. name }}</p></ion-col>
+                    <ion-col><p> {{ product.units }}</p></ion-col>
+                    <ion-col><p> Q {{ product.priceSale }}</p></ion-col>
+                  </ion-item>
+                </ion-list>
+              </ion-list>
+
+            </ion-card>
+
+          </ion-toolbar>
+        </ion-row>
+      </form>
+    </ion-card-content>
+    <ion-row *ngIf="!load">
+      <ion-col>
+        <ion-button
+          shape="round"
+          [disabled]="form.invalid && formSale.invalid && formProduct.invalid"
+          (click)="submit()">Anular Venta</ion-button>
+      </ion-col>
+
+    </ion-row>
+
+   </ion-card>
+
+  </ion-col>
+</ion-row> -->
