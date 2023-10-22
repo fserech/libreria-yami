@@ -67,39 +67,46 @@ export class NewCategoryComponent implements OnInit {
     });
   }
 
-  submit(){
+  submit() {
     this.load = true;
-
-
-      this.record = {
-        name: this.categoryForm.controls['name'].value.toLowerCase(),
-        description: this.categoryForm.controls['description'].value,
-        keywords: this.keywords
-      }
-      if(this.mode == 'new'){
-        this.dashboardService
-          .saveDocument(CATEGORIES_COLLECTION_NAME,this.record)
-          .then(( response: any ) => {
-            this.reset();
-          })
-          .catch(( error: any ) => {
-            console.log(error)
-            this.reset();
-          });
-      }else{
-        const uid = this.route.snapshot.params['uid'];
-        this.dashboardService
-          .udpateDocument(uid, CATEGORIES_COLLECTION_NAME, this.record)
-          .then((response: any) => {
-            this.reset('/dashboard/categories/all');
-          })
-          .catch((error: any) => {
-            console.log(error);
-            this.reset('/dashboard/categories/all');
-          });
-
-    }
+    const newname = this.categoryForm.controls['name'].value.toLowerCase();
+    this.dashboardService.searchForField(CATEGORIES_COLLECTION_NAME, 'name', newname)
+      .subscribe((result: any[]) => {
+        if (result.length > 0) {
+          console.log('El nombre de la categoría ya existe en la colección. No se puede crear otra categoría con el mismo nombre.');
+          this.load = false;
+        } else {
+          this.record = {
+            name: newname,
+            description: this.categoryForm.controls['description'].value,
+            keywords: this.keywords
+          };
+          if (this.mode == 'new') {
+            this.dashboardService
+              .saveDocument(CATEGORIES_COLLECTION_NAME, this.record)
+              .then((response: any) => {
+                this.reset();
+              })
+              .catch((error: any) => {
+                console.log(error);
+                this.reset();
+              });
+          } else {
+            const uid = this.route.snapshot.params['uid'];
+            this.dashboardService
+              .udpateDocument(uid, CATEGORIES_COLLECTION_NAME, this.record)
+              .then((response: any) => {
+                this.reset('/dashboard/categories/all');
+              })
+              .catch((error: any) => {
+                console.log(error);
+                this.reset('/dashboard/categories/all');
+              });
+          }
+        }
+      });
   }
+  
 
   reset(route?: string){
     this.categoryForm.reset();

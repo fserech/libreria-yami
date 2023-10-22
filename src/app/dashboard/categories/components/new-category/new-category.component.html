@@ -53,9 +53,11 @@
                     name="name"
                     label="Nombre categoria"
                     placeholder="Ingresa nombre"
-                    help="hola mundo soy ayuda"
                     [required]="true"
                     [load]="load"
+                    [maxlength]="50"
+                    [minlength]="2"
+                    [counter]="true"
                   ></app-input>
                 </ion-col>
             </ion-row>
@@ -68,7 +70,11 @@
                   label="Descripción de categoria"
                   placeholder="Descripción"
                   [required]="true"
-                  [load]="load">
+                  [load]="load"
+                  [maxlength]="50"
+                  [minlength]="2"
+                  [counter]="true">
+                  
                 </app-input>
               </ion-col>
             </ion-row>
