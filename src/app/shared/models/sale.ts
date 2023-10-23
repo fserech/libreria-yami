@@ -8,6 +8,8 @@ export interface Sale {
     total: string;
     status: 'UNBILLED' | 'INVOICED';
     products: ProductSale[];
+    saleCanceled?: boolean;
+    cancellationRef?: DocumentReference;
   }
 
 export interface ProductSale {

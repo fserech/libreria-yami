@@ -89,6 +89,8 @@ export class CancellationSalesComponent  implements OnInit {
         this.formSale.controls['description'].setValue(this.sale.description?this.sale.description:'');
         this.formSale.controls['status'].setValue(this.getLabelStatus(this.sale.status));
         this.formSale.controls['total'].setValue('Q ' + this.sale.total);
+        console.log('venta anulada: ', this.sale.saleCanceled);
+        this.sale.saleCanceled ? this.form.disable():this.form.enable();
         this.formSale.disable();
         this.productsSale = this.sale.products;
         this.load = false;

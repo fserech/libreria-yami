@@ -45,7 +45,7 @@ title="Anulacion"
                   [load]="load">
                 </app-toggle>
               </ion-col>
-              <ion-col [ngClass]="{ 'border-top bt-2 m-2': sale }" size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
                 <app-input
                     [form]="form"
                     name="comment"
@@ -239,7 +239,7 @@ title="Anulacion"
 
         <ion-card *ngIf="!load && sale" class="m-auto mt-2 rounded-4 w-100">
           <ion-card-content>
-            <ion-button [disabled]="form.invalid" (click)="submitAlert()" color="danger">
+            <ion-button [disabled]="form.invalid || sale && sale.saleCanceled" (click)="submitAlert()" color="danger">
               <ion-icon slot="end" name="ban"></ion-icon>
               Anular venta</ion-button>
           </ion-card-content>
