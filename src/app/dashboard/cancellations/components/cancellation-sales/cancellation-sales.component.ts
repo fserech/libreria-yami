@@ -1,15 +1,14 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { DocumentReference } from '@angular/fire/firestore';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { IonSearchbar, NavController } from '@ionic/angular';
+import { AlertController, IonSearchbar } from '@ionic/angular';
 import { Observable, map } from 'rxjs';
-import { CANCELLATIONS_COLLECTION_NAME, PRODUCTS_COLLECTION_NAME, SALES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
+import { CANCELLATIONS_COLLECTION_NAME, SALES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { MESSAGES_APP } from 'src/app/shared/constants/messages-app';
+import { REGEX_TEX } from 'src/app/shared/constants/reguex';
 import { Cancellation } from 'src/app/shared/models/cancellation';
-
 import { ProductSale, Sale } from 'src/app/shared/models/sale';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
@@ -35,41 +34,32 @@ export class CancellationSalesComponent  implements OnInit {
   sale: Sale = null;
   productsSale: ProductSale[];
   formSale: FormGroup;
-  formProduct: FormGroup;
   routeBack: string = '/dashboard/cancellations';
 
   constructor(
     private dashboardService: DashboardService,
-    private navCtrl: NavController,
     private datePipe: DatePipe,
     private route: ActivatedRoute,
     private router: Router,
     private fb: FormBuilder,
-    private firestore: AngularFirestore,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private alertController: AlertController
   ) {
     this.sales$ = this.route.data.pipe(map(data => {
       const sales = data['sales'] as any[];
       console.log(sales);
       return sales
-      // .filter(product => product.active === true)
       .map(sale => ({ ...sale, select: false }));
     }));
     this.getFiles();
   }
 
-
-  ngOnInit() {
-
-
-  }
+  ngOnInit() {}
 
   getFiles() {
     this.form = this.fb.group({
-      defective: [false, []],
-      comment: ['', [Validators.required]],
-      status: ['PENDING', []],
-      stock: [false, []],
+      comment: ['', [Validators.required, Validators.pattern(REGEX_TEX)]],
+      discardStock: [false, []]
     });
 
     this.formSale = this.fb.group({
@@ -80,44 +70,7 @@ export class CancellationSalesComponent  implements OnInit {
       total: ['Q 00.00', []],
     });
     this.formSale.disable();
-
-    this.formProduct = this.fb.group({
-      name: ['', []],
-      priceSale: ['', []],
-      units: ['', []],
-    });
-    this.formProduct.disable();
   }
-
- async submit() {
-  if(this.form){
-    this.load = true;
-    this.record = {
-      type: 'SALE',
-      documentRef: null,
-      comment: this.form.controls['comment'].value,
-      status: this.form.controls['status'].value,
-    };
-
-
-
-
-    this.dashboardService.saveDocument(CANCELLATIONS_COLLECTION_NAME, this.record)
-      .then((response:any) => {
-        console.log('guardado exitosamente',response);
-        this.load=false;
-        this.form.reset();
-      })
-      .catch((error) => {
-        console.log('Ocurrió un error al guardar la cancelación:', error);
-        this.load=false;
-        this.form.reset();
-      });
-      this.reset(this.routeBack);
-  }
-  }
-
-
 
   handleInput(searchBar: IonSearchbar) {
     this.load = true;
@@ -129,8 +82,6 @@ export class CancellationSalesComponent  implements OnInit {
     this.dashboardService
     .getDocumentByIdToPromise(SALES_COLLECTION_NAME, query)
     .then((document: Sale) => {
-
-      console.log(document);
       if(document){
         this.sale = document;
         this.formSale.controls['nit'].setValue(this.getLabelNIT(this.sale.nit));
@@ -149,46 +100,15 @@ export class CancellationSalesComponent  implements OnInit {
       this.toastService.info('Ocurrio un error, Intentelo más tarde')
     })
 }
-}
-
-getLabelStatus(status: string): string{
-  return (status === 'UNBILLED' ) ? 'Pendiente de Facturar' : 'Facturado';
-}
-
-getLabelNIT(value: string): string{
-  return (value === 'CF' ) ? 'Consumidor Final (CF)' : value;
-}
-
-async changeToogle($event: any) {
-  const valueCheck = $event.detail.checked;
-  if (valueCheck) {
-    this.form.get('status').setValue('Finalized');
-    this.form.get('comment').setValue('');
-    this.form.get('comment').disable();
-  } else {
-    this.form.get('status').setValue('Finalized');
-    this.form.get('comment').enable();
-    if (this.form.controls['sale'] && this.form.controls['sale'].value) {
-      const success = await this.returnProductToStock();
-      if (success) {
-        this.form.get('status').setValue('Canceled');
-      } else {
-        console.log('error');
-      }
-    }
-  }
-}
-
-// Función para devolver los productos al stock
-async returnProductToStock(){
-
-  if (this.record) {
-
-
   }
 
-  return null;
-}
+  getLabelStatus(status: string): string{
+    return (status === 'UNBILLED' ) ? 'Pendiente de Facturar' : 'Facturado';
+  }
+
+  getLabelNIT(value: string): string{
+    return (value === 'CF' ) ? 'Consumidor Final (CF)' : value;
+  }
 
   reset(route?: string){
     this.load = false;
@@ -200,14 +120,11 @@ async returnProductToStock(){
 
   }
 
-  defective(value: string): string{
-    return (value === 'defective' ) ? 'Producto Defectuoso' :"coment";
-  }
-
   formatDate(timestamp: any): string {
     const date = timestamp ? timestamp.toDate() : null;
     return this.datePipe.transform(date, 'dd/MM/yyyy HH:mm:ss') || '';
   }
+
   getMessageApp(code: string): string{
     return MESSAGES_APP.find((element: any) => element.code === code).message;
   }
@@ -216,15 +133,58 @@ async returnProductToStock(){
     return 'Q ' + (parseFloat(a) * parseFloat(b)).toFixed(2);
   }
 
-  // getTotalSale(products: ProductSale[]){
-  //   if(products.length > 0){
-  //     let total = 0;
-  //     products.forEach((product: ProductSale) => {
-  //       const subTotal = parseFloat(product.units) * parseFloat(product.priceSale);
-  //       total += parseFloat(subTotal.toFixed(2));
-  //     });
-  //     return 'Q ' + total.toFixed(2);
-  //   }
-  //   return 'Q 000.00';
-  // }
+  async submitAlert() {
+    const alert = await this.alertController.create({
+      mode: 'ios',
+      header: 'Confirmación',
+      message: 'Se creará una solicitud de anulación para esta venta, ¿Deseas continuar?',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          cssClass: 'secondary',
+          handler: () => {
+          }
+        },
+        {
+          text: 'Aceptar',
+          handler: () => {
+            this.submit();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async submit() {
+    if(this.sale && this.form.valid){
+
+      this.load = true;
+      this.record = {
+        type: 'SALE',
+        documentRef: this.dashboardService.getDocumentReference(SALES_COLLECTION_NAME, this.sale.uid),
+        comment: this.form.controls['comment'].value,
+        discardStock: this.form.controls['discardStock'].value,
+        status: 'PENDING',
+      };
+
+      this.dashboardService.saveDocument(CANCELLATIONS_COLLECTION_NAME, this.record)
+        .then((response:any) => {
+
+          if(response){
+            this.toastService.success('Solicitud de anulación de venta enviada');
+          }
+          this.load = false;
+          this.form.reset();
+        })
+        .catch((error) => {
+          this.toastService.error('Ocurrió un error al guardar la anulación:');
+          this.load=false;
+          this.form.reset();
+        });
+        this.reset(this.routeBack);
+      }
+    }
 }

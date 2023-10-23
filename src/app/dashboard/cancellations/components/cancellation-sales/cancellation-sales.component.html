@@ -28,6 +28,40 @@ title="Anulacion"
           </ion-card-content>
         </ion-card>
 
+        <ion-card *ngIf="sale && !load" class="m-auto mt-2 rounded-4 w-100">
+          <ion-card-header>
+            <ion-card-subtitle>
+              <b>Datos para solicitud de anulación</b>
+            </ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-row>
+              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                <app-toggle
+                  [form]="form"
+                  name="discardStock"
+                  label="Descartar de Stock"
+                  [disabled]="false"
+                  [load]="load">
+                </app-toggle>
+              </ion-col>
+              <ion-col [ngClass]="{ 'border-top bt-2 m-2': sale }" size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                <app-input
+                    [form]="form"
+                    name="comment"
+                    label="Comentario de anulación"
+                    placeholder="Comentario de anulación"
+                    [required]="true"
+                    [load]="load"
+                    [counter]="true"
+                    [maxlength]="100"
+                    [help]="getMessageApp('TEXT')">
+                  </app-input>
+              </ion-col>
+            </ion-row>
+          </ion-card-content>
+        </ion-card>
+
         <!-- General Information -->
         <ion-card class="m-auto mt-2 rounded-4 w-100">
           <ion-card-header>
@@ -37,31 +71,45 @@ title="Anulacion"
           </ion-card-header>
 
           <ion-card-content>
-
-            <div *ngIf="!sale || load" style="max-height: 100px;min-height: 100px; overflow: auto;">
+            <div *ngIf="!sale && !load" style="max-height: 100px;min-height: 100px; overflow: auto;">
               <div style="max-height: 100px;min-height: 100px; width: 100%;"
                 class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
                 <ion-label>Para visualizar datos de venta debe consultar el UID de la venta.</ion-label>
               </div>
             </div>
-
             <ion-row>
               <ion-col size-xs="12" size-sm="6" size-md="6" size-lg="6" size-xl="6">
-                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>Fecha: </b>{{ formSale.controls['date'].value }}</ion-card-subtitle>
-                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>NIT: </b>{{ formSale.controls['nit'].value }}</ion-card-subtitle>
+                <ion-card-subtitle class="d-flex" style="text-align: left; font-size: 15px;" *ngIf="sale || load">
+                  <b>Fecha: </b>
+                  <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
+                  <p *ngIf="!load">{{ formSale.controls['date'].value }}</p>
+                </ion-card-subtitle>
+                <ion-card-subtitle class="d-flex" style="text-align: left; font-size: 15px;" *ngIf="sale || load">
+                  <b>NIT: </b>
+                  <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
+                  <p *ngIf="!load">{{ formSale.controls['nit'].value }}</p>
+                </ion-card-subtitle>
               </ion-col>
               <ion-col size-xs="12" size-sm="6" size-md="6" size-lg="6" size-xl="6">
-                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>Estado: </b>{{ formSale.controls['status'].value }}</ion-card-subtitle>
-                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>Total: </b>{{ formSale.controls['total'].value }}</ion-card-subtitle>
+                <ion-card-subtitle class="d-flex" style="text-align: left; font-size: 15px;" *ngIf="sale || load">
+                  <b>Estado: </b>
+                  <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
+                  <ion-text *ngIf="!load" [color]="sale?.status === 'UNBILLED'? 'danger' : 'success'">{{ formSale.controls['status'].value }}</ion-text>
+                </ion-card-subtitle>
+                <ion-card-subtitle class="d-flex" style="text-align: left; font-size: 15px;" *ngIf="sale || load">
+                  <b>Total: </b>
+                  <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
+                  <p *ngIf="!load">{{ formSale.controls['total'].value }}</p>
+                </ion-card-subtitle>
               </ion-col>
               <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
-                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load"><b>Descripción: </b>{{ formSale.controls['description'].value }}</ion-card-subtitle>
+                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="sale || load">
+                  <b>Descripción: </b>
+                  <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 90%; height: 16px;"></ion-skeleton-text>
+                  <p *ngIf="!load">{{ formSale.controls['description'].value }}</p>
+                </ion-card-subtitle>
               </ion-col>
-
             </ion-row>
-
-
-
           </ion-card-content>
         </ion-card>
 
@@ -74,7 +122,7 @@ title="Anulacion"
           </ion-card-header>
           <ion-card-content>
 
-            <div *ngIf="!sale || sale.products.length === 0" style="max-height: 100px;min-height: 100px; overflow: auto;">
+            <div *ngIf="!sale && !load || sale?.products.length === 0 && !load" style="max-height: 100px;min-height: 100px; overflow: auto;">
               <div
                 style="max-height: 100px;min-height: 100px; width: 100%;"
                 class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
@@ -87,16 +135,28 @@ title="Anulacion"
                 <ion-grid>
 
                   <ion-row class="border-bottom fixed-top" style="border-bottom: 1px solid var(--ion-color-medium);">
-                    <ion-col size="1" class="fw-bold"><ion-label color="primary">#</ion-label></ion-col>
-                    <ion-col class="fw-bold"><ion-label color="primary">Nombre</ion-label></ion-col>
-                    <ion-col class="fw-bold"><ion-label color="primary">Cantidad</ion-label></ion-col>
-                    <ion-col class="fw-bold"><ion-label color="primary">Precio</ion-label></ion-col>
-                    <ion-col class="fw-bold"><ion-label color="primary">Subtotal</ion-label></ion-col>
+                    <ion-col size="1" class="fw-bold"><ion-label color="medium">#</ion-label></ion-col>
+                    <ion-col class="fw-bold">
+                      <ion-label color="medium">
+                        Nombre
+                      </ion-label></ion-col>
+                    <ion-col class="fw-bold">
+                      <ion-label color="medium">
+                        Cantidad
+                      </ion-label></ion-col>
+                    <ion-col class="fw-bold">
+                      <ion-label color="medium">
+                        Precio
+                      </ion-label></ion-col>
+                    <ion-col class="fw-bold">
+                      <ion-label color="medium">
+                        Subtotal
+                      </ion-label></ion-col>
                   </ion-row>
 
                   <div class="mt-4" style="max-height: 175px; min-height: 50px; overflow: auto;">
                     <ion-row *ngFor="let product of sale.products; let i = index" class="border-bottom" style="border-bottom: 1px solid var(--ion-color-medium);">
-                      <ion-col size="1"><ion-label color="medium"><ion-text color="primary"><b>{{ i + 1 }}</b></ion-text></ion-label></ion-col>
+                      <ion-col size="1"><ion-label color="medium"><ion-text color="medium"><b>{{ i + 1 }}</b></ion-text></ion-label></ion-col>
                       <ion-col><ion-label color="medium">{{ product.name }}</ion-label></ion-col>
                       <ion-col><ion-label color="medium">{{ product.units }}</ion-label></ion-col>
                       <ion-col><ion-label color="medium">{{ product.priceSale }}</ion-label></ion-col>
@@ -115,7 +175,73 @@ title="Anulacion"
               </ion-card-content>
             </ion-card>
 
+            <ion-card class="p-0 m-0" *ngIf="load">
+              <ion-card-content class="m-0 p-0">
+                <ion-grid>
 
+                  <ion-row class="border-bottom fixed-top" style="border-bottom: 1px solid var(--ion-color-medium);">
+                    <ion-col size="1" class="fw-bold"><ion-label color="medium">#</ion-label></ion-col>
+                    <ion-col class="fw-bold">
+                      <ion-label color="medium">
+                        Nombre
+                      </ion-label></ion-col>
+                    <ion-col class="fw-bold">
+                      <ion-label color="medium">
+                        Cantidad
+                      </ion-label></ion-col>
+                    <ion-col class="fw-bold">
+                      <ion-label color="medium">
+                        Precio
+                      </ion-label></ion-col>
+                    <ion-col class="fw-bold">
+                      <ion-label color="medium">
+                        Subtotal
+                      </ion-label></ion-col>
+                  </ion-row>
+
+                  <div class="mt-4" style="max-height: 175px; min-height: 50px; overflow: auto;">
+                    <ion-row *ngFor="let product of [1,2,3]; let i = index" class="border-bottom" style="border-bottom: 1px solid var(--ion-color-medium);">
+                      <ion-col size="1"><ion-label color="medium">
+                        <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                      </ion-label></ion-col>
+                      <ion-col><ion-label color="medium">
+                        <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                      </ion-label></ion-col>
+                      <ion-col><ion-label color="medium">
+                        <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                      </ion-label></ion-col>
+                      <ion-col><ion-label color="medium">
+                        <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                      </ion-label></ion-col>
+                      <ion-col><ion-label color="medium">
+                        <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                      </ion-label></ion-col>
+                    </ion-row>
+                  </div>
+
+                  <ion-row>
+                    <ion-col size="1"><ion-label color="medium"></ion-label></ion-col>
+                    <ion-col><ion-label color="medium"></ion-label></ion-col>
+                    <ion-col><ion-label color="medium"></ion-label></ion-col>
+                    <ion-col><ion-label color="medium"><ion-text color="primary"><b>Total</b></ion-text></ion-label></ion-col>
+                    <ion-col>
+                      <ion-label color="medium">
+                        <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                      </ion-label>
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+              </ion-card-content>
+            </ion-card>
+
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card *ngIf="!load && sale" class="m-auto mt-2 rounded-4 w-100">
+          <ion-card-content>
+            <ion-button [disabled]="form.invalid" (click)="submitAlert()" color="danger">
+              <ion-icon slot="end" name="ban"></ion-icon>
+              Anular venta</ion-button>
           </ion-card-content>
         </ion-card>
 
