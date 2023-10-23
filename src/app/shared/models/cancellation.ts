@@ -5,6 +5,7 @@ export interface Cancellation {
   type: 'SALE'|'SHOPPING';
   documentRef: DocumentReference;
   comment: string;
+  discardStock: boolean;
   status: 'PENDING' | 'FINALIZED' | 'NOT_APPLY';
   commentNotApply?: string;
 }
