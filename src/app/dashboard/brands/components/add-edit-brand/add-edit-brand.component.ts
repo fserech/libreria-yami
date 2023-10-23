@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BRANDS_COLLECTION_NAME, CATEGORIES_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
+import { MESSAGES_APP } from 'src/app/shared/constants/messages-app';
 import { REGEX_TEXT_WITHOUT_SPACES } from 'src/app/shared/constants/reguex';
 import { Brand } from 'src/app/shared/models/brand';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
@@ -60,33 +61,44 @@ export class AddEditBrandComponent implements OnInit {
 
   submit() {
     this.load = true;
-    this.record = {
-      name: this.brandForm.controls['name'].value.toLowerCase(),
-      description: this.brandForm.controls['description'].value
-    };
-    if (this.mode == 'new') {
-      this.dashboardService
-        .saveDocument(BRANDS_COLLECTION_NAME, this.record)
-        .then((response: any) => {
-          this.reset();
-        })
-        .catch((error: any) => {
-          console.log(error);
-          this.reset();
-        });
-    } else {
-      const uid = this.route.snapshot.params['uid'];
-      this.dashboardService
-        .udpateDocument(uid, BRANDS_COLLECTION_NAME, this.record)
-        .then((response: any) => {
-          this.reset('/dashboard/brands/all');
-        })
-        .catch((error: any) => {
-          console.log(error);
-          this.reset('/dashboard/brands/all');
-        });
-    }
+    const newname = this.brandForm.controls['name'].value.toLowerCase();
+    this.dashboardService.searchForField(BRANDS_COLLECTION_NAME, 'name', newname)
+      .subscribe((result: any[]) => {
+        if (result.length > 0) {
+          console.log('El nombre de la marca ya existe en la colección. No se puede crear otra marca con el mismo nombre.');
+          this.load = false;
+        } else {
+          this.record = {
+            name: newname,
+            description: this.brandForm.controls['description'].value
+          };
+  
+          if (this.mode == 'new') {
+            this.dashboardService
+              .saveDocument(BRANDS_COLLECTION_NAME, this.record)
+              .then((response: any) => {
+                this.reset();
+              })
+              .catch((error: any) => {
+                console.log(error);
+                this.reset();
+              });
+          } else {
+            const uid = this.route.snapshot.params['uid'];
+            this.dashboardService
+              .udpateDocument(uid, BRANDS_COLLECTION_NAME, this.record)
+              .then((response: any) => {
+                this.reset('/dashboard/brands/all');
+              })
+              .catch((error: any) => {
+                console.log(error);
+                this.reset('/dashboard/brands/all');
+              });
+          }
+        }
+      });
   }
+  
 
   reset(route?: string) {
     this.brandForm.reset();
@@ -96,6 +108,10 @@ export class AddEditBrandComponent implements OnInit {
     } else {
       this.router.navigate(['/dashboard/brands']);
     }
+  }
+
+  getMessageApp(code: string): string{
+    return MESSAGES_APP.find((element: any) => element.code === code).message;
   }
 
   copyToClipboard(text: string | undefined) {
