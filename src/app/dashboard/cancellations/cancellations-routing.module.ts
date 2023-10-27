@@ -9,7 +9,7 @@ const routes: Routes = [
   {path: '',component: CancellationSalesComponent },
   {path: 'sale',component: CancellationSalesComponent },
   {path: 'shopping',component: CancellationShoppingComponent },
-  {path: 'cancellation-stock',component: CancellationStockComponent },
+  {path: 'history',component: CancellationStockComponent },
 ];
 
 
