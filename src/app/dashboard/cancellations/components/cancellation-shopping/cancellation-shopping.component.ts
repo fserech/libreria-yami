@@ -8,10 +8,7 @@ import { Observable, map } from 'rxjs';
 import { CANCELLATIONS_COLLECTION_NAME, SHOPPING_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { MESSAGES_APP } from 'src/app/shared/constants/messages-app';
 import { REGEX_TEX } from 'src/app/shared/constants/reguex';
-<<<<<<< HEAD
 import { Bill } from 'src/app/shared/models/bill';
-=======
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
 import { Cancellation } from 'src/app/shared/models/cancellation';
 import { DetailsShopping, ProductShopping, Shopping } from 'src/app/shared/models/shopping';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
@@ -38,11 +35,8 @@ export class CancellationShoppingComponent  implements OnInit {
   ProductShopping: ProductShopping[];
   formShopping: FormGroup;
   routeBack: string = '/dashboard/cancellations';
-<<<<<<< HEAD
   bill: Bill;
   
-=======
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
 
   constructor(
     private dashboardService: DashboardService,
@@ -75,17 +69,13 @@ export class CancellationShoppingComponent  implements OnInit {
       status: ['', []],
       description: ['', []],
       total: ['Q 00.00', []],
-<<<<<<< HEAD
       bill: this.fb.group({
-        serie: ['', []], // Asigna las propiedades de la interfaz Bill
+        serie: ['', []], 
         noDTE: ['', []],
         noAuth: ['', []],
         date: ['', []],
         nitSupplier: ['', []],
       }),
-=======
-      
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
     });
     this.formShopping.disable();
 
@@ -108,13 +98,10 @@ export class CancellationShoppingComponent  implements OnInit {
         this.formShopping.controls['status'].setValue(this.getLabelStatus(this.shopp.status));
         this.formShopping.controls['description'].setValue(this.shopp.description ? this.shopp.description : '');
         this.formShopping.controls['total'].setValue('Q ' + this.shopp.total);
-<<<<<<< HEAD
         this.formShopping.controls['bill'].get('serie').setValue(this.shopp.bill.serie);
         this.formShopping.controls['bill'].get('noDTE').setValue(this.shopp.bill.noDTE);
         this.formShopping.controls['bill'].get('noAuth').setValue(this.shopp.bill.noAuth);
         this.formShopping.controls['bill'].get('date').setValue(this.formatDate(this.shopp.bill.date));
-=======
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
         this.formShopping.disable();
         this.DetailsShopping = this.shopp.details;
         this.ProductShopping = this.shopp.details.map(detail => detail.product);

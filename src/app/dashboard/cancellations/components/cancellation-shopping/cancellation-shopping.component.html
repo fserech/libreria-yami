@@ -41,11 +41,7 @@ title="Anulacion"
                   [load]="load">
                 </app-toggle>
               </ion-col>
-<<<<<<< HEAD
               <ion-col  size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
-=======
-              <ion-col [ngClass]="{ 'border-top bt-2 m-2': shopp }" size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
                 <app-input
                     [form]="form"
                     name="comment"
@@ -68,19 +64,11 @@ title="Anulacion"
               <b>Información general de Compra</b>
             </ion-card-subtitle>
           </ion-card-header>
-<<<<<<< HEAD
-=======
-
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
           <ion-card-content>
             <div *ngIf="!shopp && !load" style="max-height: 100px;min-height: 100px; overflow: auto;">
               <div style="max-height: 100px;min-height: 100px; width: 100%;"
                 class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
-<<<<<<< HEAD
                 <ion-label>Para visualizar datos de Compra debe consultar el UID de la Compra.</ion-label>
-=======
-                <ion-label>Para visualizar datos de compra debe consultar el UID de la compra.</ion-label>
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
               </div>
             </div>
             <ion-row>
@@ -88,7 +76,6 @@ title="Anulacion"
                 <ion-card-subtitle class="d-flex" style="text-align: left; font-size: 15px;" *ngIf="shopp || load">
                   <b>Fecha: </b>
                   <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
-<<<<<<< HEAD
                   <p *ngIf="!load"> <ion-col></ion-col>{{ formShopping.controls['date'].value }}</p>
                 </ion-card-subtitle>
               </ion-col>
@@ -139,19 +126,10 @@ title="Anulacion"
                   <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
                   <p *ngIf="!load"><ion-col></ion-col>{{ formShopping.controls['bill'].get('serie').value }}</p>
                   
-=======
-                  <p *ngIf="!load">{{ formShopping.controls['date'].value }}</p>
-                </ion-card-subtitle>
-                <ion-card-subtitle class="d-flex" style="text-align: left; font-size: 15px;" *ngIf="shopp || load">
-                  <b>Total: </b>
-                  <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
-                  <p *ngIf="!load">{{ formShopping.controls['total'].value }}</p>
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
                 </ion-card-subtitle>
               </ion-col>
               <ion-col size-xs="12" size-sm="6" size-md="6" size-lg="6" size-xl="6">
                 <ion-card-subtitle class="d-flex" style="text-align: left; font-size: 15px;" *ngIf="shopp || load">
-<<<<<<< HEAD
                   <b>Número de DTE: </b>
                   <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
                   <p *ngIf="!load"><ion-col></ion-col>{{ formShopping.controls['bill'].get('noDTE').value }}</p>
@@ -177,28 +155,11 @@ title="Anulacion"
                   <b>Fecha de Emision Factura: </b>
                   <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
                   <p *ngIf="!load"><ion-col></ion-col>{{ formShopping.controls['bill'].get('date').value }}</p>
-=======
-                  <b>Estado: </b>
-                  <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 50%; height: 16px;"></ion-skeleton-text>
-                  <ion-text *ngIf="!load" [color]="shopp?.status === 'PENDING'? 'danger' : 'success'">{{ formShopping.controls['status'].value }}</ion-text>
-                </ion-card-subtitle>
-                
-              </ion-col>
-              <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
-                <ion-card-subtitle style="text-align: left; font-size: 15px;" *ngIf="shopp || load">
-                  <b>Descripción: </b>
-                  <ion-skeleton-text *ngIf="load" class="rounded-4 ms-2" [animated]="true" style="width: 90%; height: 16px;"></ion-skeleton-text>
-                  <p *ngIf="!load">{{ formShopping.controls['description'].value }}</p>
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
                 </ion-card-subtitle>
               </ion-col>
             </ion-row>
           </ion-card-content>
         </ion-card>
-<<<<<<< HEAD
-
-=======
->>>>>>> d81a69bdb53e5e1b76c9af2219fa96a1b4cd4f6b
          <!-- Details -->
          <ion-card class="m-auto mt-2 rounded-4 w-100">
           <ion-card-header>
