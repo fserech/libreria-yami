@@ -73,7 +73,7 @@ export class NewCategoryComponent implements OnInit {
     this.dashboardService.searchForField(CATEGORIES_COLLECTION_NAME, 'name', newname)
       .subscribe((result: any[]) => {
         if (result.length > 0) {
-          console.log('El nombre de la categoría ya existe en la colección. No se puede crear otra categoría con el mismo nombre.');
+          this.toastService.info('No se puede crear otra categoría con el mismo nombre.');
           this.load = false;
         } else {
           this.record = {
@@ -86,6 +86,7 @@ export class NewCategoryComponent implements OnInit {
               .saveDocument(CATEGORIES_COLLECTION_NAME, this.record)
               .then((response: any) => {
                 this.reset();
+                this.toastService.success('Categoria creada exitosamente.');
               })
               .catch((error: any) => {
                 console.log(error);
@@ -96,6 +97,7 @@ export class NewCategoryComponent implements OnInit {
             this.dashboardService
               .udpateDocument(uid, CATEGORIES_COLLECTION_NAME, this.record)
               .then((response: any) => {
+                this.toastService.success('Categoria actualizada exitosamente.');
                 this.reset('/dashboard/categories/all');
               })
               .catch((error: any) => {

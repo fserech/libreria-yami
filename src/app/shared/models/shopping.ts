@@ -10,6 +10,7 @@ export interface Shopping {
  bill: Bill;
 //  supplier: Supplier;
  details: DetailsShopping[];
+ shoppCanceled?: boolean;
 }
 
 export interface DetailsShopping{

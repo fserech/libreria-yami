@@ -65,7 +65,7 @@ export class AddEditBrandComponent implements OnInit {
     this.dashboardService.searchForField(BRANDS_COLLECTION_NAME, 'name', newname)
       .subscribe((result: any[]) => {
         if (result.length > 0) {
-          console.log('El nombre de la marca ya existe en la colección. No se puede crear otra marca con el mismo nombre.');
+          this.toastService.info('No se puede crear otra marca con el mismo nombre.');
           this.load = false;
         } else {
           this.record = {
@@ -78,6 +78,7 @@ export class AddEditBrandComponent implements OnInit {
               .saveDocument(BRANDS_COLLECTION_NAME, this.record)
               .then((response: any) => {
                 this.reset();
+                this.toastService.success('Marca creada exitosamente.');
               })
               .catch((error: any) => {
                 console.log(error);
@@ -88,6 +89,7 @@ export class AddEditBrandComponent implements OnInit {
             this.dashboardService
               .udpateDocument(uid, BRANDS_COLLECTION_NAME, this.record)
               .then((response: any) => {
+                this.toastService.success('Marca actualizada exitosamente.');
                 this.reset('/dashboard/brands/all');
               })
               .catch((error: any) => {

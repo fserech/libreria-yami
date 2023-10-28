@@ -291,7 +291,7 @@ title="Anulacion"
         </ion-card>
         <ion-card *ngIf="!load && shopp" class="m-auto mt-2 rounded-4 w-100">
           <ion-card-content>
-            <ion-button [disabled]="form.invalid" (click)="submitAlert()" color="danger">
+            <ion-button [disabled]="form.invalid || shopp && shopp.shoppCanceled" (click)="submitAlert()" color="danger">
               <ion-icon slot="end" name="ban"></ion-icon>
               Anular Compra</ion-button>
           </ion-card-content>

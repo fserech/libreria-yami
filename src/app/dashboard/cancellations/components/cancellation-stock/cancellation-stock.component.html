@@ -4,7 +4,68 @@ title="Anulacion"
 [showButtonBack]="true">
 </app-header>
 
-<ion-content>
-  <ion-label color="medium">
-    <h1>Anulacion Stoks</h1>
-  </ion-label>
+<ion-content class="ion-padding">
+  <ion-grid>
+    <ion-row class="ion-justify-content-center">
+      <ion-col class="m-auto col-12 align-items-center" size-xs="12" size-sm="11" size-md="9" size-lg="" size-xl="5">
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-title>Solicitudes de Anulaciones</ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="mt-2">
+            <ion-list>
+              <ion-row>
+                <ion-col size="0.1"></ion-col>
+                <ion-col style ="text-align: start" ><ion-label color="medium"><b>Tipo</b></ion-label></ion-col>
+                <ion-col style ="text-align: start"  ><ion-label color="medium"><b>Comentario</b></ion-label></ion-col>
+                <ion-col style ="text-align: start" ><ion-label color="medium"><b>Descartar Stock</b></ion-label></ion-col>
+                <ion-col style ="text-align: start" ><ion-label color="medium"><b>Estado</b></ion-label></ion-col>
+                <ion-col style ="text-align: start" ><ion-label color="medium"><b>Acccion</b></ion-label></ion-col>
+              </ion-row>
+              <ion-row *ngFor="let cancellation of pendingCancellations">
+                <ion-col size="0.1"></ion-col>
+                <ion-col style="text-align: start;" ><ion-label>{{ getTypeLabel(cancellation.type) }}</ion-label></ion-col>
+                <ion-col style="text-align: start;" ><ion-label>{{ cancellation.comment }}</ion-label></ion-col>
+                <ion-col style="text-align: start;" >{{ cancellation.discardStock ? 'SI' : 'NO' }}</ion-col>
+                <ion-col style="text-align: start;" ><ion-label>{{ cancellation.status === 'PENDING' ? 'Pendiente' : cancellation.status === 'FINALIZED' ? 'Finalizado' : cancellation.status }}</ion-label></ion-col>
+                <!-- Dentro del *ngFor que muestra las solicitudes de anulación -->
+                  <ion-col style="text-align: start;">
+                    <ion-label>
+                      <ion-button (click)="submit(cancellation)">Autorizar</ion-button>
+                    </ion-label>
+                  </ion-col>
+                </ion-row>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-title>Autorizadas</ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="mt-2">
+            <ion-list>
+              <ion-row>
+                <ion-col size="0.1"></ion-col>
+                <ion-col style ="text-align: start" ><ion-label color="medium"><b>Tipo</b></ion-label></ion-col>
+                <ion-col style ="text-align: start"  ><ion-label color="medium"><b>Comentario</b></ion-label></ion-col>
+                <ion-col style ="text-align: start" ><ion-label color="medium"><b>Descartar Stock</b></ion-label></ion-col>
+                <ion-col style ="text-align: start" ><ion-label color="medium"><b>Estado</b></ion-label></ion-col>
+                
+              </ion-row>
+              <ion-row *ngFor="let cancellation of finalizedCancellations">
+                <ion-col size="0.1"></ion-col>
+                <ion-col style="text-align: start;" ><ion-label>{{ getTypeLabel(cancellation.type) }}</ion-label></ion-col>
+                <ion-col style="text-align: start;" ><ion-label>{{ cancellation.comment }}</ion-label></ion-col>
+                <ion-col style="text-align: start;" >{{ cancellation.discardStock ? 'SI' : 'NO' }}</ion-col>
+                <ion-col style="text-align: start;" ><ion-label>{{ cancellation.status === 'PENDING' ? 'Pendiente' : cancellation.status === 'FINALIZED' ? 'Finalizado' : cancellation.status }}</ion-label></ion-col>
+                
+                </ion-row>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+         
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>

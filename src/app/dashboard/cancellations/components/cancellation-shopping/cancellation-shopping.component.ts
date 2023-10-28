@@ -24,7 +24,7 @@ export class CancellationShoppingComponent  implements OnInit {
   load: boolean = false;
   shopping: Shopping[] = [];
   record: Cancellation =null;
-  title: string = 'Anular Ventas';
+  title: string = 'Anular compras';
   @ViewChild('searchBar') searchBar: IonSearchbar;
   shopping$: Observable<any[]>;
   searchInputNotEmpty = false;
@@ -102,6 +102,8 @@ export class CancellationShoppingComponent  implements OnInit {
         this.formShopping.controls['bill'].get('noDTE').setValue(this.shopp.bill.noDTE);
         this.formShopping.controls['bill'].get('noAuth').setValue(this.shopp.bill.noAuth);
         this.formShopping.controls['bill'].get('date').setValue(this.formatDate(this.shopp.bill.date));
+        console.log('Compra anulada: ', this.shopp.shoppCanceled === true);
+        this.shopp.shoppCanceled ? this.form.disable():this.form.enable();
         this.formShopping.disable();
         this.DetailsShopping = this.shopp.details;
         this.ProductShopping = this.shopp.details.map(detail => detail.product);

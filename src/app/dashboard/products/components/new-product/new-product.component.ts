@@ -121,7 +121,7 @@ export class NewProductComponent  implements OnInit {
     this.dashboardService.searchForField(PRODUCTS_COLLECTION_NAME, 'name', newname)
       .subscribe((result: any[]) => {
         if (result.length > 0) {
-          console.log('El nombre del producto ya existe en la colección. No se puede crear otro producto con el mismo nombre.');
+          this.toastService.info(' No se puede crear otro producto con el mismo nombre.');
           this.load = false;
         } else {
           const date: Date = new Date();
@@ -146,16 +146,19 @@ export class NewProductComponent  implements OnInit {
               .saveDocument(PRODUCTS_COLLECTION_NAME, this.record)
               .then((response: any) => {
                 this.reset();
+                this.toastService.success('Producto creado exitosamente.');
               })
               .catch((error: any) => {
                 console.log(error);
                 this.reset();
+                this.toastService.error('Hubo un error al crear el producto.');
               });
           } else if (this.mode === 'edit') {
             const uid = this.route.snapshot.params['uid'];
             this.dashboardService
               .udpateDocument(uid, PRODUCTS_COLLECTION_NAME, this.record)
               .then((response: any) => {
+                this.toastService.success('Producto actualizado exitosamente.');
                 this.reset(this.routeBackAll);
               })
               .catch((error: any) => {
