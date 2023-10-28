@@ -8,6 +8,7 @@ export interface Cancellation {
   discardStock: boolean;
   status: 'PENDING' | 'FINALIZED' | 'NOT_APPLY';
   commentNotApply?: string;
+  createAt: Date;
 }
 
 

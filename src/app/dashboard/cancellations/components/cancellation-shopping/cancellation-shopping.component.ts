@@ -36,7 +36,7 @@ export class CancellationShoppingComponent  implements OnInit {
   formShopping: FormGroup;
   routeBack: string = '/dashboard/cancellations';
   bill: Bill;
-  
+
 
   constructor(
     private dashboardService: DashboardService,
@@ -70,7 +70,7 @@ export class CancellationShoppingComponent  implements OnInit {
       description: ['', []],
       total: ['Q 00.00', []],
       bill: this.fb.group({
-        serie: ['', []], 
+        serie: ['', []],
         noDTE: ['', []],
         noAuth: ['', []],
         date: ['', []],
@@ -179,12 +179,14 @@ async submit() {
   if(this.shopp && this.form.valid){
 
     this.load = true;
+    const date: Date = new Date();
     this.record = {
       type: 'SHOPPING',
       documentRef: this.dashboardService.getDocumentReference(SHOPPING_COLLECTION_NAME, this.shopp.uid),
       comment: this.form.controls['comment'].value,
       discardStock: this.form.controls['discardStock'].value,
       status: 'PENDING',
+      createAt: date
     };
 
     this.dashboardService.saveDocument(CANCELLATIONS_COLLECTION_NAME, this.record)

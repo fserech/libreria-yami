@@ -76,7 +76,6 @@ export class CancellationSalesComponent  implements OnInit {
     this.load = true;
     const query = searchBar.value;
     if (query.trim() === '') {
-      this.toastService.info('UID esta vacío, Ingresa UID')
       this.load = false;
   } else {
     this.dashboardService
@@ -89,7 +88,6 @@ export class CancellationSalesComponent  implements OnInit {
         this.formSale.controls['description'].setValue(this.sale.description?this.sale.description:'');
         this.formSale.controls['status'].setValue(this.getLabelStatus(this.sale.status));
         this.formSale.controls['total'].setValue('Q ' + this.sale.total);
-        console.log('venta anulada: ', this.sale.saleCanceled);
         this.sale.saleCanceled ? this.form.disable():this.form.enable();
         this.formSale.disable();
         this.productsSale = this.sale.products;
@@ -164,12 +162,15 @@ export class CancellationSalesComponent  implements OnInit {
     if(this.sale && this.form.valid){
 
       this.load = true;
+      const date: Date = new Date();
+
       this.record = {
         type: 'SALE',
         documentRef: this.dashboardService.getDocumentReference(SALES_COLLECTION_NAME, this.sale.uid),
         comment: this.form.controls['comment'].value,
         discardStock: this.form.controls['discardStock'].value,
         status: 'PENDING',
+        createAt: date
       };
 
       this.dashboardService.saveDocument(CANCELLATIONS_COLLECTION_NAME, this.record)
