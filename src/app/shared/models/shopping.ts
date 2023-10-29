@@ -16,7 +16,7 @@ export interface DetailsShopping{
   productUid: string;
   productName: string;
   productBrand: string;
-  productCategory: string;
+  productCategory?: string;
   quantity: string;
   priceUnit: string;
   subTotal: string;

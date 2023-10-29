@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IonModal } from '@ionic/angular';
-import { CATEGORIES_COLLECTION_NAME, PRODUCTS_COLLECTION_NAME, SHOPPING_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
+import { PRODUCTS_COLLECTION_NAME, SHOPPING_COLLECTION_NAME } from 'src/app/shared/constants/collections-name-firebase';
 import { MEASUREMENT_UNITS } from 'src/app/shared/constants/measurement-units';
 import { MESSAGES_APP } from 'src/app/shared/constants/messages-app';
 import { REGEX_TEX, REGUEX_NUMBERS_FLOAT, REGEX_NUMBERS_INT, REGEX_TEXT_DASHES } from 'src/app/shared/constants/reguex';
@@ -152,26 +152,21 @@ export class NewShoppingComponent  implements OnInit {
     if(this.productsSelect.length > 0){
       let details: DetailsShopping[] = [];
 
-      this.productsSelect.forEach((item:{ units: string, product: Product, brand: string, price: string})=>{
-        this.dashboardService.getDataDocumentReference(item.product.categoryRef).then((category: Category) => {
-            // product: {
-            //   uid: item.product.uid,
-            //   name: item.product.name,
-            //   brand: item.brand,
-            //   category: category.name
-            // },
+      this.productsSelect.forEach((item:{ units: string, product: Product, brand: string, price: string}) => {
 
-          const detail: DetailsShopping = {
-            productUid: item.product.uid,
-            productName: item.product.name,
-            productBrand: item.brand,
-            productCategory: category.name,
-            quantity: item.units,
-            priceUnit: item.price,
-            subTotal: (parseFloat(item.units) * parseFloat(item.price)).toFixed(2)
-          };
-          details.push(detail);
-        });
+        const detail: DetailsShopping = {
+          productUid: item.product.uid,
+          productName: item.product.name,
+          productBrand: item.brand,
+          // productCategory: category.name,
+          quantity: item.units.toString(),
+          priceUnit: item.price,
+          subTotal: (parseFloat(item.units) * parseFloat(item.price)).toFixed(2)
+        };
+        details.push(detail);
+        // this.dashboardService.getDataDocumentReference(item.product.categoryRef).then((category: Category) => {
+
+        // });
 
       });
       return details;

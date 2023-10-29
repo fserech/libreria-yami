@@ -101,7 +101,18 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
       let stock: Boolean = false;
       await this.checkStock().then((result: any) => {
         if(result.success && result.message === 'OK'){
-
+          this.dashboardService
+          .saveDocument(SALES_COLLECTION_NAME, this.record)
+          .then((response: any) => {
+            console.log(response);
+            this.load = false;
+            this.form.reset();
+          })
+          .catch((error: any) => {
+            console.log(error);
+            this.load = false;
+            this.form.reset();
+          });
         }else{
           console.log(result.message)
         }
