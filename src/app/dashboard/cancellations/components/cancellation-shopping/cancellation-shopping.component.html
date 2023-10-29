@@ -168,7 +168,7 @@ title="Anulacion"
           </ion-card-header>
           <ion-card-content>
 
-            <div *ngIf="!shopp && !load || shopp?.details.length === 0 && !load" style="max-height: 100px;min-height: 100px; overflow: auto;">
+            <div *ngIf="!shopp && !load || shopp?.products.length === 0 && !load" style="max-height: 100px;min-height: 100px; overflow: auto;">
               <div
                 style="max-height: 100px;min-height: 100px; width: 100%;"
                 class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
@@ -176,7 +176,7 @@ title="Anulacion"
               </div>
             </div>
 
-            <ion-card class="p-0 m-0" *ngIf="!load && shopp && shopp.details.length > 0">
+            <ion-card class="p-0 m-0" *ngIf="!load && shopp && shopp.products.length > 0">
               <ion-card-content class="m-0 p-0">
                 <ion-grid>
 
@@ -205,9 +205,9 @@ title="Anulacion"
                   </ion-row>
 
                   <div class="mt-4" style="max-height: 175px; min-height: 50px; overflow: auto;">
-                    <ion-row *ngFor="let detail of shopp.details; let i = index" class="border-bottom" style="border-bottom: 1px solid var(--ion-color-medium);">
+                    <ion-row *ngFor="let detail of shopp.products; let i = index" class="border-bottom" style="border-bottom: 1px solid var(--ion-color-medium);">
                       <ion-col size="1"><ion-label color="medium"><ion-text color="medium"><b>{{ i + 1 }}</b></ion-text></ion-label></ion-col>
-                      <ion-col><ion-label color="medium">{{ detail.product.name}}</ion-label></ion-col>
+                      <ion-col><ion-label color="medium">{{ detail.productName }}</ion-label></ion-col>
                       <ion-col><ion-label color="medium">{{ detail.quantity }}</ion-label></ion-col>
                       <ion-col><ion-label color="medium">{{ detail.priceUnit }}</ion-label></ion-col>
                       <ion-col><ion-label color="medium">{{ detail.subTotal }}</ion-label></ion-col>

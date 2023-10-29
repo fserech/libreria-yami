@@ -105,8 +105,8 @@ export class CancellationShoppingComponent  implements OnInit {
         console.log('Compra anulada: ', this.shopp.shoppCanceled === true);
         this.shopp.shoppCanceled ? this.form.disable():this.form.enable();
         this.formShopping.disable();
-        this.DetailsShopping = this.shopp.details;
-        this.ProductShopping = this.shopp.details.map(detail => detail.product);
+        this.DetailsShopping = this.shopp.products;
+        // this.ProductShopping = this.shopp.details.map(detail => detail);
 
         this.load = false;
       } else {

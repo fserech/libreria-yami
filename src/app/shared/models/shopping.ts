@@ -7,14 +7,16 @@ export interface Shopping {
  status: 'PENDING'| 'PENDING_CHARGE_STOCK' |'FINALIZED';
  description?: string;
  total: string;
+ products: DetailsShopping[];
  bill: Bill;
-//  supplier: Supplier;
- details: DetailsShopping[];
  shoppCanceled?: boolean;
 }
 
 export interface DetailsShopping{
-  product: ProductShopping;
+  productUid: string;
+  productName: string;
+  productBrand: string;
+  productCategory: string;
   quantity: string;
   priceUnit: string;
   subTotal: string;
