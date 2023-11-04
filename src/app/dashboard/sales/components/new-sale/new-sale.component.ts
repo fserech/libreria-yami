@@ -90,7 +90,9 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
         total: this.getTotalSale(),
         status: 'UNBILLED',
         products: this.getProductSelected(),
+        saleCanceled: false,
       };
+      
 
       if(this.form.controls['description'].value !== '' &&
          this.form.controls['description'].value !== null &&

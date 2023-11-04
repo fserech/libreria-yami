@@ -65,7 +65,7 @@ export class CancellationShoppingComponent  implements OnInit {
     });
 
     this.formShopping = this.fb.group({
-      date: ['', []],
+      date: [''],
       status: ['', []],
       description: ['', []],
       total: ['Q 00.00', []],
@@ -85,39 +85,40 @@ export class CancellationShoppingComponent  implements OnInit {
     this.load = true;
     const query = searchBar.value;
     if (query.trim() === '') {
-      this.toastService.info('UID esta vacío, Ingresa UID')
+      this.toastService.info('UID está vacío, Ingresa UID')
       this.load = false;
-  } else {
-    this.dashboardService
-    .getDocumentByIdToPromise(SHOPPING_COLLECTION_NAME, query)
-    .then((document: Shopping) => {
-      if (document) {
-        this.shopp = document;
-
-        this.formShopping.controls['date'].setValue(this.formatDate(this.shopp.createAt));
-        this.formShopping.controls['status'].setValue(this.getLabelStatus(this.shopp.status));
-        this.formShopping.controls['description'].setValue(this.shopp.description ? this.shopp.description : '');
-        this.formShopping.controls['total'].setValue('Q ' + this.shopp.total);
-        this.formShopping.controls['bill'].get('serie').setValue(this.shopp.bill.serie);
-        this.formShopping.controls['bill'].get('noDTE').setValue(this.shopp.bill.noDTE);
-        this.formShopping.controls['bill'].get('noAuth').setValue(this.shopp.bill.noAuth);
-        this.formShopping.controls['bill'].get('date').setValue(this.formatDate(this.shopp.bill.date));
-        console.log('Compra anulada: ', this.shopp.shoppCanceled === true);
-        this.shopp.shoppCanceled ? this.form.disable():this.form.enable();
-        this.formShopping.disable();
-        this.DetailsShopping = this.shopp.products;
-        // this.ProductShopping = this.shopp.details.map(detail => detail);
-
-        this.load = false;
-      } else {
-        this.toastService.info('No se encontro UID de venta')
-      }
-    })
-    .catch((error:any) => {
-      this.toastService.info('Ocurrio un error, Intentelo más tarde')
-    })
-}
-}
+    } else {
+      this.dashboardService
+        .getDocumentByIdToPromise(SHOPPING_COLLECTION_NAME, query)
+        .then((document: Shopping) => {
+          if (document) {
+            this.shopp = document;
+  
+            this.formShopping.controls['date'].setValue(this.formatDate(this.shopp.createAt));
+            this.formShopping.controls['status'].setValue(this.getLabelStatus(this.shopp.status));
+            this.formShopping.controls['description'].setValue(this.shopp.description ? this.shopp.description : '');
+            this.formShopping.controls['total'].setValue('Q ' + this.shopp.total);
+            this.formShopping.controls['bill'].get('serie').setValue(this.shopp.bill.serie);
+            this.formShopping.controls['bill'].get('noDTE').setValue(this.shopp.bill.noDTE);
+            this.formShopping.controls['bill'].get('noAuth').setValue(this.shopp.bill.noAuth);
+            this.formShopping.controls['bill'].get('date').setValue(this.formatDate(this.shopp.bill.date));
+            this.shopp.shoppCanceled ? this.form.disable() : this.form.enable();
+            this.formShopping.disable();
+            this.DetailsShopping = this.shopp.products;
+            // this.ProductShopping = this.shopp.details.map(detail => detail);
+  
+            this.load = false;
+          } else {
+            this.toastService.info('No se encontró el UID de la compra')
+          }
+        })
+        .catch((error: any) => {
+          console.log('Error al buscar el documento:', error); // Agregado para mostrar el error
+          this.toastService.info('Ocurrió un error, inténtelo más tarde')
+        })
+    }
+  }
+  
 getLabelStatus(status: string): string {
   switch (status) {
     case 'PENDING':
@@ -144,9 +145,16 @@ reset(route?: string){
 }
 
 formatDate(timestamp: any): string {
-  const date = timestamp ? timestamp.toDate() : null;
-  return this.datePipe.transform(date, 'dd/MM/yyyy HH:mm:ss') || '';
+  if (timestamp instanceof Date) {
+    return this.datePipe.transform(timestamp, 'dd/MM/yyyy HH:mm:ss') || '';
+  } else if (timestamp && timestamp.toDate instanceof Function) {
+    const date = timestamp.toDate();
+    return this.datePipe.transform(date, 'dd/MM/yyyy HH:mm:ss') || '';
+  } else {
+    return '';
+  }
 }
+
 
 getMessageApp(code: string): string{
   return MESSAGES_APP.find((element: any) => element.code === code).message;
