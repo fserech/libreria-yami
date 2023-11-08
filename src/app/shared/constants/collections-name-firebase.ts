@@ -10,6 +10,7 @@ export const SHOPPING_COLLECTION_NAME: string = 'shopping';
 export const STATISTICS_COLLECTION_NAME: string = 'statistics';
 export const CANCELLATIONS_COLLECTION_NAME: string = 'cancellations';
 export const BRANDS_COLLECTION_NAME: string = 'brands';
+export const REPORTS_SALES_COLLECION_NAME: string = 'reports-sales';
 // Si hay que crear mas llenar estas y quitar el comentario para poder utilizar
 
 // export const _COLLECTION_NAME: string = '';

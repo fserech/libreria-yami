@@ -5,7 +5,30 @@ title="Estadisticas"
 </app-header>
 
 <ion-content>
-  <ion-label color="medium">
-    <h1>ganacia</h1>
-  </ion-label>
+
+  <!-- <ion-label>Gráfica</ion-label>
+  <ngx-charts-bar-vertical
+    [view]="[400, 300]"
+    [results]="barChartData"
+    [xAxis]="true"
+    [yAxis]="true">
+  </ngx-charts-bar-vertical> -->
+
+<div>
+  <ngx-charts-bar-vertical-2d
+  [view]="[800, 300]"
+  [results]="data"
+  [yAxisLabel]="yAxisLabel"
+  [XAxisLabel]="xAxisLabel"
+  [xAxis]="true"
+  [yAxis]="true"
+  [animations]="true"
+  [legend]="true"
+  [legendTitle]="'No. Semana'">
+  </ngx-charts-bar-vertical-2d>
+</div>
+
+
+
 </ion-content>
+

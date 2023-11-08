@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { StatisticsRoutingModule } from './statistics-routing.module';
@@ -7,7 +7,7 @@ import { KpiSalesComponent } from './components/kpi-sales/kpi-sales.component';
 import { KpiShoppingComponent } from './components/kpi-shopping/kpi-shopping.component';
 import { KpiEarningsComponent } from './components/kpi-earnings/kpi-earnings.component';
 import { KpiLossesComponent } from './components/kpi-losses/kpi-losses.component';
-
+import { NgxChartsModule } from '@swimlane/ngx-charts';
 
 @NgModule({
   declarations: [
@@ -19,7 +19,9 @@ import { KpiLossesComponent } from './components/kpi-losses/kpi-losses.component
   imports: [
     CommonModule,
     StatisticsRoutingModule,
-    SharedModule
-  ]
+    SharedModule,
+    NgxChartsModule
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class StatisticsModule { }
