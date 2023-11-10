@@ -4,49 +4,7 @@ title="Compras"
 [showButtonBack]="true">
 </app-header>
 
-<!-- <ion-content class="ion-padding">
 
-  <ion-grid>
-    <ion-row class="ion-justify-content-center" >
-
-        <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
-          <ion-card class="rounded-4">
-
-            <ion-card-header>
-              <ion-card-title>
-                <ion-text color="medium">
-                  <ion-label>Filtro de Compras</ion-label>
-                </ion-text>
-              </ion-card-title>
-            </ion-card-header>
-
-            <ion-card-content class="mt-2">
-              <form [formGroup]="form">
-
-                <ion-row>
-                  <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6" class="m-auto">
-                    <app-date-picker
-                      [form]="form"
-                      name="date"
-                      label="Fecha"
-                      placeholder="Selecciona una fecha"
-                      [required]="true"
-                      [load]="load"
-                      [showTime]="false"
-                      (changes)="changeDate($event)">
-                    </app-date-picker>
-                  </ion-col>
-                </ion-row>
-
-              </form>
-            </ion-card-content>
-
-          </ion-card>
-        </ion-col>
-    </ion-row>
-  </ion-grid>
-
-</ion-content> -->
 
 <ion-content>
   <ion-segment
@@ -54,123 +12,328 @@ title="Compras"
     class="sticky-top"
     swipe-gesture="true"
     [scrollable]="true"
-    mode="md">
+    mode="md"
+    (ionChange)="changeSegment($event)">
     <ion-segment-button *ngFor="let segment of segmentList" [value]="segment.name">
       <ion-icon name="{{ segment.icon }}"></ion-icon>
       <ion-label>{{segment.label}}</ion-label>
     </ion-segment-button>
   </ion-segment>
 
-  <div *ngIf="segmentSelected === 'day'">
-    <ion-grid>
-      <ion-row class="ion-justify-content-center" >
 
-          <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
-            <ion-card class="rounded-4">
-
-              <ion-card-content class="mt-2">
-                <form [formGroup]="form">
-
-                  <ion-row>
-                    <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6" class="m-auto mb-0">
-                      <app-date-picker
-                        [form]="form"
-                        name="date"
-                        label="Fecha de compras"
-                        placeholder="Selecciona una fecha"
-                        [required]="true"
-                        [load]="load"
-                        [showTime]="false"
-                        (changes)="changeDate($event)">
-                      </app-date-picker>
-                    </ion-col>
-                  </ion-row>
-
-                </form>
+   <div *ngIf="segmentSelected === 'day'">
+    <ion-grid >
+      <ion-row  class="ion-justify-content-center">
+        <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
+          <ion-card class="rounded-4">
+            <ion-card-header>
+              <ion-card-content>
+                <app-date-picker
+                  [form]="form"
+                  name="date"
+                  label="Filtrar compra por fecha"
+                  placeholder="Selecciona una fecha"
+                  [required]="true"
+                  [load]="load"
+                  [showTime]="false"
+                  (changes)="changeDate($event)"
+                  [max]="date">
+                </app-date-picker>
               </ion-card-content>
-
-            </ion-card>
-          </ion-col>
+            </ion-card-header>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+      <ion-row class="ion-justify-content-center">
+        <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
+          <ion-card class="rounded-4">
+            <ion-card-content class="mt-2">
+              <ion-list  *ngIf="shopping.length > 0">
+                <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 10px;">
+                  <ion-col>
+                    <ion-label color="medium"><b>Descripcion</b></ion-label>
+                  </ion-col>
+                   <ion-col>
+                    <ion-label color="medium"><b>Uid</b></ion-label>
+                  </ion-col>
+                  
+                </ion-row>
+              </ion-list>
+              <ion-list *ngIf="shopping.length > 0">
+                <ion-label  >
+                <ion-item  *ngFor="let shopp of shopping" id="open-modal" expand="block" (click)="openModal(shopp)" >
+                  <ion-col>
+                    <h2>{{ shopp.description}}</h2>
+                  </ion-col>
+                  <ion-col>
+                    <p> {{(shopp.uid )}}</p>
+                  </ion-col>
+                </ion-item>
+              </ion-label>
+                <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 10px;">
+                  <ion-col>
+                    <ion-label color="medium"><b>Total de Compras</b></ion-label>
+                  </ion-col>
+                  <ion-col>
+                    <ion-label color="medium"><b>Q. {{ calculateTotalShoppingPrice() }}</b></ion-label>
+                  </ion-col>
+                </ion-row>
+              </ion-list>
+              
+  
+              <ion-list *ngIf="shopping.length <= 0">
+                <ion-item>
+                  <ion-label class="text-center text-wrap">No se registraron compras el {{ dateString(form.controls['date'].value) }}</ion-label>
+                </ion-item>
+              </ion-list>
+  
+            </ion-card-content>
+          </ion-card>
+          <!-- modal -->
+          <ion-card-content color="danger" class="m-0" >
+            <ion-modal style="--border-radius: 5px;"  (willDismiss)="onWillDismiss($event)"  >
+              <ng-template >
+                <ion-header>
+                  <ion-toolbar color="primary">
+                    <ion-title class="text-center" ></ion-title>
+                    <ion-buttons slot="end">
+                      <ion-button (click)="cancel()" [strong]="true">
+                        <ion-icon name="close-circle-outline"></ion-icon>
+                      </ion-button>
+                    </ion-buttons>
+                  </ion-toolbar>
+                </ion-header>
+                
+                <ion-content class="ion-padding" *ngIf="shopp"  >
+                  <ion-card class="rounded-4"  >
+                    <ion-card class="rounded-2" style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                    <ion-card-header>
+                      <ion-card-subtitle class="ion-text-center">
+                        <b>Datos de Compra</b>
+                      </ion-card-subtitle>
+                    </ion-card-header>
+                    <ion-card-content class="p-0">
+                      <ion-row>
+                        <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="" size-xl="12">
+                        <ion-label > Fecha De Creación: {{formatDate(shopp.createAt)}}</ion-label>
+                      </ion-col>
+                         <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="" size-xl="12">
+                        <ion-label >Estado: {{ shopp.status === 'PENDING' ? 'PENDIENTE' : shopp.status === 'FINALIZED' ? 'FINALIZADO' : shopp.status }}
+                        </ion-label>
+                      </ion-col>
+                    </ion-row>
+                    
+                  </ion-card-content>
+                </ion-card>
+                  <ion-card class="rounded-2" style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                    <ion-card-content *ngIf="shopp.description">
+                        <ion-card-subtitle class="ion-text-center">
+                          <b>Descripcion</b>
+                        </ion-card-subtitle>
+                      <ion-label>{{shopp.description}}</ion-label>
+                  </ion-card-content>
+                </ion-card>
+                <ion-card class="rounded-2" style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                  <ion-card-subtitle class="ion-text-center">
+                    <b>Datos de productos</b>
+                  </ion-card-subtitle>
+                  <ion-list mode="ios">
+                    <ion-item *ngFor="let product of DetailsShopping">
+                      <ion-col><ion-label> {{ product.productName }}</ion-label></ion-col>
+                      <ion-col><ion-label> {{ product.priceUnit }}</ion-label></ion-col>
+                      <ion-col><ion-label> {{ product.quantity }}</ion-label></ion-col>
+                      <ion-col> <ion-label >{{ product.subTotal }}</ion-label></ion-col>
+                     
+                    </ion-item>
+                  </ion-list>
+                </ion-card>
+                <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 10px;">
+                  <ion-col>
+                    <ion-label color="medium"><b>Total de Compras</b></ion-label>
+                  </ion-col>
+                  <ion-col>
+                    <ion-label color="medium"><b>Q. {{ calculateTotalShoppingPrice() }}</b></ion-label>
+                  </ion-col>
+                </ion-row>
+                <ion-row>
+                  <ion-col>
+                    <ion-card-content>
+                      <ion-button (click)="finalizeShopping()">AUTORIZAR</ion-button>
+                    </ion-card-content>
+                  </ion-col>
+                </ion-row>
+                
+                  </ion-card>
+                </ion-content>
+              </ng-template>
+            </ion-modal>
+          </ion-card-content>
+          <!-- fin modal -->
+          
+        </ion-col>
       </ion-row>
     </ion-grid>
-
-    <ion-row class="ion-justify-content-center p-0 m-0">
-
-      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7" class="mt-0">
+  </div>
+ <!-- mes -->
+ <div *ngIf="segmentSelected === 'month'">
+  <ion-grid >
+    <ion-row  class="ion-justify-content-center">
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
         <ion-card class="rounded-4">
-          <ion-card-content class="p-0">
-            <ion-list mode="ios" class="p-0">
-              <ion-item>
-                <ion-label>
-                  <h2>Nombre articulo / Nombre marca</h2>
-                  <p>Cantidad de unidades</p>
-                </ion-label>
-
-                <ion-button
-                  fill="clear"
-                  ionTooltip="Texto del tooltip">
-                  <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
-                  <ion-icon name="close-circle-outline" color="danger"></ion-icon>
-                </ion-button>
-
-                <!-- <ion-popover trigger="hover-trigger-check" triggerAction="hover">
-                  <ng-template>
-                    <ion-content class="ion-padding">Proceso finalizado</ion-content>
-                  </ng-template>
-                </ion-popover>
-
-                <ion-popover trigger="hover-trigger-close" triggerAction="hover">
-                  <ng-template>
-                    <ion-content class="ion-padding">Pendiente ingresar a inventario</ion-content>
-                  </ng-template>
-                </ion-popover> -->
-
-              </ion-item>
-            </ion-list>
-          </ion-card-content>
-
+          <ion-card-header>
+            <ion-card-content>
+              <app-date-picker-month-year
+                [form]="form"
+                name="date"
+                label="Filtrar compra por fecha"
+                placeholder="Selecciona una fecha"
+                [required]="true"
+                [load]="load"
+                [showTime]="false"
+                (changes)="changeMonth($event)"
+                [max]="date">
+              </app-date-picker-month-year>
+            </ion-card-content>
+          </ion-card-header>
         </ion-card>
       </ion-col>
-  </ion-row>
-  </div>
+    </ion-row>
+    <ion-row class="ion-justify-content-center">
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
+        <ion-card class="rounded-4">
+          <ion-card-content class="mt-2">
+            <ion-list  *ngIf="shopping.length > 0">
+              <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 10px;">
+                <ion-col>
+                  <ion-label color="medium"><b>Descripcion</b></ion-label>
+                </ion-col>
+                 <ion-col>
+                  <ion-label color="medium"><b>Uid</b></ion-label>
+                </ion-col>
+                
+              </ion-row>
+            </ion-list>
+            <ion-list *ngIf="shopping.length > 0">
+              <ion-label  >
+              <ion-item  *ngFor="let shopp of shopping" id="open-modal" expand="block" (click)="openModal(shopp)" >
+                <ion-col>
+                  <p>{{ shopp.description}}</p>
+                </ion-col>
+                <ion-col>
+                  <h2> {{(shopp.uid )}}</h2>
+                </ion-col>
+              </ion-item>
+            </ion-label>
+              <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 10px;">
+                <ion-col>
+                  <ion-label color="medium"><b>Total de Compras</b></ion-label>
+                </ion-col>
+                <ion-col>
+                  <ion-label color="medium"><b>Q. {{ calculateTotalShoppingPrice() }}</b></ion-label>
+                </ion-col>
+              </ion-row>
+            </ion-list>
+            
 
-  <div *ngIf="segmentSelected === 'month'">
-    <ion-grid>
-      <ion-row class="ion-justify-content-center" >
+            <ion-list *ngIf="shopping.length <= 0">
+              <ion-item>
+                <ion-label class="text-center text-wrap">No se registraron ventas en {{ monthString(form.controls['date'].value) }}</ion-label>
+              </ion-item>
+            </ion-list>  
 
-          <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="" size-xl="7">
-            <ion-card class="rounded-4">
-
-              <ion-card-content class="mt-2">
-                <form [formGroup]="form">
-
-                  <ion-row>
-                    <ion-col size-xs="12" size-sm="12" size-md="12" size-lg="6" size-xl="6" class="m-auto">
-                      <app-date-picker-month-year
-                        [form]="form"
-                        name="date"
-                        label="Mes de compras"
-                        placeholder="Selecciona mes y año"
-                        presentation="month-year"
-                        [required]="true"
-                        [load]="load"
-                        (changes)="changeDate($event)">
-                      </app-date-picker-month-year>
+          </ion-card-content>
+        </ion-card>
+        <!-- modal -->
+        <ion-card-content color="danger" class="m-0" >
+          <ion-modal style="--border-radius: 5px;"  (willDismiss)="onWillDismiss($event)"  >
+            <ng-template >
+              <ion-header>
+                <ion-toolbar color="primary">
+                  <ion-title class="text-center" ></ion-title>
+                  <ion-buttons slot="end">
+                    <ion-button (click)="cancel()" [strong]="true">
+                      <ion-icon name="close-circle-outline"></ion-icon>
+                    </ion-button>
+                  </ion-buttons>
+                </ion-toolbar>
+              </ion-header>
+              
+              <ion-content class="ion-padding" *ngIf="shopp"  >
+                <ion-card class="rounded-4"  >
+                  <ion-card class="rounded-2" style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                  <ion-card-header>
+                    <ion-card-subtitle class="ion-text-center">
+                      <b>Datos de Compra</b>
+                    </ion-card-subtitle>
+                  </ion-card-header>
+                  <ion-card-content class="p-0">
+                    <ion-row>
+                      <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="" size-xl="12">
+                      <ion-label > Fecha De Creación: {{monthString(shopp.createAt)}}</ion-label>
+                    </ion-col>
+                       <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="" size-xl="12">
+                      <ion-label >Estado: {{ shopp.status === 'PENDING' ? 'PENDIENTE' : shopp.status === 'FINALIZED' ? 'FINALIZADO' : shopp.status }}
+                      </ion-label>
                     </ion-col>
                   </ion-row>
-
-                </form>
-              </ion-card-content>
-
-            </ion-card>
-          </ion-col>
-      </ion-row>
-    </ion-grid>
-  </div>
+                  
+                </ion-card-content>
+              </ion-card>
+                <ion-card class="rounded-2" style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                  <ion-card-content *ngIf="shopp.description">
+                      <ion-card-subtitle class="ion-text-center">
+                        <b>Descripcion</b>
+                      </ion-card-subtitle>
+                    <ion-label>{{shopp.description}}</ion-label>
+                </ion-card-content>
+              </ion-card>
+              <ion-card class="rounded-2" style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
+                <ion-card-subtitle class="ion-text-center">
+                  <b>Datos de productos</b>
+                </ion-card-subtitle>
+                <ion-list mode="ios">
+                  <ion-item *ngFor="let product of DetailsShopping">
+                    <ion-col><ion-label> {{ product.productName }}</ion-label></ion-col>
+                    <ion-col><ion-label> {{ product.priceUnit }}</ion-label></ion-col>
+                    <ion-col><ion-label> {{ product.quantity }}</ion-label></ion-col>
+                    <ion-col> <ion-label >{{ product.subTotal }}</ion-label></ion-col>
+                   
+                  </ion-item>
+                </ion-list>
+              </ion-card>
+              <ion-row style="border-bottom: 2px solid var(--ion-color-medium); padding: 10px;">
+                <ion-col>
+                  <ion-label color="medium"><b>Total de Compras</b></ion-label>
+                </ion-col>
+                <ion-col>
+                  <ion-label color="medium"><b>Q. {{ calculateTotalShoppingPrice() }}</b></ion-label>
+                </ion-col>
+              </ion-row>
+              <ion-row>
+                <ion-col>
+                  <ion-card-content>
+                    <ion-button (click)="finalizeShopping()">AUTORIZAR</ion-button>
+                  </ion-card-content>
+                </ion-col>
+              </ion-row>
+              
+                </ion-card>
+              </ion-content>
+            </ng-template>
+          </ion-modal>
+        </ion-card-content>
+        <!-- fin modal -->
+        
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</div>
 
   <div *ngIf="segmentSelected === 'report'">
     <ion-label>Generación de Reporte</ion-label>
   </div>
+
+  
 
 </ion-content>
 

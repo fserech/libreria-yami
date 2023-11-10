@@ -6,6 +6,7 @@ import { Sale } from 'src/app/shared/models/sale';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { Segments } from 'src/app/shared/models/segments';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ToastService } from 'src/app/shared/services/toast/toast.service';
 
 @Component({
   selector: 'app-history-sales',
@@ -18,6 +19,7 @@ export class HistorySalesComponent  implements OnInit {
   sales: Sale[] = [];
   title: string = 'Historial ventas';
   truncatedUID: string;
+  copied: boolean = false;
   value: Date = new Date();
   date: string = this.value.toISOString();
   segmentSelected = 'day';
@@ -36,7 +38,7 @@ export class HistorySalesComponent  implements OnInit {
     private modalController: ModalController,
     private datePipe: DatePipe,
     private formBuilder: FormBuilder,
-    
+    private toastService: ToastService,
   ) {
     this.form = this.formBuilder.group({
       date: ['', Validators.required]
@@ -84,9 +86,7 @@ export class HistorySalesComponent  implements OnInit {
       );
   }
 
-  firstCapitalLetter(cadena: string): string {
-    return cadena.charAt(0).toUpperCase() + cadena.slice(1);
-  }
+  
 
   changeDate($event: any){
     const value = $event.detail.value;
@@ -237,11 +237,25 @@ export class HistorySalesComponent  implements OnInit {
       }
     }
   
-    // Devolvemos el precio total como número con dos decimales
     return parseFloat(totalPrice.toFixed(2));
   }
   
-  
-  
+  copyToClipboard(text: string | undefined) {
+    if (text) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      textArea.setSelectionRange(0, 99999); // Para navegadores móviles
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      this.copied = true;
+      this.toastService.success('se copio UID del registro');
+      setTimeout(() => {
+        this.copied = false;
+      }, 1000); // Puedes ajustar el tiempo en milisegundos según tus preferencias
+
+    }
+  }
 
 }

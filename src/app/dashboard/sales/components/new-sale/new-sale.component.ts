@@ -29,6 +29,8 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
   totalPrice: number = 0;
   products$: Observable<any[]>;
   products: any[] = [];
+  itemsPerPage = 6;
+  currentPage = 1;
 
   constructor(
     private fb: FormBuilder,
@@ -76,6 +78,29 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
       total: ['', []],
       status: ['', []],
       // products: this.fb.array([]),
+    });
+  }
+
+  get startIndex(): number {
+    return (this.currentPage - 1) * this.itemsPerPage;
+  }
+
+  get endIndex(): number {
+    return this.startIndex + this.itemsPerPage;
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  nextPage() {
+    this.products$.subscribe(products$ => {
+      const totalPages = Math.ceil(products$.length / this.itemsPerPage);
+      if (this.currentPage < totalPages) {
+        this.currentPage++;
+      }
     });
   }
 

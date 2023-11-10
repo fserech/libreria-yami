@@ -70,7 +70,7 @@
                   <p>{{ sale.description}}</p>
                 </ion-col>
                 <ion-col>
-                  <h2>Q. {{ firstCapitalLetter(sale.total) }}</h2>
+                  <h2>Q. {{(sale.total) }}</h2>
                 </ion-col>
                 <ion-col>
                   <p>{{formatDate(sale.createAt) }}</p>
@@ -140,9 +140,7 @@
                 <ion-col>
                   <ion-label color="medium"><b>Total</b></ion-label>
                 </ion-col>
-                <ion-col>
-                  <ion-label color="medium"><b>Fecha</b></ion-label>
-                </ion-col>
+                
                 <ion-col>
                   <ion-label color="medium"><b>Estado</b></ion-label>
                 </ion-col>
@@ -154,11 +152,9 @@
                   <p>{{ sale.description}}</p>
                 </ion-col>
                 <ion-col>
-                  <h2>Q. {{ firstCapitalLetter(sale.total) }}</h2>
+                  <h2>Q. {{ (sale.total) }}</h2>
                 </ion-col>
-                <ion-col>
-                  <p>{{formatDate(sale.createAt) }}</p>
-                </ion-col>
+                
                 <ion-col [ngClass]="{'text-danger': !isInvoiceStatus(sale.status), 'text-success': isInvoiceStatus(sale.status)}">
                   <ion-label>{{ sale.status === 'UNBILLED' ? 'No Facturada' : 'Facturada' }}</ion-label>
                 </ion-col>

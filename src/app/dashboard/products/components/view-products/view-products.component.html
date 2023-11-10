@@ -16,6 +16,7 @@ title="Productos"
     </ion-col>
   </ion-row>
 </ion-toolbar>
+
 <ion-content class="ion-padding">
 
   <ion-grid>
@@ -32,7 +33,7 @@ title="Productos"
           </ion-card-header>
           <ion-card-content class="mt-2">
             <ion-list>
-              <ion-item *ngFor="let product of products">
+              <ion-item *ngFor="let product of products.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)">
                 <ion-label>
                   <h2>{{ firstCapitalLetter(product.name) }}</h2>
                   <p>{{ product.uid }}</p>
@@ -48,6 +49,8 @@ title="Productos"
                 </ion-button>
               </ion-item>
             </ion-list>
+            <ion-button (click)="previousPage()" [disabled]="currentPage === 1"><ion-icon name="arrow-back-circle-outline"></ion-icon></ion-button>
+            <ion-button (click)="nextPage()" [disabled]="currentPage * itemsPerPage >= products.length"><ion-icon name="arrow-forward-circle-outline"></ion-icon></ion-button>
 
             
           </ion-card-content>

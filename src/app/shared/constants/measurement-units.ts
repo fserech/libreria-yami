@@ -1,5 +1,5 @@
 export const MEASUREMENT_UNITS: any[] = [
-  { value: 'L', label: 'Litro' },
+  { value: 'R', label: 'Resma' },
   { value: 'LB', label: 'Libra' },
   { value: 'C', label: 'Caja' },
   { value: 'CM', label: 'Centimetro' },

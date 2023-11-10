@@ -122,7 +122,7 @@ title="Ventas"
 
                     <ion-list>
                       <ion-list style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
-                      <ion-item *ngFor="let product of products$ | async; ; let i = index">
+                        <ion-item *ngFor="let product of (products$ | async)?.slice(startIndex, endIndex); let i = index">
                           <ion-col size="1">
                             <ion-checkbox
                               *ngIf="product.active && product.stock !== '0'"
@@ -163,6 +163,8 @@ title="Ventas"
                      </ion-list>
                     <!-- <div *ngIf="products.length === 0">No se encontraron resultados.</div> -->
                     </ion-list>
+                    <ion-button (click)="previousPage()" [disabled]="currentPage === 1"><ion-icon name="arrow-back-circle-outline"></ion-icon></ion-button>
+                   <ion-button (click)="nextPage()" [disabled]="endIndex >= (products$ | async)?.length"><ion-icon name="arrow-forward-circle-outline"></ion-icon></ion-button>
                   </ion-card-content>
               </ion-toolbar>
 

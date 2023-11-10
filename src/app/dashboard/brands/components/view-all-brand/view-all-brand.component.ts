@@ -13,9 +13,10 @@ import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.se
 export class ViewAllBrandComponent implements OnInit {
   brands: Brand[] = [];
   title: string = 'Ver marcas';
-  selectedArticles: Article[] = []; // Lista de artículos seleccionados
-  fruits: Article[] = []; // Lista de todos los artículos disponibles
-  selectedFruitsText: string = '';
+  itemsPerPage: number = 8;
+  currentPage: number = 1;
+  totalItems: number;
+  isLoading: boolean = false;
 
   constructor(
     private dashboardService: DashboardService,
@@ -71,5 +72,17 @@ export class ViewAllBrandComponent implements OnInit {
 
   firstCapitalLetter(cadena: string): string {
     return cadena.charAt(0).toUpperCase() + cadena.slice(1);
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+  
+  nextPage() {
+    if (this.currentPage * this.itemsPerPage < this.brands.length) {
+      this.currentPage++;
+    }
   }
 }

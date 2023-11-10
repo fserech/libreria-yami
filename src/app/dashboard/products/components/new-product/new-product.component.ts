@@ -117,56 +117,39 @@ export class NewProductComponent  implements OnInit {
 
   submit() {
     this.load = true;
-    const newname = this.form.controls['name'].value;
-    this.dashboardService.searchForField(PRODUCTS_COLLECTION_NAME, 'name', newname)
-      .subscribe((result: any[]) => {
-        if (result.length > 0) {
-          this.toastService.info(' No se puede crear otro producto con el mismo nombre.');
-          this.load = false;
-        } else {
-          const date: Date = new Date();
-          this.record = {
-            name: newname,
-            description: this.form.controls['description'].value,
-            brandsRef: this.form.controls['brands'].value,
-            categoryRef: this.dashboardService.getDocumentReference(CATEGORIES_COLLECTION_NAME, this.form.controls['category'].value),
-            stock: this.mode === 'new' ? '0' : this.recordAux.stock,
-            unitMeasurement: this.form.controls['unitMeasurement'].value,
-            typeWholesaleUnitMeasure: this.form.controls['typeWholesaleUnitMeasure'].value,
-            priceSale: this.mode === 'new' ? '00.00' : this.recordAux.priceSale,
-            unitsPackage: this.form.controls['unitsPackage'].value,
-            active: this.form.controls['active'].value,
-            stockMin: this.form.controls['stockMin'].value,
-            stockMax: this.form.controls['stockMax'].value,
-            createAt: this.mode === 'new' ? date : this.recordAux.createAt,
-            isSelected: this.form.controls['active'].value,
-          };
-          if (this.mode == 'new') {
-            this.dashboardService
-              .saveDocument(PRODUCTS_COLLECTION_NAME, this.record)
-              .then((response: any) => {
-                this.reset();
-                this.toastService.success('Producto creado exitosamente.');
-              })
-              .catch((error: any) => {
-                console.log(error);
-                this.reset();
-                this.toastService.error('Hubo un error al crear el producto.');
-              });
-          } else if (this.mode === 'edit') {
-            const uid = this.route.snapshot.params['uid'];
-            this.dashboardService
-              .udpateDocument(uid, PRODUCTS_COLLECTION_NAME, this.record)
-              .then((response: any) => {
-                this.toastService.success('Producto actualizado exitosamente.');
-                this.reset(this.routeBackAll);
-              })
-              .catch((error: any) => {
-                this.reset(this.routeBackAll);
-              });
-          }
-        }
-      });
+    this.record = null;
+    const date: Date= new Date();
+    this.record={
+      name: this.form.controls['name'].value,
+      description: this.form.controls['description'].value,
+      brandsRef: this.form.controls['brands'].value,	          
+      categoryRef: this.dashboardService.getDocumentReference(CATEGORIES_COLLECTION_NAME,this.form.controls['category'].value),
+      stock: this.mode === 'new' ? '0' : this.recordAux.stock,
+      unitMeasurement: this.form.controls['unitMeasurement'].value,
+      typeWholesaleUnitMeasure: this.form.controls['typeWholesaleUnitMeasure'].value,
+      priceSale: this.mode === 'new' ? '00.00' : this.recordAux.priceSale,
+      active: this.form.controls['active'].value,
+      unitsPackage: this.form.controls['unitsPackage'].value,
+      stockMin: this.form.controls['stockMin'].value,
+      stockMax: this.form.controls['stockMax'].value,
+      createAt: this.mode === 'new' ? date : this.recordAux.createAt,
+      isSelected: this.form.controls['active'].value,
+    }
+    if(this.mode =='new'){
+      this.dashboardService
+      .saveDocument(PRODUCTS_COLLECTION_NAME, this.record)
+      .then((response: any) => {this.reset();})
+      .catch((error: any) => {this.reset();});
+
+    }else if(this.mode == 'edit'){
+      const uid = this.route.snapshot.params['uid'];
+      this.dashboardService
+      .udpateDocument(uid, PRODUCTS_COLLECTION_NAME, this.record)
+      .then((response: any) => {this.reset(this.routeBackAll);})
+      .catch((error: any) => {this.reset(this.routeBackAll);});
+
+    }
+
   }
   
 

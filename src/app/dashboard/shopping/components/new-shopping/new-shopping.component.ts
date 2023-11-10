@@ -36,6 +36,7 @@ export class NewShoppingComponent  implements OnInit {
   productsList: Product[] = [];
   results: Product[] = [];
   isMobile: boolean;
+  routeBack: string = '/dashboard/products';
   loadProduct: boolean;
   currentProduct: Product = null;
   productsSelect: {units: string, product: Product, brand: string, price: string}[] = [];
@@ -138,16 +139,24 @@ export class NewShoppingComponent  implements OnInit {
      this.dashboardService
       .saveDocument(SHOPPING_COLLECTION_NAME, record)
       .then((response: any) => {
-        console.log('response: ', response);
-        console.log('record es: ', record);
+        this.reset();
         if(response)this.toastService.success('Compra registrada correctamente');
       })
       .catch((error: any) => {
-        console.log('error: ', error)
+        this.reset();
         this.toastService.error('ocurrio un error al guardar la compra, intenta luego')
       });
   }
 
+  reset(route?: string){
+    this.form.reset();
+    this.load = false;
+    if(route){
+      this.router.navigate([route]);
+    }else{
+      this.router.navigate([this.routeBack]);
+    }
+  }
   buildDetailsShopping():DetailsShopping[]{
     if(this.productsSelect.length > 0){
       let details: DetailsShopping[] = [];

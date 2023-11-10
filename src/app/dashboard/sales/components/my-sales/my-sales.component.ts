@@ -81,9 +81,7 @@ export class MySalesComponent  implements OnInit {
       );
   }
 
-  firstCapitalLetter(cadena: string): string {
-    return cadena.charAt(0).toUpperCase() + cadena.slice(1);
-  }
+  
 
   changeDate($event: any){
     const value = $event.detail.value;

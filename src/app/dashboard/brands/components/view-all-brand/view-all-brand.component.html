@@ -33,7 +33,7 @@
           </ion-card-header>
           <ion-card-content class="mt-2">
             <ion-list>
-              <ion-item *ngFor="let brand of brands">
+              <ion-item *ngFor="let brand of brands.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)">
                 <ion-label>
                   <h2>{{ firstCapitalLetter(brand.name) }}</h2>
                   <p>{{ brand.uid }}</p>
@@ -49,7 +49,8 @@
                 </ion-button>
               </ion-item>
             </ion-list>
-
+            <ion-button (click)="previousPage()" [disabled]="currentPage === 1"><ion-icon name="arrow-back-circle-outline"></ion-icon></ion-button>
+            <ion-button (click)="nextPage()" [disabled]="currentPage * itemsPerPage >= brands.length"><ion-icon name="arrow-forward-circle-outline"></ion-icon></ion-button>
             
           </ion-card-content>
         </ion-card>

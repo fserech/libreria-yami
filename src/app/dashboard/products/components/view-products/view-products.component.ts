@@ -13,14 +13,21 @@ import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.se
 export class ViewProductsComponent  implements OnInit {
   products: Product[] = [];
   title: string = 'Ver Productos';
+  itemsPerPage: number = 8;
+  currentPage: number = 1;
+  totalItems: number;
+  isLoading: boolean = false;
+
 
   constructor(
     private dashboardService: DashboardService,
     private navCtrl: NavController,
-    private router: Router
+    private router: Router,
+    
   ) { }
 
   ngOnInit() {
+    
     this.dashboardService.getAllItemsCollection(PRODUCTS_COLLECTION_NAME, 'name')
     .subscribe({
       next: (products: Product[]) => {
@@ -30,6 +37,18 @@ export class ViewProductsComponent  implements OnInit {
     });
   }
 
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+  
+  nextPage() {
+    if (this.currentPage * this.itemsPerPage < this.products.length) {
+      this.currentPage++;
+    }
+  }
+  
 
   editProduct(product: Product) {
     // console.log(product.uid)
@@ -54,6 +73,7 @@ export class ViewProductsComponent  implements OnInit {
         }
       );
   }
+  
 
   firstCapitalLetter(cadena: string): string {
     return cadena.charAt(0).toUpperCase() + cadena.slice(1);
