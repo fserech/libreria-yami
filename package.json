@@ -28,6 +28,7 @@
     "@capacitor/keyboard": "5.0.4",
     "@capacitor/status-bar": "5.0.4",
     "@ionic/angular": "^7.0.0",
+    "@swimlane/ngx-charts": "^20.4.1",
     "bootstrap": "^5.3.0",
     "bootstrap-icons": "^1.10.5",
     "ionicons": "^7.0.0",
