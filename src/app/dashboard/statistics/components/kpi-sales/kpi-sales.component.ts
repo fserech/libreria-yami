@@ -139,6 +139,8 @@ export class KpiSalesComponent  implements OnInit, AfterViewChecked {
   cardColor = '#232837';
   yAxisLabel: string = 'Cantidad';
   xAxisLabel: string = 'Semanas';
+  date: Date = new Date();
+  currentYear: any = this.date.getFullYear();
 
   constructor(
     private fb: FormBuilder,
