@@ -19,22 +19,20 @@
       ]
     }
   ],
-  "hosting": [
-    {
-      "site":"libreria-80d84",
-      "public": "public",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ]
-    },
-    {
-      "target": "app",
-      "source": ".",
-      "frameworksBackend": {}
-    }
-  ],
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
   "storage": {
     "rules": "storage.rules"
   },
@@ -52,6 +50,12 @@
       "enabled": true,
       "port": 5353
     },
-    "singleProjectMode": true
+    "singleProjectMode": true,
+    "auth": {
+      "port": 9099
+    },
+    "hosting": {
+      "port": 5000
+    }
   }
 }
