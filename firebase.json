@@ -21,6 +21,7 @@
   ],
   "hosting": [
     {
+      "site":"libreria-80d84",
       "public": "public",
       "ignore": [
         "firebase.json",
