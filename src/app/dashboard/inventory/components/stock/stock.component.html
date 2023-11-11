@@ -4,8 +4,60 @@ title="Inventarios"
 [showButtonBack]="true">
 </app-header>
 
+<ion-toolbar>
+  <ion-row class="row">
+    <ion-col class="m-auto d-flex col-12 align-items-center" size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
+      <ion-searchbar
+        placeholder="Buscar"
+        shape="round"
+        class="rounded-pill"
+        (ionInput)="handleInput($event)">
+      </ion-searchbar>
+    </ion-col>
+  </ion-row>
+</ion-toolbar>
 <ion-content>
-  <ion-label color="medium">
-    <h1>consulta de stock</h1>
-  </ion-label>
+  <ion-grid>
+    <ion-row class="ion-justify-content-center">
+      <ion-col size-xs="12" size-sm="10" size-md="8" size-lg=" " size-xl="7">
+        <ion-card class="rounded-4">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-text color="medium">
+                <!-- <h1><ion-icon name="file-tray-stacked-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1> -->
+              </ion-text>
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="mt-2">
+            <ion-list>
+              <ion-item *ngFor="let product of getSortedProducts().slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)">
+                <ion-label>
+                  <ion-row>
+                    <!-- Primera columna -->
+                    <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                      <ion-title style="text-align: start;">{{ firstCapitalLetter(product.name) }}</ion-title>
+                    </ion-col>
+                    <!-- Segunda columna -->
+                    <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                      <ion-title style="font-size: 30px" >
+                        <ion-icon [name]="getStockIconColor(product)" [color]="getStockIconColor(product)"  [name]="getStockIconName(product)"  ></ion-icon>
+                        <ion-badge [color]="getStockIconColor(product)">{{ product.stock }}</ion-badge>
+                      </ion-title>
+                    </ion-col>
+                  </ion-row>
+                </ion-label>
+              </ion-item>
+              
+            </ion-list>
+            <ion-button (click)="previousPage()" [disabled]="currentPage === 1"><ion-icon name="arrow-back-circle-outline"></ion-icon></ion-button>
+            <ion-button (click)="nextPage()" [disabled]="currentPage * itemsPerPage >= products.length"><ion-icon name="arrow-forward-circle-outline"></ion-icon></ion-button>
+
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 </ion-content>
+
+
+
