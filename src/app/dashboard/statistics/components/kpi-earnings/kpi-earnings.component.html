@@ -6,29 +6,127 @@ title="Estadisticas"
 
 <ion-content>
 
-  <!-- <ion-label>Gráfica</ion-label>
-  <ngx-charts-bar-vertical
-    [view]="[400, 300]"
-    [results]="barChartData"
-    [xAxis]="true"
-    [yAxis]="true">
-  </ngx-charts-bar-vertical> -->
+  <ion-row class="d-flex justify-content-center">
+    <ion-col size-xs="12" size-sm="12" size-md="8" size-lg="6" size-xl="6">
+      <ion-card class="rounded-4">
+        <ion-card-title class="p-2">
+          <ion-label color="medium">
+            <h1>Resumen del mes actual</h1>
+          </ion-label>
+        </ion-card-title>
+      </ion-card>
+    </ion-col>
+  </ion-row>
 
-<div>
-  <ngx-charts-bar-vertical-2d
-  [view]="[800, 300]"
-  [results]="data"
-  [yAxisLabel]="yAxisLabel"
-  [XAxisLabel]="xAxisLabel"
-  [xAxis]="true"
-  [yAxis]="true"
-  [animations]="true"
-  [legend]="true"
-  [legendTitle]="'No. Semana'">
-  </ngx-charts-bar-vertical-2d>
-</div>
+  <ion-row class="d-flex justify-content-center">
 
+    <ion-col size-xs="12" size-sm="12" size-md="8" size-lg="6" size-xl="6">
+      <ion-card>
+        <ion-card-title>
+          <div class="text-center">
+            <ion-label color="medium">
+              <h1><b>No. de ventas actual</b></h1>
+            </ion-label>
+          </div>
+        </ion-card-title>
+        <ion-card-content>
+          <div class="p-0 m-0">
+            <ngx-charts-linear-gauge
+              [value]="value"
+              [previousValue]="previousValue"
+              [units]="units">
+            </ngx-charts-linear-gauge>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
 
+    <ion-col size-xs="12" size-sm="12" size-md="8" size-lg="6" size-xl="6">
+      <ion-card>
+        <ion-card-title>
+          <div class="text-center">
+            <ion-label color="medium">
+              <h1><b>Categorias más vendida</b></h1>
+            </ion-label>
+          </div>
+        </ion-card-title>
+        <ion-card-content>
+          <div class="p-0 m-0">
+            <ngx-charts-pie-grid
+              [results]="single">
+            </ngx-charts-pie-grid>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+
+  </ion-row>
+
+  <ion-row class="d-flex justify-content-center">
+    <ion-col size-xs="12" size-sm="12" size-md="8" size-lg="6" size-xl="6">
+      <ion-card class="rounded-4">
+        <ion-card-title class="p-2">
+          <ion-label color="medium">
+            <h1>Resumen de los últimos 3 meses</h1>
+          </ion-label>
+        </ion-card-title>
+      </ion-card>
+    </ion-col>
+  </ion-row>
+
+  <ion-row class="d-flex justify-content-center">
+
+    <ion-col size-xs="12" size-sm="12" size-md="8" size-lg="6" size-xl="6">
+      <ion-card class="rounded-4">
+        <ion-card-title>
+          <div class="text-center">
+            <ion-label color="medium">
+              <h1><b>Ventas por semana</b></h1>
+            </ion-label>
+          </div>
+        </ion-card-title>
+        <ion-card-content>
+          <div class="p-0 m-0">
+            <ngx-charts-bar-vertical-2d
+              [results]="data"
+              [yAxisLabel]="yAxisLabel"
+              [XAxisLabel]="xAxisLabel"
+              [xAxis]="true"
+              [yAxis]="true"
+              [animations]="true"
+              [legend]="true"
+              [legendTitle]="'No. Semana'"
+              [resize]="true"
+              [customColors]="colorScheme"
+              style="height: 100%;"
+              [gradient]="true">
+            </ngx-charts-bar-vertical-2d>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+
+    <ion-col size-xs="12" size-sm="12" size-md="8" size-lg="6" size-xl="6">
+      <ion-card>
+        <ion-card-title>
+          <div class="text-center">
+            <ion-label color="medium">
+              <h1><b>Categorias más vendida</b></h1>
+            </ion-label>
+          </div>
+        </ion-card-title>
+        <ion-card-content>
+          <div class="p-0 m-0">
+            <ngx-charts-number-card
+              [results]="single"
+              [cardColor]="cardColor">
+            </ngx-charts-number-card>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+
+  </ion-row>
 
 </ion-content>
 

@@ -6,6 +6,7 @@ import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.se
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
 import { ReportSalesService } from '../../services/report-sales.service';
 import { Color } from '@swimlane/ngx-charts';
+import { ColorHelper } from '@swimlane/ngx-charts';
 
 export var single = [
   {
@@ -73,6 +74,32 @@ export var multi = [
 })
 export class KpiEarningsComponent  implements OnInit, AfterViewChecked {
 
+ single = [
+    {
+      "name": "Germany",
+      "value": 8940000
+    },
+    {
+      "name": "USA",
+      "value": 5000000
+    },
+    {
+      "name": "France",
+      "value": 7200000
+    },
+    {
+      "name": "UK",
+      "value": 5200000
+    },
+    {
+      "name": "Italy",
+      "value": 7700000
+    },
+    {
+      "name": "Spain",
+      "value": 4300000
+    }
+  ];
 
   barChartData: any[] = [
     // {
@@ -162,7 +189,15 @@ export class KpiEarningsComponent  implements OnInit, AfterViewChecked {
       ]
     },
   ];
-  view: [number, number] = [500, 300];
+
+  colorScheme = {
+    domain: ['#9370DB', '#87CEFA', '#FA8072', '#FF7F50', '#90EE90', '#9370DB']
+  };
+
+  value: number = 50;
+  previousValue: number = 70;
+  units: string = 'counts';
+  cardColor = '#232837';
   yAxisLabel: string = 'Cantidad';
   xAxisLabel: string = 'Semanas';
 
