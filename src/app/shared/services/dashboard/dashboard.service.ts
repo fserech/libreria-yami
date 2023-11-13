@@ -137,8 +137,17 @@ getDocumentsByDateRange(collection: string, initDate: Date, endDate: Date, field
 
   return this.firestore.collection(collection, ref =>
     ref.where(field, '>=', initDateAdjusted).where(field, '<=', endDateAdjusted)
-  ).valueChanges();
+  ).snapshotChanges().pipe(
+    map(actions => {
+      return actions.map(action => {
+        const data = action.payload.doc.data() as any;
+        const uid = action.payload.doc.id;
+        return { uid, ...data };
+      });
+    })
+  );
 }
+
 
 getItemsPageNext(collection: string, endDoc: any, limit: number, orderByField: string, directionStr: 'desc' | 'asc'): Observable<any>{
 

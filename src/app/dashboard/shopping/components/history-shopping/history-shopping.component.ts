@@ -8,6 +8,9 @@ import { DetailsShopping, Shopping } from 'src/app/shared/models/shopping';
 import { DashboardService } from 'src/app/shared/services/dashboard/dashboard.service';
 import { ToastService } from 'src/app/shared/services/toast/toast.service';
 import { OverlayEventDetail } from '@ionic/core/components';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Product } from 'src/app/shared/models/product';
+import { MESSAGES_APP } from 'src/app/shared/constants/messages-app';
 
 @Component({
   selector: 'app-history-shopping',
@@ -26,8 +29,9 @@ export class HistoryShoppingComponent  implements OnInit {
   date: string = this.value.toISOString();
   segmentSelected = 'day' ;
   load: boolean = false;
+  formProduct: FormGroup;
   DetailsShopping: DetailsShopping[] = [];
-  products: DetailsShopping[];
+  products: Product[] = [];;
   segmentList: Array<Segments> = [ // Asegúrate de ajustar el tipo de datos de 'segmentList' según tus necesidades
     { name: 'day', label: 'Por Día', icon: 'partly-sunny-outline' },
     { name: 'month', label: 'Por Mes', icon: 'today-outline' }
@@ -40,41 +44,22 @@ export class HistoryShoppingComponent  implements OnInit {
     private modalController: ModalController,
     private datePipe: DatePipe,
     private formBuilder: FormBuilder,
-    private toastService: ToastService
+    private toastService: ToastService,
+     private route: ActivatedRoute,
+    private router: Router
     
   ) {
-    
     this.form = this.formBuilder.group({
-      date: ['', Validators.required],
-
-    });
+        date: ['', Validators.required],
+      }); 
+      this.formProduct = this.formBuilder.group({
+        priceSale: ['', []],
+      });
   }
   
   ngOnInit() {
-    
-    
     const date = new Date();
     this.getShopping(date, date);
-  }
-
-  updateShoppingStatus(shopping: Shopping) {
-    // Cambia el estado de la compra
-    if (shopping.status === 'PENDING') {
-      shopping.status = 'FINALIZED';
-    } else if (shopping.status === 'FINALIZED') {
-      shopping.status = 'PENDING';
-    }
-
-    // Puedes agregar aquí la lógica para guardar el cambio en tu base de datos o servicio
-    // Por ejemplo, puedes emitir una solicitud HTTP a tu servidor para actualizar el estado.
-
-    // Si estás utilizando Firebase Firestore, puedes hacer algo como esto (asegúrate de importar AngularFire):
-    // this.afs.collection('shopping').doc(shopping.uid).update({ status: shopping.status });
-}
-
-
-  isInvoiceStatus(status: string): boolean {
-    return status === 'INVOICED';
   }
 
   formatDate(timestamp: any): string {
@@ -82,31 +67,19 @@ export class HistoryShoppingComponent  implements OnInit {
     return this.datePipe.transform(date, 'dd/MM/yyyy HH:mm:ss') || '';
   }
 
-  handleInput(event: any) {
-    const value = event.target.value.toLowerCase();
-    this.dashboardService.searchForField(SHOPPING_COLLECTION_NAME, 'uid', value)
-      .subscribe((response: any[]) => {
-        this.shopping = response;
-      },
-      (error: any) => {
-        console.log(error);
-      });
-  }
-
   changeDate($event: any){
     const value = $event.detail.value;
     const date = new Date(value);
     this.getShopping(date, date);
   }
-  
 
   getShopping(dateInit: Date, endDate: Date){
     this.load = true;
     this.shopping = [];
   
     this.dashboardService.getDocumentsByDateRange(SHOPPING_COLLECTION_NAME, dateInit, endDate, 'createAt').subscribe({
-      next: (res: Shopping[]) => {
-        this.shopping = res;
+      next: (shopping: Shopping[]) => {
+        this.shopping = shopping;
         this.load = false;
       },
       error: (err: any) => {
@@ -114,8 +87,6 @@ export class HistoryShoppingComponent  implements OnInit {
       },
     });
   }
-  
-  
   
 
   dateString(value: string): string{
@@ -146,9 +117,6 @@ export class HistoryShoppingComponent  implements OnInit {
     }
   }
   
-  
-  
-
   getMonth(value: string): string{
     let date = '';
     switch (value) {
@@ -203,7 +171,6 @@ export class HistoryShoppingComponent  implements OnInit {
     this.getShopping(firstDate, lastDate);
   }
   
-
   getFirstAndLastDayOfMonth(dateString: string): { firstDate: string, lastDate: string } {
 
     const date = new Date(dateString);
@@ -279,62 +246,47 @@ export class HistoryShoppingComponent  implements OnInit {
       }, 1000);
     }
   }
-
-  
-   
+ 
   async finalizeShopping() {
-    const arrayOfShopping: Shopping[] = this.shopping;
-    const finalizePromises: Promise<any>[] = [];
-    for (const shopping of arrayOfShopping) {
-      if (shopping && shopping.products && shopping.products.length > 0) {
-        const updateStockPromises: Promise<any>[] = [];
-  
-        for (const product of shopping.products) {
-          const productUid = product.productUid;
-          const productQuantity = parseFloat(product.quantity);
-  
-          updateStockPromises.push(
-            this.dashboardService.getDocumentByIdToPromise(PRODUCTS_COLLECTION_NAME, productUid)
-              .then((productFb: any) => {
-                const currentStock = parseFloat(productFb.stock) + productQuantity;
-  
-                return this.dashboardService.udpateDocument(productUid, PRODUCTS_COLLECTION_NAME,  { stock: currentStock })
-                  .then(() => {
-                    return { uid: productUid, name: product.productName, stock: currentStock, success: true };
-                  })
-                  .catch((error: any) => {
-                    console.log('Error al procesar el producto:', error);
-                    return { uid: productUid, name: product.productName, success: false, error };
-                  });
-              })
-
-          );
-        }
+    const shopping = this.shopping.find((element: any) => element.status === 'PENDING');
+    if (shopping) {
+      const shoppingUid = shopping.uid;
+      await this.dashboardService.udpateDocument(shoppingUid, SHOPPING_COLLECTION_NAME, { status: 'FINALIZED' });
+      const updatePromises: Promise<any>[] = [];
+      const updateStockPromises: Promise<any>[] = [];
+      for (const product of shopping.products) {
+        const productUid = product.productUid;
+        const productQuantity = parseFloat(product.quantity);
+        const productFb = await this.dashboardService.getDocumentByIdToPromise(PRODUCTS_COLLECTION_NAME, productUid);
+        const currentStock = parseFloat(productFb.stock) + productQuantity;
+        const updateProductPromise = this.dashboardService.udpateDocument(productUid, PRODUCTS_COLLECTION_NAME, { stock: currentStock });
+        updateStockPromises.push(updateProductPromise);
       }
+      updatePromises.push(...updateStockPromises);
+      const updatePriceSalePromises: Promise<any>[] = [];
+      for (const product of shopping.products) {
+        const productUid = product.productUid;
+        const newPriceSale = this.formProduct.get('priceSale')?.value;
+        const updateProductPromise = this.dashboardService.udpateDocument(productUid, PRODUCTS_COLLECTION_NAME, { priceSale: newPriceSale });
+        updatePriceSalePromises.push(updateProductPromise);
+      }
+      updatePromises.push(...updatePriceSalePromises);
+      await Promise.all(updatePromises);
+      this.submitClicked();
+      this.toastService.success('Compra autorizada correctamente');
     }
-  
-    Promise.all(finalizePromises)
-      .then(() => {
-        console.log('Todas las compras han sido finalizadas');
-        this.submitClicked();
-      })
-      .catch((error: any) => {
-        console.log('Error al finalizar las compras:', error);
-      });
   }
   
-
+  getMessageApp(code: string): string{
+    return MESSAGES_APP.find((element: any) => element.code === code).message;
+  }
   
-  
- 
   cancel() {
     this.modal.dismiss(null, 'cancel');
   }
 
-
   onWillDismiss(event: Event) {
     const ev = event as CustomEvent<OverlayEventDetail<string>>;
-    
   }
   async openModal(shopp: Shopping)
   {

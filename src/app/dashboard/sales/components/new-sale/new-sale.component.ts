@@ -59,14 +59,6 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
 
   ngOnInit() {
 
-    // this.dashboardService.getAllItemsCollection(PRODUCTS_COLLECTION_NAME, 'name')
-    // .subscribe({
-    //   next: (products: Product[]) => {
-    //     this.products = products;
-
-    //   },
-    //   error: error => {console.log(error);}
-    // });
   }
 
   getFiles() {
@@ -132,8 +124,10 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
           .saveDocument(SALES_COLLECTION_NAME, this.record)
           .then((response: any) => {
             console.log(response);
+            this.updateStockFb();
             this.load = false;
             this.form.reset();
+            this.reset(this.routeBack);
           })
           .catch((error: any) => {
             console.log(error);
@@ -144,38 +138,9 @@ export class NewSaleComponent  implements OnInit, AfterViewChecked {
           console.log(result.message)
         }
       });
+      this.reset(this.routeBack);
 
     }
-
-    // Agregar un console.log para mostrar el JSON antes de guardarlo
-    // console.log('JSON a guardar en Firestore:', this.record);
-
-    // if (this.form) {
-    //   this.dashboardService
-    //     .saveDocument(SALES_COLLECTION_NAME, this.record)
-    //     .then((response: any) => {
-    //       console.log(response);
-    //       this.load = false;
-    //       this.form.reset();
-    //     })
-    //     .catch((error: any) => {
-    //       console.log(error);
-    //       this.load = false;
-    //       this.form.reset();
-    //     });
-    //     this.reset(this.routeBack);
-    // }  this.selectedProducts.forEach((product: any) => {
-    //   const updatedStock = product.stock - product.units;
-    //   if (updatedStock >= 0) {
-    //     // Actualiza el stock del producto en Firestore
-    //     this.dashboardService.udpateDocument(product.uid, 'products', { stock: updatedStock });
-
-    //   } else {
-    //     console.error(`No hay suficiente stock disponible para ${product.name}`);
-
-
-    //   }
-    // });
 
   }
 

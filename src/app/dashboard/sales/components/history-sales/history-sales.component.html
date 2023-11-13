@@ -54,13 +54,7 @@
                   <ion-label color="medium"><b>Descripcion</b></ion-label>
                 </ion-col>
                 <ion-col>
-                  <ion-label color="medium"><b>Total</b></ion-label>
-                </ion-col>
-                <ion-col>
-                  <ion-label color="medium"><b>Fecha</b></ion-label>
-                </ion-col>
-                <ion-col>
-                  <ion-label color="medium"><b>Estado</b></ion-label>
+                  <ion-label color="medium"><b>Uid</b></ion-label>
                 </ion-col>
               </ion-row>
             </ion-list>
@@ -70,13 +64,15 @@
                   <p>{{ sale.description}}</p>
                 </ion-col>
                 <ion-col>
-                  <h2>Q. {{(sale.total) }}</h2>
-                </ion-col>
-                <ion-col>
-                  <p>{{formatDate(sale.createAt) }}</p>
-                </ion-col>
-                <ion-col [ngClass]="{'text-danger': !isInvoiceStatus(sale.status), 'text-success': isInvoiceStatus(sale.status)}">
-                  <ion-label>{{ sale.status === 'UNBILLED' ? 'No Facturada' : 'Facturada' }}</ion-label>
+                  <h2> {{(sale.uid)}}
+                    <ion-icon
+                    class="m-0"
+                    [class.enlarged]="copied"
+                    style="font-size: 20px;"
+                    color="primary"
+                    name="copy-outline"
+                    (click)="copyToClipboard(sale.uid)"></ion-icon>
+                  </h2>
                 </ion-col>
               </ion-item>
               
@@ -138,11 +134,7 @@
                   <ion-label color="medium"><b>Descripcion</b></ion-label>
                 </ion-col>
                 <ion-col>
-                  <ion-label color="medium"><b>Total</b></ion-label>
-                </ion-col>
-                
-                <ion-col>
-                  <ion-label color="medium"><b>Estado</b></ion-label>
+                  <ion-label color="medium"><b>Uid</b></ion-label>
                 </ion-col>
               </ion-row>
             </ion-list>
@@ -152,11 +144,15 @@
                   <p>{{ sale.description}}</p>
                 </ion-col>
                 <ion-col>
-                  <h2>Q. {{ (sale.total) }}</h2>
-                </ion-col>
-                
-                <ion-col [ngClass]="{'text-danger': !isInvoiceStatus(sale.status), 'text-success': isInvoiceStatus(sale.status)}">
-                  <ion-label>{{ sale.status === 'UNBILLED' ? 'No Facturada' : 'Facturada' }}</ion-label>
+                  <h2> {{(sale.uid)}}
+                    <ion-icon
+                    class="m-0"
+                    [class.enlarged]="copied"
+                    style="font-size: 20px;"
+                    color="primary"
+                    name="copy-outline"
+                    (click)="copyToClipboard(sale.uid)"></ion-icon>
+                  </h2>
                 </ion-col>
                
                 
