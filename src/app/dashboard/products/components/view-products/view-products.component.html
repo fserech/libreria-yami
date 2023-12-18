@@ -24,19 +24,19 @@ title="Productos"
       <ion-col size-xs="12" size-sm="10" size-md="8" size-lg="5" size-xl="5">
         <ion-card class="rounded-4">
           <ion-card-header>
-            <ion-card-title>
+            <!-- <ion-card-title>
               <ion-text color="medium">
                 <h1><ion-icon name="albums-outline" style="font-size: 30px;"></ion-icon> {{ title }}</h1>
               </ion-text>
-            </ion-card-title>
+            </ion-card-title> -->
             
           </ion-card-header>
           <ion-card-content class="mt-2">
             <ion-list>
               <ion-item *ngFor="let product of products.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)">
                 <ion-label>
-                  <h2>{{ firstCapitalLetter(product.name) }}</h2>
-                  <p>{{ product.uid }}</p>
+                  <h2>{{firstCapitalLetter(product.name)}}</h2>
+                  <p>{{ product.description }}</p>
                 </ion-label>
 
                 <ion-button class="float-right" (click)="editProduct(product)">

@@ -94,154 +94,316 @@ title="Ventas"
 
         <!-- asignacion del buscador  -->
         <ion-card class="rounded-4">
-          <ion-card-header>
-         <ion-card-content class="mt-2">
-          <form [formGroup]="form">
-            <ion-row>
-              <ion-searchbar placeholder="Buscar producto" color="light  "></ion-searchbar>
-              <ion-toolbar>
-                  <ion-card-content class="mt-2">
-                    <ion-list>
-                      <ion-row style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
-                        <ion-col size="1">
-                        </ion-col>
-                        <ion-col>
-                          <ion-label color="medium"><b>Nombre</b></ion-label>
-                        </ion-col>
-                        <ion-col>
-                          <ion-label color="medium"><b>Descripción</b></ion-label>
-                        </ion-col>
-                        <ion-col>
-                          <ion-label color="medium"><b>Stock</b></ion-label>
-                        </ion-col>
-                        <ion-col>
-                          <ion-label color="medium"><b>Precio</b></ion-label>
-                        </ion-col>
-                      </ion-row>
-                    </ion-list>
 
-                    <ion-list>
-                      <ion-list style="border-radius: 10px; border:1px solid var(--ion-color-medium);">
-                        <ion-item *ngFor="let product of (products$ | async)?.slice(startIndex, endIndex); let i = index">
-                          <ion-col size="1">
-                            <ion-checkbox
-                              *ngIf="product.active && product.stock !== '0'"
-                              [disabled]="!product.active ? true : false"
-                              mode="ios"
-                              [(ngModel)]="product.select"
-                              (ionChange)="toggleProduct($event, product)"
-                              [ngModelOptions]="{standalone: true}">
-                            </ion-checkbox>
-                            <ion-icon
-                              *ngIf="!product.active || product.stock === '0'"
-                              [id]="'hover-trigger' + i"
-                              class="float-start"
-                              size="large"
-                              [color]="product.active ? 'warning' : 'danger'"
-                              name="alert-circle-outline">
-                            </ion-icon>
-                            <ion-popover
-                              *ngIf="!product.active || product.stock === '0'"
-                              mode="ios"
-                              [trigger]="'hover-trigger' + i"
-                              triggerAction="click"
-                              side="top"
-                              size="auto"
-                              alignment="center">
-                              <ng-template>
-                                <ion-content class="ion-padding">{{ product.active ? 'Producto sin Stock' : 'Producto Inactivo'}}</ion-content>
-                              </ng-template>
-                            </ion-popover>
+          <ion-card-header class="m-0">
+            <ion-card-subtitle>
+              <b>Selección de productos de la Venta</b>
+            </ion-card-subtitle>
+            <ion-card-subtitle>
+              <ion-searchbar mode="ios" [debounce]="250" (ionInput)="handleInput($event)" placeholder="Buscar Producto"></ion-searchbar>
+            </ion-card-subtitle>
+          </ion-card-header>
 
-                          </ion-col>
-                          <ion-col><h2> {{ firstCapitalLetter(product.name) }}</h2></ion-col>
-                          <!-- <ion-col><h2> {{ product.uid }}</h2></ion-col> -->
-                          <ion-col><p> {{ product. description }}</p></ion-col>
-                          <ion-col><p> {{ product.stock }}</p></ion-col>
-                          <ion-col><p> Q {{ product.priceSale }}</p></ion-col>
-                      </ion-item>
-                     </ion-list>
-                    <!-- <div *ngIf="products.length === 0">No se encontraron resultados.</div> -->
-                    </ion-list>
-                    <ion-button (click)="previousPage()" [disabled]="currentPage === 1"><ion-icon name="arrow-back-circle-outline"></ion-icon></ion-button>
-                   <ion-button (click)="nextPage()" [disabled]="endIndex >= (products$ | async)?.length"><ion-icon name="arrow-forward-circle-outline"></ion-icon></ion-button>
-                  </ion-card-content>
-              </ion-toolbar>
+          <ion-card-content color="danger" class="m-0">
+            <div style="max-height: 250px;min-height: 250px; overflow: auto;">
 
-            </ion-row>
-          </form>
-        </ion-card-content>
-      </ion-card-header>
-      </ion-card>
+              <ion-list *ngIf="!load && results.length > 0 && !loadProduct" class="m-0 p-0" [inset]="true">
+                <ion-item *ngFor="let product of results; let index; trackBy: trackByItems"
+                  [style.opacity]="(product.active) ? 1 : 0.4"
+                  class="ion-activatable ripple-parent item-custom"
+                  (click)="product.active ? addProductShopping(product) : null">
+
+                  <ion-label  class="m-0 p-0">
+                    <h2>
+                      <ion-icon
+                      slot="start"
+                      class="m-0 p-0"
+                      [color]="getColorLabelUnits(product)"
+                      [name]="getColorLabelIconUnits(product)">
+                      </ion-icon>
+                      {{ product.name }}
+                    </h2>
+                    <p>
+                      <b>Stock:</b>
+                      <ion-text
+                        [color]="getColorLabelUnits(product)">
+                        {{ product.stock }}  {{ getUnit(product.unitMeasurement) }}
+                      </ion-text>
+                    </p>
+                  </ion-label>
+                  <ion-label slot="end">
+                    <h2>Precio actual</h2>
+                    <p>Q {{ product.priceSale }}</p>
+                  </ion-label>
+                  <ion-ripple-effect *ngIf="product.active" type="unbounded" class="custom-ripple"></ion-ripple-effect>
+                </ion-item>
+              </ion-list>
+
+              <ion-list *ngIf="load || loadProduct" class="m-0 p-0" [inset]="true">
+                <ion-item *ngFor="let item of (isMobile) ? [1,2,3] : [1,2,3,4,5];">
+                  <ion-label class="m-0 p-0">
+                    <h2 class="d-flex">
+                      <ion-skeleton-text animated="true" class="rounded-circle" style="width: 18px; height: 18px;"></ion-skeleton-text>
+                      <ion-skeleton-text animated="true" class="skeleton-text rounded-pill w-{{ isMobile ? '50' : '25' }} m-1 mt-0 mb-0 mr-0" style="height: 20px;"></ion-skeleton-text>
+                    </h2>
+                    <p class="d-flex">
+                      <b>Stock: </b>
+                      <ion-skeleton-text animated="true" class="skeleton-text rounded-pill w-{{ isMobile ? '50' : '25' }}  m-1 mt-0 mb-0 mr-0" style="height: 20px;"></ion-skeleton-text>
+                    </p>
+                  </ion-label>
+                  <ion-ripple-effect type="unbounded" class="custom-ripple"></ion-ripple-effect>
+                </ion-item>
+              </ion-list>
+
+              <div *ngIf="!load && results.length === 0 && !loadProduct"
+                style="max-height: 250px;min-height: 250px; width: 100%;"
+                class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
+                <ion-label>No se econtraron productos</ion-label>
+              </div>
+
+            </div>
+          </ion-card-content>
+        </ion-card>
 
        <!-- Lista de productos filtrados -->
-       <ion-grid *ngIf="selectedProducts.length > 0">
-       <ion-card class="rounded-4">
-      <ion-card-header>
-       <ion-card-content class="mt-2">
-          <ion-row class="w-100">
-            <ion-col size="4">
-              <h2>Nombre</h2>
-            </ion-col>
-            <ion-col size="2">
-              <h2>Cantidad</h2>
-            </ion-col>
-            <ion-col size="3">
-              <h2>Precio</h2>
-            </ion-col>
-            <ion-col size="3">
-              <h2>Sub Total</h2>
-            </ion-col>
-            <ion-col size="1">
-            </ion-col>
+       <ion-card *ngIf="productsSelect.length > 0" class="rounded-4">
+        <ion-card-header>
+          <ion-card-subtitle>
+            <b>Productos seleccionados</b>
+          </ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
 
-          </ion-row>
-          <ion-list>
-            <ion-item *ngFor="let product of selectedProducts">
-              <ion-col size="4"><h2>{{ firstCapitalLetter(product.name) }}</h2></ion-col>
-              <!-- <ion-col size="5"><h2>{{ product.uid }}</h2></ion-col> -->
-              <ion-col size="2">
-                <ion-input
-                  min="1"
-                  max="{{product.stock}}"
-                 [(ngModel)]="product.units"
-                 type="number"
-                 (ionChange)="calculateSubtotal(product)">
-                </ion-input>
-              </ion-col>
-              <ion-col size="3"><p>Q {{ product.priceSale }}</p> </ion-col>
+          <div *ngIf="productsSelect.length === 0 && !load" style="max-height: 100px;min-height: 100px; overflow: auto;">
+            <div
+              style="max-height: 100px;min-height: 100px; width: 100%;"
+              class="d-flex align-items-center justify-content-center border-dashboard rounded-4">
+              <ion-label>No existen productos seleccionados</ion-label>
+            </div>
+          </div>
 
-              <ion-col size="3"><p>Q {{ calculateSubtotal(product).toFixed(2) }}</p></ion-col>
-              <ion-col size="1">
-                <ion-button color="danger" (click)="removeListTemp(product)">
-                  <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-                </ion-button>
-              </ion-col>
-            </ion-item>
-            <ion-item>
-              <ion-col size="9"><h1>Total a pagar</h1></ion-col>
-              <ion-col size="3"><b>Q {{ getTotalSale() }}</b></ion-col>
-            </ion-item>
-          </ion-list>
+          <ion-card class="p-0 m-0" *ngIf="load">
+            <ion-card-content class="m-0 p-0">
+              <ion-grid>
 
-       </ion-card-content>
+                <ion-row class="border-bottom fixed-top" style="border-bottom: 1px solid var(--ion-color-medium);">
+                  <ion-col size="1" class="fw-bold"><ion-label color="medium">#</ion-label></ion-col>
+                  <ion-col class="fw-bold">
+                    <ion-label color="medium">
+                      Nombre
+                    </ion-label></ion-col>
+                  <ion-col class="fw-bold">
+                    <ion-label color="medium">
+                      Cantidad
+                    </ion-label></ion-col>
+                  <ion-col class="fw-bold">
+                    <ion-label color="medium">
+                      Precio
+                    </ion-label></ion-col>
+                  <ion-col class="fw-bold">
+                    <ion-label color="medium">
+                      Subtotal
+                    </ion-label></ion-col>
+                </ion-row>
 
-       <ion-row *ngIf="!load">
-        <ion-col>
-          <ion-button
-            shape="round"
-            [disabled]="form.invalid"
-            (click)="submit()">Generar Venta</ion-button>
-        </ion-col>
-      </ion-row>
-      </ion-card-header>
-    </ion-card>
-       </ion-grid>
+                <div class="mt-4" style="max-height: 175px; min-height: 50px; overflow: auto;">
+                  <ion-row *ngFor="let product of [1,2,3]; let i = index" class="border-bottom" style="border-bottom: 1px solid var(--ion-color-medium);">
+                    <ion-col size="1"><ion-label color="medium">
+                      <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                    </ion-label></ion-col>
+                    <ion-col><ion-label color="medium">
+                      <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                    </ion-label></ion-col>
+                    <ion-col><ion-label color="medium">
+                      <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                    </ion-label></ion-col>
+                    <ion-col><ion-label color="medium">
+                      <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                    </ion-label></ion-col>
+                    <ion-col><ion-label color="medium">
+                      <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                    </ion-label></ion-col>
+                  </ion-row>
+                </div>
 
+                <ion-row>
+                  <ion-col size="1"><ion-label color="medium"></ion-label></ion-col>
+                  <ion-col><ion-label color="medium"></ion-label></ion-col>
+                  <ion-col><ion-label color="medium"></ion-label></ion-col>
+                  <ion-col><ion-label color="medium"><ion-text color="primary"><b>Total</b></ion-text></ion-label></ion-col>
+                  <ion-col>
+                    <ion-label color="medium">
+                      <ion-skeleton-text class="rounded-4" [animated]="true" style="width: 100%"></ion-skeleton-text>
+                    </ion-label>
+                  </ion-col>
+                </ion-row>
+              </ion-grid>
+            </ion-card-content>
+          </ion-card>
+
+          <ion-card class="p-0 m-0" *ngIf="!load && productsSelect.length > 0">
+            <ion-card-content class="m-0 p-0">
+              <ion-grid>
+
+                <ion-row class="border-bottom fixed-top" style="border-bottom: 1px solid var(--ion-color-medium);">
+                  <ion-col size="1" class="fw-bold"><ion-label color="medium">#</ion-label></ion-col>
+                  <ion-col class="fw-bold">
+                    <ion-label color="medium">
+                      Nombre
+                    </ion-label></ion-col>
+                  <ion-col class="fw-bold">
+                    <ion-label color="medium">
+                      Cantidad
+                    </ion-label></ion-col>
+                  <ion-col class="fw-bold">
+                    <ion-label color="medium">
+                      Precio
+                    </ion-label></ion-col>
+                  <ion-col class="fw-bold">
+                    <ion-label color="medium">
+                      Subtotal
+                    </ion-label></ion-col>
+                </ion-row>
+
+                <div class="mt-4" style="max-height: 175px; min-height: 50px; overflow: auto;">
+                  <ion-row *ngFor="let item of productsSelect; let i = index" class="border-bottom" style="border-bottom: 1px solid var(--ion-color-medium);">
+                    <ion-col size="1"><ion-label color="medium"><ion-text color="medium"><b>{{ i + 1 }}</b></ion-text></ion-label></ion-col>
+                    <ion-col><ion-label color="medium">{{ item.brand }} - {{ item.product.name }}</ion-label></ion-col>
+                    <ion-col><ion-label color="medium">
+                      <ion-button size="small" fill="clear" (click)="addRemoveUnitsProductSelect(-1, item)">
+                        <ion-icon slot="icon-only" name="remove"></ion-icon>
+                      </ion-button>
+                      {{ item.units }}
+                      <ion-button size="small" fill="clear" (click)="addRemoveUnitsProductSelect(1, item)">
+                        <ion-icon slot="icon-only" name="add"></ion-icon>
+                      </ion-button>
+                    </ion-label></ion-col>
+                    <ion-col><ion-label color="medium">Q {{ item.price }}</ion-label></ion-col>
+                    <ion-col><ion-label color="medium">{{ getSubtotalProduct(item.units, item.price) }}</ion-label></ion-col>
+                  </ion-row>
+                </div>
+
+                <ion-row>
+                  <ion-col size="1"><ion-label color="medium"></ion-label></ion-col>
+                  <ion-col><ion-label color="medium"></ion-label></ion-col>
+                  <ion-col><ion-label color="medium"></ion-label></ion-col>
+                  <ion-col><ion-label color="medium"><ion-text color="primary"><b>Total</b></ion-text></ion-label></ion-col>
+                  <ion-col><ion-label color="medium">Q {{ getTotalProductSelect() }}</ion-label></ion-col>
+                </ion-row>
+              </ion-grid>
+            </ion-card-content>
+          </ion-card>
+
+        </ion-card-content>
+      </ion-card>
+      <ion-card *ngIf="!load && productsSelect.length > 0" class="rounded-4">
+        <ion-card-content>
+          <ion-button [disabled]="form.invalid || productsSelect.length === 0" (click)="submit()" color="primary">
+            Guardar Compra
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
       </ion-col>
 
+      <ion-modal [backdropDismiss]="false">
+        <ng-template>
+          <ion-content>
 
+            <ion-toolbar color="primary">
+              <ion-title class="text-center">{{ currentProduct.name }}</ion-title>
+              <ion-buttons slot="end">
+                <ion-button (click)="closeModal()">
+                  <ion-icon style="font-size: 30px;" name="close-circle-outline"></ion-icon>
+                </ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+
+            <ion-card class="rounded-4">
+              <ion-card-content>
+                <ion-row>
+                  <ion-col class="m-auto" size-xs="6" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                    <app-input
+                      [form]="formProductSelect"
+                      name="units"
+                      label="Cantidad"
+                      placeholder="Ingresa cantidad requerida"
+                      [required]="true"
+                      [load]="load"
+                      [maxlength]="10"
+                      [minlength]="1"
+                      [min]="1"
+                      [counter]="true"
+                      help="Ingrese unidades requeridas">
+                    </app-input>
+                  </ion-col>
+
+                  <ion-col class="m-auto" size-xs="6" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                    <app-input
+                      [form]="formProductSelect"
+                      name="price"
+                      label="Precio por unidad"
+                      placeholder="Ingresa precio unitario"
+                      [required]="true"
+                      [load]="load"
+                      [maxlength]="10"
+                      [minlength]="1"
+                      [min]="1"
+                      [counter]="true"
+                      help="Ingrese unidades requeridas">
+                    </app-input>
+                  </ion-col>
+
+                  <ion-col class="m-auto" size-xs="12" size-sm="12" size-md="12" size-lg="12" size-xl="12">
+                    <app-select
+                      [form]="formProductSelect"
+                      name="brand"
+                      label="Marca del producto"
+                      placeholder="Marca del producto"
+                      [required]="true"
+                      [disabled]="false"
+                      [load]="load"
+                      [values]="brandsAux"
+                      [options]="{
+                      label: 'name',
+                      value: 'name' }">
+                    </app-select>
+                  </ion-col>
+                </ion-row>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card class="rounded-4">
+              <ion-card-content>
+                <ion-row>
+                  <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                    <h2 class="border-bottom pb-2"><b>Cantidad</b></h2>
+                    <p>{{ (formProductSelect.controls['units'].valid) ?
+                          formProductSelect.controls['units'].value + ' ' + getUnit(currentProduct.unitMeasurement) :
+                          '0 ' + getUnit(currentProduct.unitMeasurement)}} </p>
+                  </ion-col>
+                  <ion-col size-xs="6" size-sm="6" size-md="6" size-lg="6" size-xl="6">
+                    <h2 class="border-bottom pb-2"><b>Subtotal</b></h2>
+                    <p>{{ (formProductSelect.controls['units'].valid && formProductSelect.controls['price'].valid) ? getSubtotalUnitSelect(formProductSelect.controls['units'].value, formProductSelect.controls['price'].value) : 'Q 00.00'}}</p>
+                    <p></p>
+                  </ion-col>
+                </ion-row>
+
+                <ion-row>
+                  <ion-col>
+                    <ion-button
+                      [disabled]="formProductSelect.invalid"
+                      shape="round" (click)="add(currentProduct)">
+                      Agregar
+                    </ion-button>
+                  </ion-col>
+                </ion-row>
+
+              </ion-card-content>
+            </ion-card>
+
+          </ion-content>
+        </ng-template>
+      </ion-modal>
     </ion-row>
   </ion-grid>
 </ion-content>
-

@@ -17,8 +17,11 @@ export interface ProductSale {
   name: string;
   priceSale: string;
   units: string;
-  unitMeasurement: string;
-  date: Date;
+  unitMeasurement?: string;
+  date?: Date;
+  productBrand?: string;
+  subTotal?: string;
 }
+
 
 

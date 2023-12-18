@@ -15,9 +15,6 @@ export class ViewProductsComponent  implements OnInit {
   title: string = 'Ver Productos';
   itemsPerPage: number = 8;
   currentPage: number = 1;
-  totalItems: number;
-  isLoading: boolean = false;
-
 
   constructor(
     private dashboardService: DashboardService,
@@ -35,6 +32,8 @@ export class ViewProductsComponent  implements OnInit {
       },
       error: error => {console.log(error);}
     });
+
+    
   }
 
   previousPage() {
@@ -67,6 +66,8 @@ export class ViewProductsComponent  implements OnInit {
       .subscribe(
         (response: any[]) => {
           this.products = response;
+          this.currentPage = 1; 
+          
         },
         (error: any) => {
           console.log(error);
@@ -74,7 +75,6 @@ export class ViewProductsComponent  implements OnInit {
       );
   }
   
-
   firstCapitalLetter(cadena: string): string {
     return cadena.charAt(0).toUpperCase() + cadena.slice(1);
   }

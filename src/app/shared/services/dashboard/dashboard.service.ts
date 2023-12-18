@@ -85,8 +85,9 @@ saveDocument(collection: string, document: any): Promise<any> {
 
 // Elimina un documento de una colección por su ID.
 DeleteDocument(collection: string, uid: string): Promise<void> {
-  return this.firestore.collection(collection).doc(uid).delete();
+  return this.firestore.collection(collection).doc(uid).update({ active: false });
 }
+
 
 udpateDocument(uid: string, collection: string, document: any){
   if(document.uid)delete document.uid;
@@ -123,10 +124,10 @@ searchForField(collection: string, field: string, value: string) {
   const valorNormalizado = value.toLowerCase();
   return this.firestore
     .collection(collection, (ref) =>
-      ref.where(field, '==', valorNormalizado)
-        //  .where(field, '<=', valorNormalizado + '\uf8ff')
+      ref.where(field, '>=', valorNormalizado)
+         .where(field, '<=', valorNormalizado + '\uf8ff')
     )
-    .valueChanges({idField: 'uid'});
+    .valueChanges({ idField: 'uid' });
 }
 
 getDocumentsByDateRange(collection: string, initDate: Date, endDate: Date, field: string): Observable<any[]> {
