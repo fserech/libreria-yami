@@ -1,0 +1,67 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+
+<div class="w-full p-3 border-b">
+<div class="w-full grid grid-cols-1 sm:grid-cols-1">
+  <app-input
+    [form]="form"
+    name="id"
+    icon="bootstrapPostcardFill"
+    label="ID Producto"
+    placeholder="ID Producto"
+    helpMessage="Sólo se aceptan números"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="20">
+  </app-input>
+  <app-input
+    [form]="form"
+    name="name"
+    icon="matDriveFileRenameOutlineOutline"
+    label="Nombre de producto"
+    placeholder="Nombre de producto"
+    helpMessage="Sólo se aceptan caracteres alfanumericos"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="200">
+  </app-input>
+</div>
+
+  <p class="p-2 font-bold text-center w-100 m-1">Rango de precios</p>
+
+  <div class="grid grid-cols-2 gap-4 w-full justify-between align-middle">
+    <app-input
+    [form]="form"
+    name="initPrice"
+    icon="matAttachMoneyOutline"
+    label="Desde"
+    placeholder="Desde"
+    helpMessage="Sólo se aceptan números"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="10">
+    </app-input>
+    <app-input
+    [form]="form"
+    name="endPrice"
+    icon="matAttachMoneyOutline"
+    label="Hasta"
+    placeholder="Hasta"
+    helpMessage="Sólo se aceptan números"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="10">
+    </app-input>
+  </div>
+
+  <div class="flex justify-center align-middle">
+    <button (click)="filter()" [disabled]="load" class="btn-primary h-10 w-40 font-bold">
+      Filtrar
+    </button>
+  </div>
+
+
+</div>

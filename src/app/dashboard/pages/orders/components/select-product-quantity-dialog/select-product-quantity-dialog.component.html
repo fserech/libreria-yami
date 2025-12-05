@@ -1,0 +1,40 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+
+<div class="w-full p-3 border-b">
+<div class="w-full grid grid-cols-1 sm:grid-cols-1">
+
+  @if (product) {
+    <h1 class="text-center">
+      <p>
+        <b>Q {{ product.price.toFixed(2) }}</b>
+      </p>
+    </h1>
+    <br>
+  }
+
+  <app-input
+    [form]="form"
+    name="quantity"
+    icon="matFilter2Outline"
+    label="Cantidad"
+    placeholder="Cantidad"
+    helpMessage="Sólo se aceptan números enteros"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="5">
+  </app-input>
+</div>
+
+
+  <div class="flex justify-center align-middle">
+    <button (click)="close()" [disabled]="load" class="btn-danger h-12 w-48 font-bold">
+      Cancelar
+    </button>
+    <button (click)="ok()" [disabled]="load || form.invalid" class="btn-success h-12 w-48 font-bold">
+      Continuar
+    </button>
+  </div>
+
+
+</div>

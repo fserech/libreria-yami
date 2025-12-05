@@ -1,0 +1,29 @@
+
+<button
+(click)="toggleMenu()"
+class="relative flex rounded-full bg-transparent text-sm m-auto"
+type="button"
+aria-expanded="false"
+aria-haspopup="true">
+<ng-icon clickOutside (clickOutside)="isMenuOpen = false" class="text-gray-400 dark:text-gray-300 font-bold float-end m-0 p-0" size="30" name="matMoreVertOutline"></ng-icon>
+</button>
+
+<div class="relative ml-3 z-50 right-28">
+
+  <div [ngClass]="isMenuOpen ? 'pointer-events-auto scale-100 animate-fade-in-up opacity-100 duration-200' :
+                            'pointer-events-none scale-95 opacity-0 duration-100 ease-in'"
+
+    class="absolute w-auto m-auto transform rounded-md bg-white py-2 shadow-custom transition focus:outline-none dark:bg-slate-900 border dark:border-slate-800">
+
+    <ul class="p-0 pl-1 pr-1">
+      @for (option of options; track $index) {
+        <li (click)="clickAction(option)" class="flex cursor-pointer rounded-md px-3 py-2 text-sm font-semibold {{(option.colorIcon && option.colorIcon !== '') ? option.colorIcon : 'text-gray-200' }} hover:bg-gray-100 hover:text-primary-500 dark:hover:bg-slate-950">
+          <p class="ml-1 flex">
+            <ng-icon class="font-bold float-end mr-1 " size="20" name="{{ option.icon }}"></ng-icon>
+             {{ option.label }}
+          </p>
+        </li>
+      }
+    </ul>
+  </div>
+</div>

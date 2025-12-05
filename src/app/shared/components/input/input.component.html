@@ -1,0 +1,74 @@
+@if (!load) {
+  <div class="relative">
+    <input #input [type]="(type && type !== '') ? type : 'text'" [formControl]="getFormControl()" placeholder="{{ placeholder }}"
+    minlength="{{ minlength === 0 ? 1 : minlength }}" maxlength="{{ maxlength === 0 ? 200 : maxlength}}"
+    [required]="getValidatorRequired()" autocomplete="disabled" autocomplete="new-password"
+    class="text-gray-600 bg-gray-200 py-2 px-10 w-full border-none
+            focus:border-gray-400 focus:outline-none focus:border
+            dark:border-slate-800 dark:bg-slate-950 dark:focus:border-slate-700 dark:text-white
+            disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl"/>
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      @if(icon){
+        <span class="top-1/4">
+          <ng-icon class="text-slate-500 font-bold dark:text-slate-400" size="20" name="{{ icon }}"></ng-icon>
+        </span>
+      }
+
+    </div>
+
+    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+      @if(iconRight){
+        <span (click)="viewPass()" class="top-1/4 mr-2 bg-red-300">
+          <ng-icon class="text-slate-500 font-bold dark:text-slate-400" size="20" name="{{ iconRight }}"></ng-icon>
+        </span>
+      }
+
+      <span class="top-1/4">
+        @if(getFormControl().valid) {
+          <ng-icon class="text-green-500" size="20" name="matCheckCircleOutline"></ng-icon>
+        }
+        @if(!getFormControl().valid) {
+          <ng-icon class="text-red-500 transform rotate-45" size="20" name="matAddCircleOutlineOutline"></ng-icon>
+        }
+      </span>
+    </div>
+
+  </div>
+
+  <div class="relative mt-1">
+    @if (helpMessage && helpMessage !== '' && getFormControl().enabled) {
+      <div class="text-xs text-gray-500 mt-1 mb-4 z-40 float-start">{{ helpMessage }}</div>
+    }
+    @if (counter) {
+      <div class="text-xs text-gray-500 float-end z-50">{{ (getFormControl().value?.length) ? getFormControl().value.length : 0 }}/{{ maxlength === 0 ? 200 : maxlength}}</div>
+    }
+    <br>
+  </div>
+
+} @else {
+
+  <div class="relative">
+  <input class="relative w-full pl-12 pr-3 py-2 rounded-2xl bg-gray-300 dark:bg-gray-700 dark:text-white border-none focus:border focus:border-gray-300 animate-pulse" disabled>
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      @if(icon){
+        <span class="top-1/4">
+          <ng-icon class="text-slate-500 font-bold dark:text-slate-400 animate-pulse" size="20" name="{{ icon }}"></ng-icon>
+        </span>
+      }@else if(iconLeft){
+        <span class="top-1/4">
+          <ng-icon class="text-slate-500 font-bold dark:text-slate-400 animate-pulse" size="20" name="{{ iconLeft }}"></ng-icon>
+        </span>
+      }
+    </div>
+  </div>
+  <div class="relative mt-1">
+    @if (helpMessage && helpMessage !== '' && getFormControl().enabled) {
+      <div class="bg-emerald-200 dark:bg-slate-800 mt-1 mb-4 z-40 float-start animate-pulse rounded-lg text-xs text-transparent" style="user-select: none;">{{ helpMessage }}</div>
+    }
+    @if (counter) {
+      <div class="bg-gray-200 dark:bg-slate-800 float-end z-50 animate-pulse rounded-lg text-xs text-transparent" style="user-select: none;">{{ (getFormControl().value?.length) ? getFormControl().value.length : 0 }}/{{ maxlength === 0 ? 200 : maxlength}}</div>
+    }
+    <br>
+  </div>
+
+}

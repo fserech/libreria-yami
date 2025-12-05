@@ -1,0 +1,64 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+
+<div class="w-full p-3 border-b">
+<div class="w-full grid grid-cols-1 sm:grid-cols-1">
+  <app-input
+    [form]="form"
+    name="id"
+    icon="bootstrapPostcardFill"
+    label="ID Cliente"
+    placeholder="ID Cliente"
+    helpMessage="Sólo se aceptan caracteres numericos"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="20">
+  </app-input>
+  
+  <app-input
+    [form]="form"
+    name="name"
+    icon="matDriveFileRenameOutlineOutline"
+    label="Nombre de Cliente"
+    placeholder="Nombre de Cliente"
+    helpMessage="Sólo se aceptan caracteres alfabeticos"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="60">
+  </app-input>
+
+  <app-select
+    [form]="form"
+    name="offerDay"
+    label="Día de visita"
+    icon="matTodayOutline"
+    placeholder="Día de visita"
+    helpMessage="Seleccione un semana."
+    errorMessage="Error message."
+    [load]="load"
+    [options]="daysOfWeek">
+  </app-select>
+
+ @if (isAdmin()) {
+  <app-select
+    [form]="form"
+    [load]="load"
+    [options] ="users"
+    placeholder="Vendedor de cliente"
+    name="idUser"
+    icon="matPersonOutline">
+  </app-select>
+  }
+</div>
+
+
+
+  <div class="flex justify-center align-middle">
+    <button (click)="filter()" [disabled]="load" class="btn-primary h-10 w-40 font-bold">
+      Filtrar
+    </button>
+  </div>
+
+
+</div>

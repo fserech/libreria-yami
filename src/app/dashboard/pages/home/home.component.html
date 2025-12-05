@@ -1,0 +1,13 @@
+<app-header headerTitle="Inicio" headerDescription="{{ 'Hola ' + auth?.getUserData()?.sub + ', bievenido al sistema' }}"></app-header>
+
+<div style="height: 75vh; width: 98%;" class="rounded-lg bg-white dark:bg-slate-900 grid grid-cols-2 gap-4 place-content-center m-auto">
+  @for (item of permissions; track $index) {
+    @if (item.label !== 'Inicio') {
+      <button (click)="navigateRoute(item.route)"
+        class="bg-gray-50 dark:bg-slate-950 dark:border-slate-800 dark:text-gray-400 active:bg-gray-100 active:text-gray-400  border border-gray-100 p-2 rounded-xl text-gray-400 text-center w-36 m-auto">
+        <ng-icon name="{{ item.icon }}" size="60"></ng-icon>
+        <p>{{ item.label }}</p>
+      </button>
+    }
+  }
+</div>

@@ -1,0 +1,53 @@
+@if (!load) {
+  <mat-form-field (click)="open()" [formGroup]="form" class="w-full">
+    @if (!getFormControl().valid || getFormControl().value === '' || getFormControl().value === null || getFormControl().value === undefined) {
+      <mat-label [floating]="false" class="dark:bg-slate-950 dark:text-gray-400">{{ placeholder }}</mat-label>
+    }
+    <input
+          class="z-10"
+          matInput
+          readonly
+          [matDatepicker]="dp"
+          (dateChange)="onDateSelected($event)"
+          [min]="minDate" [max]="maxDate"
+          [formControl]="getFormControl()">
+
+          @if (patternHint && patternHint !== '') {
+            <mat-hint class="bg-transparent text-gray-400 dark:text-gray-500 text-xs">{{ patternHint }}</mat-hint>
+          }
+    <mat-datepicker-toggle matIconSuffix [for]="dp"></mat-datepicker-toggle>
+    <mat-datepicker [placeholder]="placeholder" #dp [disabled]="false">
+    </mat-datepicker>
+    @if(getFormControl().valid && !clear) {
+      <ng-icon class="text-green-500 absolute -right-20 top-4" size="20" name="matCheckCircleOutline"></ng-icon>
+    }
+    @if(!getFormControl().valid && !clear) {
+      <ng-icon class="text-red-500 transform rotate-45 absolute -right-20 top-4" size="20" name="matAddCircleOutlineOutline"></ng-icon>
+    }
+    @if (getFormControl().value && clear) {
+      <button matSuffix mat-icon-button aria-label="Clear" (click)="getFormControl().setValue('');datepicker.close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+    <!-- @if(clear) {
+      <ng-icon class="text-gray-500 transform rotate-45 z-30 absolute -right-20 top-4" size="20" name="matAddCircleOutlineOutline"></ng-icon>
+    } -->
+  </mat-form-field>
+} @else {
+  <div class="relative">
+    <input class="relative w-full pl-12 pr-3 py-2 rounded-2xl bg-gray-300 dark:bg-gray-700 dark:text-white border-none focus:border focus:border-gray-300 animate-pulse" disabled>
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        @if(icon){
+          <span class="top-1/4">
+            <ng-icon class="text-slate-500 font-bold dark:text-slate-400 animate-pulse" size="20" name="{{ icon }}"></ng-icon>
+          </span>
+        }
+      </div>
+    </div>
+    <div class="relative mt-1">
+      @if (patternHint && patternHint !== '' && getFormControl().enabled) {
+        <div class="bg-emerald-200 dark:bg-slate-800 mt-1 mb-4 z-40 float-start animate-pulse rounded-lg text-xs text-transparent" style="user-select: none;">{{ patternHint }}</div>
+      }
+      <br>
+    </div>
+}

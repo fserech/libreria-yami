@@ -1,0 +1,32 @@
+@if (!load) {
+  <div [formGroup]="form" class="flex flex-col">
+    <label class="mb-2 text-gray-500 dark:text-gray-400" id="example-radio-group-label">{{ label }}</label>
+    <mat-radio-group
+      aria-labelledby="example-radio-group-label"
+      color="primary" [formControl]="getFormControl()"
+      (change)="change($event)">
+      @for (item of options; track $index ) {
+        <mat-radio-button [value]="item.value">{{ item.label }}</mat-radio-button>
+      }
+    </mat-radio-group>
+  </div>
+}@else {
+  <div class="rounded-md max-w-sm w-full mx-auto ml-0 mb-5">
+    <div class="animate-pulse flex space-x-4">
+      <div class="flex-1 space-y-6 py-1 w-full">
+        <div class="h-3 w-52 bg-gray-300 dark:bg-gray-700 rounded-lg"></div>
+      </div>
+    </div>
+    <div class="animate-pulse flex mt-1">
+      <div class="ml-2 rounded-full bg-gray-300 dark:bg-gray-700 h-5 w-5"></div>
+      <div class="ml-1 mt-1 h-3 w-20 bg-gray-300 dark:bg-gray-800 rounded-lg"></div>
+
+      <div class="ml-2 rounded-full bg-gray-300 dark:bg-slate-700 h-5 w-5"></div>
+      <div class="ml-1 mt-1 h-3 w-20 bg-gray-300 dark:bg-gray-800 rounded-lg"></div>
+
+      <div class="ml-2 rounded-full bg-gray-300 dark:bg-gray-700 h-5 w-5"></div>
+      <div class="ml-1 mt-1 h-3 w-20 bg-gray-300 dark:bg-gray-800 rounded-lg"></div>
+    </div>
+  </div>
+}
+

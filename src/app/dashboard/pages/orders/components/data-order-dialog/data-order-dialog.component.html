@@ -1,0 +1,43 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+
+<div class="w-full p-3 border-b">
+<div class="w-full grid grid-cols-1 sm:grid-cols-1">
+
+  <app-select
+    [form]="form"
+    name="panel"
+    label="Panel de carga"
+    icon="bootstrapTruck"
+    placeholder="Panel de carga"
+    helpMessage="Seleccione transporte de envio"
+    errorMessage="Error message."
+    [load]="load"
+    [options]="transports">
+  </app-select>
+
+  <app-input
+    [form]="form"
+    name="observation"
+    icon="matInsertCommentOutline"
+    label="Observación"
+    placeholder="Observación"
+    helpMessage="Sólo se aceptan caracteres alfanumericos"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="300">
+  </app-input>
+</div>
+
+
+  <div class="flex justify-center align-middle">
+    <!-- <button (click)="close()" [disabled]="load" class="btn-danger h-12 w-48 font-bold">
+      Cancelar
+    </button> -->
+    <button (click)="ok()" [disabled]="load || form.invalid" class="btn-success h-12 w-48 font-bold">
+      Continuar
+    </button>
+  </div>
+
+
+</div>

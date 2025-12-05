@@ -1,0 +1,27 @@
+:host ::ng-deep .mat-horizontal-stepper-wrapper {
+  @apply bg-white dark:bg-slate-900;
+}
+
+:host ::ng-deep .mat-step-text-label{
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+:host ::ng-deep .mat-step-icon{
+  @apply dark:bg-slate-700;
+}
+
+:host ::ng-deep .mat-step-icon-selected{
+  background-color: rgb(59 130 246) !important;
+}
+
+:host ::ng-deep .mat-stepper-horizontal-line{
+  @apply dark:bg-gray-500;
+}
+
+:host ::ng-deep .mat-step-icon-state-done{
+  @apply bg-emerald-500 dark:bg-emerald-500
+}
+
+:host ::ng-deep .mat-horizontal-content-container{
+  padding: 0;
+}

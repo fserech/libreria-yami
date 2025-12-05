@@ -1,0 +1,98 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+
+<div class="w-full p-3 border-b">
+<div class="w-full grid grid-cols-1 sm:grid-cols-1">
+  <app-input
+    [form]="form"
+    name="id"
+    icon="bootstrapPostcardFill"
+    label="ID pedido"
+    placeholder="ID pedido"
+    helpMessage="Sólo se aceptan números enteros"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="20">
+  </app-input>
+
+    <app-input
+    [form]="form"
+    name="clientId"
+    icon="bootstrapPostcardFill"
+    label="ID cliente"
+    placeholder="ID cliente"
+    helpMessage="Sólo se aceptan números enteros"
+    errorMessage="Error message."
+    [counter]="true"
+    [minlength]="1"
+    [maxlength]="20">
+  </app-input>
+
+  @if (this.authService?.getUserData()?.role === 'ROLE_ADMIN') {
+  <app-select
+    [form]="form"
+    name="userId"
+    label="Usuario"
+    icon="matPersonOutline"
+    placeholder="Usuario"
+    helpMessage="Seleccione un semana."
+    errorMessage="Error message."
+    [load]="load"
+    [options]="users">
+  </app-select>
+  }
+
+
+  <app-select
+    [form]="form"
+    name="status"
+    label="Estado"
+    icon="matRuleOutline"
+    placeholder="Estado"
+    helpMessage="Seleccione un semana."
+    errorMessage="Error message."
+    [load]="load"
+    [options]="statusList">
+  </app-select>
+
+  <app-select
+    [form]="form"
+    name="transportDelivery"
+    label="Trasporte envío"
+    icon="bootstrapTruck"
+    placeholder="Trasporte envío"
+    helpMessage="Seleccione un semana."
+    errorMessage="Error message."
+    [load]="load"
+    [options]="transportList">
+  </app-select>
+
+  <app-date-picker
+    [form]="form"
+    [load]="load"
+    [minDate]="minDate"
+    [maxDate]="maxDate"
+    name="dateCreated"
+    placeholder="Fecha Creción">
+  </app-date-picker>
+
+
+  <app-date-picker
+    [form]="form"
+    [load]="load"
+    [minDate]="minDate"
+    [maxDate]="maxDateDeliver"
+    name="dateDeliver"
+    placeholder="Fecha entrega">
+  </app-date-picker>
+
+</div>
+
+  <div class="flex justify-center align-middle">
+    <button (click)="filter()" [disabled]="load" class="btn-primary h-10 w-40 font-bold">
+      Filtrar
+    </button>
+  </div>
+
+
+</div>

@@ -1,0 +1,66 @@
+<!-- HEADER -->
+<app-header headerTitle="Pedidos" headerDescription="Gestión de módulo de pedidos para su posterior despacho."></app-header>
+
+<div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
+  <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between">
+    @if (mode==='new') {
+      <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo pedido</p>
+    }
+    @if (mode === 'edit'|| mode === 'view') {
+      <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID pedido: </b>{{ id }}</p>
+    }
+
+    <button (click)="back()" class="btn-back">
+      <ng-icon class="btn-back-icon" size="20" name="matArrowBackOutline"></ng-icon>
+      <p class="hidden sm:block text-sm font-bold">Regresar</p>
+    </button>
+
+  </div>
+
+  <mat-stepper #stepper [linear]="true" (selectionChange)="onStepChange($event)" class="w-full">
+
+    <mat-step [stepControl]="clientForm" [editable]="false" state="person">
+      <ng-template matStepLabel>
+        <p class="hidden sm:block">Cliente</p>
+      </ng-template>
+      <!-- @if (this.stepper.selectedIndex === 0) { -->
+        <app-orders-client-select
+          (changes)="clientSelect($event)">
+        </app-orders-client-select>
+      <!-- } -->
+    </mat-step>
+
+    <mat-step [stepControl]="stepTwoForm" [editable]="true" state="shopping_cart">
+      <ng-template matStepLabel>
+        <p class="hidden sm:block">Selección de Productos</p>
+      </ng-template>
+      <!-- @if (this.stepper.selectedIndex === 1) { -->
+        <app-orders-products-select
+          #selectProducts
+          (changes)="productsSelect($event)"
+          (finalized)="finalizedSelectProducts($event)">
+        </app-orders-products-select>
+      <!-- } -->
+    </mat-step>
+
+    <mat-step [editable]="false" state="checklist_rtl">
+      <ng-template matStepLabel>
+        <p class="hidden sm:block">Confirmación</p>
+      </ng-template>
+      <app-orders-confirm
+        #confirmOrder
+        (confirmOrder)="submit($event)"
+        (backStep)="backStep($event)"
+        [client]="client"
+        [products]="products"
+        [panel]="panel"
+        [observation]="observation">
+      </app-orders-confirm>
+    </mat-step>
+  </mat-stepper>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+  </div>
+
+</div>

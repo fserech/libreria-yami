@@ -1,0 +1,156 @@
+
+
+<div class="flex flex-col sm:flex-row sm:items-center w-full justify-between sticky mt-2 mb-2">
+
+  <!-- Botón "Nuevo" -->
+  <div class="w-full mb-4 sm:hidden">
+    <div class="flex pt-3">
+
+      @if (!load) {
+        <button (click)="backStepProducts()" [disabled]="products.length === 0" type="button" class="btn-success float-end h-12 w-40 mb-5">
+          <div class="flex text-center justify-center align-middle w-full">
+            <p class="text-sm md:text-base">Agregar más productos</p>
+            <ng-icon class="text-white font-bold m-1" style="position: absolute; left: 37%; top: 25%;" size="20" name="matAddOutline"></ng-icon>
+          </div>
+        </button>
+        <button [disabled]="products.length === 0" (click)="buildOrder()" type="button" class="btn-primary float-end h-12 w-40 mb-5">
+          <div class="flex text-center justify-center align-middle w-full">
+            <p class="text-sm md:text-base">Finalizar pedido</p>
+            <ng-icon class="text-white font-bold m-1" size="20" name="bootstrapCheckCircleFill"></ng-icon>
+          </div>
+        </button>
+      }@else {
+        <button class="btn-success h-10 w-36 font-bold animate-pulse"></button>
+        <button class="btn-primary h-10 w-36 font-bold animate-pulse"></button>
+      }
+      
+    </div>
+  </div>
+
+  @if (!load) {
+    <!-- Botón "Nuevo" -->
+    <button (click)="backStepProducts()" type="button" class="btn-success h-12 w-48 mb-2 sm:mb-0 hidden sm:inline-block">
+      <div class="flex text-center justify-center align-middle">
+        <p class="text-sm md:text-base">Agregar más productos</p>
+        <ng-icon class="text-white font-bold m-1" size="20" name="matAddOutline"></ng-icon>
+      </div>
+    </button>
+    <!-- Boton Finalizar -->
+    <button (click)="buildOrder()" type="button" class="btn-primary h-12 w-48 mb-2 sm:mb-0 hidden sm:inline-block">
+      <div class="flex text-center justify-center align-middle">
+        <p class="text-sm md:text-base">Finalizar pedido</p>
+        <ng-icon class="text-white font-bold m-1" size="20" name="bootstrapCheckCircleFill"></ng-icon>
+      </div>
+    </button>
+  }@else {
+    <button class="btn-success h-10 w-36 font-bold animate-pulse  sm:mb-0 hidden sm:inline-block"></button>
+    <button class="btn-primary h-10 w-36 font-bold animate-pulse  sm:mb-0 hidden sm:inline-block"></button>
+  }
+
+
+  </div>
+
+<div class="p-1 bg-white rounded dark:bg-slate-900">
+
+  <div class="w-full p-0">
+    <div class="bg-gray-50 dark:bg-slate-950 rounded-lg p-4">
+      <h2 class="text-sm text-gray-500 dark:text-gray-400"><b>ID </b>{{ client?.id }}</h2>
+      <h2 class="text-lg font-semibold mb-1 text-gray-500 dark:text-gray-200">{{ client?.name }}</h2>
+      <div class="mb-4 border-b border-gray-200 dark:border-gray-500 pb-2">
+        <h3 class="text-sm text-gray-500 dark:text-gray-400">
+          <ng-icon class="btn-back-icon" size="20" name="matLocationOnOutline"></ng-icon>
+          {{ client?.address }}</h3>
+      </div>
+
+      <div class="mb-4 flex justify-between">
+
+        <div>
+          <h3 class="text-sm text-gray-500 dark:text-gray-400 font-bold">
+            <ng-icon class="btn-back-icon" size="20" name="bootstrapTruck"></ng-icon>
+            Tranporte
+          </h3>
+          <h3 class="text-sm text-gray-500 dark:text-gray-400">{{ panel?.label }}</h3>
+        </div>
+
+        <div>
+          <h3 class="text-sm text-gray-500 dark:text-gray-400 font-bold">
+            <ng-icon class="btn-back-icon" size="20" name="bootstrapCalculator"></ng-icon>
+            Total de compra
+          </h3>
+          <h3 class="text-sm text-emerald-500 font-bold">Q {{ getTotal() }}</h3>
+        </div>
+
+      </div>
+
+      @if (observation && observation !== '') {
+        <div class="mb-4">
+          <h3 class="text-sm text-gray-500 dark:text-gray-400 font-bold">Observación</h3>
+          <h3 class="text-sm text-gray-500 dark:text-gray-400">{{ observation }}</h3>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="bg-gray-100 dark:bg-slate-950 rounded-lg w-full mt-2 mb-0 h-10">
+    <p class="text-center font-bold text-lg text-gray-500">Productos seleccionados</p>
+  </div>
+
+  <div class="bg-gray-100 dark:bg-slate-800"
+      class="w-full m-0 grid grid-cols-1 sm:grid-cols-1 p-0 rounded-lg h-80 overflow-y-scroll scrollbar-thumb-rounded scrollbar-track-rounded">
+
+      <ul class="p-1 w-full text-gray-500 dark:text-gray-500">
+        @for(product of products; track $index) {
+          <li [ngClass]="{'bg-gray-100 dark:bg-slate-950 text-gray-500': $odd }"
+              class="flex py-4 rounded-lg justify-between p-4 mt-1">
+            <div class="overflow-hidden float-start">
+              <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark'}"
+                 class="text-md font-bold">{{product.product.productName}}</p>
+
+              <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
+                 class="text-sm truncate">
+                 <b class="text-sm">Precio: </b> Q {{ product.product.price.toFixed(2) }}
+              </p>
+
+              <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
+                 class="text-sm truncate">
+                 <b class="text-sm dark:">Subtotal: </b> Q {{ getSubTotalForProduct(product) }}
+              </p>
+
+              @if (!load) {
+                <button (click)="removeProduct(product)" [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-200': $odd && darkmode === 'dark' }"
+                 class="text-xs truncate text-red-400"><b class="text-xs">
+                  <ng-icon class="text-red-400 font-bold float-start" size="17" name="matDeleteOutline"></ng-icon>
+                  Eliminar</b>
+              </button>
+              }
+            </div>
+
+            @if (!load) {
+              <div class="float-end flex justify-between align-middle m-2">
+                @if (product.quantity > 1) {
+                  <button (click)="removeUnit(product)">
+                    <ng-icon class="text-gray-400 font-bold float-start" size="20" name="matRemoveCircleOutline"></ng-icon>
+                  </button>
+                }
+                <b class="w-12 align-middle m-0 text-center mt-3 text-sm">{{ product.quantity }}</b>
+                @if (product.quantity < 99999) {
+                  <button (click)="addUnit(product)">
+                    <ng-icon class="text-gray-400 font-bold float-start" size="20" name="matAddCircleOutline"></ng-icon>
+                  </button>
+                }
+              </div>
+            }
+            
+          </li>
+        }@empty {
+          <li class="flex py-4 first:pt-0 last:pb-0">
+            <div class="ml-3 overflow-hidden">
+              <p>No hay productos seleccionados</p>
+            </div>
+          </li>
+
+           }
+      </ul>
+  </div>
+
+</div>

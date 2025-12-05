@@ -1,0 +1,16 @@
+@if (!load) {
+  <label class="inline-flex items-center me-5 cursor-pointer">
+    <input type="checkbox" class="sr-only peer" checked [formControl]="getFormControl()" (change)="handleChange($event)">
+    <div class="relative w-11 h-6 bg-gray-200 rounded-full dark:bg-gray-800 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+    <span class="ms-3 text-sm font-medium text-gray-500 dark:text-gray-400">{{ label }}</span>
+  </label>
+}@else {
+  <div class="">
+    <div class="animate-pulse flex space-x-4">
+      <div class="rounded-full bg-gray-300 dark:bg-slate-700 h-8 w-16"></div>
+      <div class="flex-1 space-y-6 py-1 align-middle justify-start">
+        <div class="h-5 rounded-md bg-gray-400 dark:bg-slate-800 w-48"></div>
+      </div>
+    </div>
+  </div>
+}

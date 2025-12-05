@@ -1,0 +1,299 @@
+<!-- HEADER -->
+<app-header headerTitle="Productos" headerDescription="Gestión de módulo de productos, crear, editar, activar, desactivar y eliminar productos."></app-header>
+
+<div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
+
+  <!-- FILTER AND SEARCH -->
+
+  <!-- MOBILE -->
+  <div class="sticky top-0 z-10 grid grid-cols-1 gap-4 md:grid-cols-1 p-1 bg-white dark:bg-slate-900 border-b dark:border-slate-600">
+    <div class="border dark:border-slate-700 border-none border-t-0 border-l-0 border-r-0 m-0 p-0 pb-2 w-full">
+
+      <button  (click)="openDialog()" type="button" class="btn-success h-10 sm:flex md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base">Filtros</p>
+          <ng-icon class="text-white font-bold m-1" size="15" name="matFilterAltOutline"></ng-icon>
+        </div>
+      </button>
+
+      @if (user.role === 'ROLE_ADMIN') {
+        <button (click)="add()" type="button" class="btn-primary h-10 float-right w-28">
+          <div class="flex text-center justify-center align-middle">
+            <p class="text-sm md:text-base">Nuevo</p>
+            <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+          </div>
+        </button>
+      }
+
+    </div>
+
+    <!-- FILTER DESKTOP -->
+    <div class="md:flex w-full hidden pl-6">
+        <div class="w-96">
+          <app-search-input-text
+          class="w-full"
+          [form]="form"
+          name="name"
+          icon="matSearchOutline"
+          label="Producto"
+          placeholder="Nombre de producto"
+          [maxlength]="50"
+          [load]="load"
+          [counter]="true"
+          (keydown.enter)="introSearch()"
+          (keydown.escape)="initPage()"
+          (clearFilters)="initPage()">
+        </app-search-input-text>
+        </div>
+
+        <button (click)="(form.controls['name'].value && form.controls['name'].value !== '') ?
+                   filter(form.controls['name'].value) : null" type="button" class="btn-success h-10">
+          <div class="flex text-center justify-center align-middle">
+            <p class="text-sm md:text-base align-middle">Buscar</p>
+            <ng-icon class="text-white font-bold m-1" size="17" name="matSearchOutline"></ng-icon>
+          </div>
+        </button>
+
+        <button (click)="openDialog()" type="button" class="btn-success h-10">
+          <div class="flex text-center justify-center align-middle">
+            <p class="text-sm md:text-base">Filtros</p>
+            <ng-icon class="text-white font-bold m-1" size="17" name="matFilterAltOutline"></ng-icon>
+          </div>
+        </button>
+
+    </div>
+
+    <div class="w-full md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
+
+      <div class="flex">
+        <app-search-input-text
+          class="w-full"
+          [form]="form"
+          name="name"
+          icon="matSearchOutline"
+          label="Producto"
+          placeholder="Nombre de producto"
+          [maxlength]="50"
+          [load]="load"
+          [counter]="true"
+          (keydown.enter)="introSearch()"
+          (keydown.escape)="initPage()"
+          (clearFilters)="initPage()">
+        </app-search-input-text>
+        <button (click)="(form.controls['name'].value && form.controls['name'].value !== '') ?
+        filter(form.controls['name'].value) : null" type="button" class="btn-success h-10">
+          <div class="flex text-center justify-center align-middle">
+            <ng-icon class="text-white font-bold p-0 m-0" size="20" name="matSearchOutline"></ng-icon>
+          </div>
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- PAGINATION MOBILE -->
+  <div class="content-sm">
+    <div class="pagination">
+      <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
+        <div class="flex justify-between">
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-xs text-start pl-2 w-48"><b> Páginas: </b> {{page}} de {{totalPages}}</p>
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-xs text-start pl-2 w-48"><b> Items: </b> {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <!-- <div class="relative overflow-x-auto shadow-md sm:rounded-lg"> -->
+  <div class="rounded-lg">
+    <table class="table-grid mt-4 w-full">
+      <thead>
+        <tr>
+          <th class="content-desktop-custom">
+            <button (click)="changeSortOrderBy('id')">
+              <p>ID</p>
+              @if(sortConfig.sortBy === 'id' && sortConfig.sortOrder === 'asc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'id' && sortConfig.sortOrder === 'desc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
+          <th>
+            <button (click)="changeSortOrderBy('productName')">
+              <p>Nombre</p>
+              @if(sortConfig.sortBy === 'productName' && sortConfig.sortOrder === 'asc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'productName' && sortConfig.sortOrder === 'desc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
+          <th class="content-desktop-custom">
+            <button (click)="changeSortOrderBy('price')">
+              <p>Precio</p>
+              @if(sortConfig.sortBy === 'price' && sortConfig.sortOrder === 'asc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'price' && sortConfig.sortOrder === 'desc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
+          <!-- <th class="content-desktop-custom">
+            <button>
+              <p>Estado</p>
+            </button>
+          </th> -->
+
+          <!-- <th class="content-desktop-custom">Acciones</th> -->
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        @for (product of ItemsList; track $index) {
+          @defer {
+            <tr [ngClass]="{' bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
+              <td class="hidden sm:table-cell">
+                @if (product.active) {<span class="relative inline-flex rounded-full h-2 w-2 mr-2 bg-emerald-400"></span>}
+                @if (!product.active) {<span class="relative inline-flex rounded-full h-2 w-2 mr-2 bg-red-400"></span>}
+                {{ product.id }}
+              </td>
+              <td class="hidden sm:table-cell">
+                <h1>
+                  <p class="font-bold">{{ product.productName }}</p>
+                  <p class="text-xs text-wrap">{{ product.productDesc }}</p>
+                </h1>
+              </td>
+
+              <td class="content-sm">
+                <div class="w-full flex justify-between p-1">
+                  <h1>
+                    <p class="font-bold text-gray-400">
+                      @if (product.active) {<span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-400"></span>}
+                      @if (!product.active) {<span class="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>}
+                      <b class=" ml-2 font-semibold text-xs text-gray-400">ID: {{ product.id }}</b>
+                    </p>
+                    <h1>
+                      <p class="font-bold text-gray-400">
+                        {{ product.productName }}
+                       </p>
+                       <p class="text-xs text-wrap">{{ product.productDesc }}</p>
+                    </h1>
+
+                    <p><b class="bg-gray-100 dark:bg-slate-800 dark:text-gray-300 ml-0  p-1 m-2 w-auto rounded">Q {{ product.price.toFixed(2) }}</b></p>
+                  </h1>
+                  @if (user.role === 'ROLE_ADMIN') {
+                    <app-chat-bubble [id]="product.id" [options]="actionsGrid" (selectOption)="selectOption($event)"></app-chat-bubble>
+                  }
+                </div>
+              </td>
+              <td class="hidden sm:table-cell">Q {{ product.price.toFixed(2) }}</td>
+
+              @if (user.role === 'ROLE_ADMIN') {
+                <td class="hidden sm:table-cell">
+                  <div class="w-full c-actions">
+                    <button (click)="edit(product.id)" class="btn-action content-desktop">
+                      <ng-icon class="text-blue-500 font-bold float-end" size="20" name="matEditOutline"></ng-icon>
+                    </button>
+                    <button (click)="deleteId(product.id)" class="btn-action content-desktop">
+                      <ng-icon class="text-red-500 font-bold float-end" size="20" name="matDeleteOutline"></ng-icon>
+                    </button>
+                  </div>
+                </td>
+              }
+
+            </tr>
+          } @loading {
+            <tr [ngClass]="{' bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
+              <td class="content-desktop">
+                <div class="rounded pt-2 pb-2 p-1">
+                  <div class="animate-pulse flex space-x-4">
+                    <div class="flex-1 space-y-6 py-1">
+                      <div class="h-2 bg-gray-400 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="rounded pt-2 pb-2 p-1">
+                  <div class="animate-pulse flex space-x-4">
+                    <div class="flex-1 space-y-6 py-1">
+                      <div class="h-2 bg-gray-400 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="rounded pt-2 pb-2 p-1">
+                  <div class="animate-pulse flex space-x-4">
+                    <div class="flex-1 space-y-6 py-1">
+                      <div class="h-2 bg-gray-400 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="flex justify-center">
+                <div class="rounded pl-2">
+                  <div class="animate-pulse flex space-x-4">
+                    <div class="rounded-md bg-blue-400 h-5 w-5"></div>
+                  </div>
+                </div>
+                <div class="rounded-md pl-1">
+                  <div class="animate-pulse flex space-x-4">
+                    <div class="rounded-md bg-red-400 h-5 w-5"></div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          }
+         }
+      </tbody>
+
+    </table>
+
+    <!-- PAGINATION DESKTOP -->
+    <div class="content-desktop">
+      <div class="pagination">
+        <div class="pagination-child">
+          <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{page}} de {{totalPages}}</b></p>
+          <p>Items {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+          <button><ng-icon (click)="firstPage()" class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
+          <button><ng-icon (click)="previousPage()" class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
+          <button><ng-icon (click)="nextPage()" class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
+          <button><ng-icon (click)="lastPage()" class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGINATION MOBILE -->
+    <div class="content-sm">
+      <div class="pagination">
+        <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
+
+          <div class="flex justify-between mb-2 p-2 rounded-lg border m-1 bg-white dark:bg-slate-900 dark:border-slate-700">
+            <button class="btn-pagination"><ng-icon (click)="firstPage()" size="22" name="bootstrapChevronBarLeft"></ng-icon></button>
+            <button class="btn-pagination"><ng-icon (click)="previousPage()" size="22" name="bootstrapChevronLeft"></ng-icon></button>
+            <button class="btn-pagination"><ng-icon (click)="nextPage()" size="22" name="bootstrapChevronRight"></ng-icon></button>
+            <button class="btn-pagination"><ng-icon (click)="lastPage()" size="22" name="bootstrapChevronBarRight"></ng-icon></button>
+          </div>
+
+          <div class="flex justify-between">
+            <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Páginas: </b> {{page}} de {{totalPages}}</p>
+            <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Items: </b> {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
