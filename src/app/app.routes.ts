@@ -64,6 +64,200 @@ export const routes: Routes =
         ]
       },
       {
+  path: 'inventory',
+  title: 'Inventario',
+  canMatch: [authGuard],
+  children: [
+    {
+      path: '',
+      title: 'Inventario',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/inventory/inventory.component')
+        .then(m => m.InventoryComponent),
+    },
+    {
+      path: 'movements',
+      title: 'Movimientos de Inventario',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/inventory/stock-movements/stock-movements.component')
+        .then(m => m.StockMovementsComponent)
+    },
+    {
+      path: 'low-stock',
+      title: 'Productos con Bajo Stock',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/inventory/low-stock-alerts/low-stock-alerts.component')
+        .then(m => m.LowStockAlertsComponent)
+    },
+    {
+      path: 'entries-exits',
+      title: 'Entradas y Salidas',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/inventory/stock-entry-exit/stock-entry-exit.component')
+        .then(m => m.StockEntryExitComponent)
+    }
+  ]
+},
+{
+  path: 'suppliers',
+  title: 'Proveedores',
+  canMatch: [authGuard],
+  children: [
+    {
+      path: '',
+      title: 'Lista de Proveedores',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/suppliers/suppliers.component')
+      .then(m => m.SuppliersComponent),
+    },
+    {
+      path: 'detail/:mode',
+      title: 'Proveedor',
+      canMatch: [authGuard],
+      canDeactivate: [pendingChangesGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/suppliers/supplier-form/supplier-form.component')
+      .then(m => m.SupplierFormComponent),
+    }
+  ]
+},
+
+{
+  path: 'purchases',
+  title: 'Compras',
+  canMatch: [authGuard],
+  children: [
+    {
+      path: '',
+      title: 'Listado de Compras',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/purchases/purchase-list/purchase-list.component')
+      .then(m => m.PurchaseListComponent),
+    },
+    {
+      path: 'detail/:mode',
+      title: 'Nueva Compra',
+      canMatch: [authGuard],
+      canDeactivate: [pendingChangesGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/purchases/purchase-form/purchase-form.component')
+      .then(m => m.PurchaseFormComponent),
+    },
+    {
+      path: 'detail/:mode/:id',
+      title: 'Editar Compra',
+      canMatch: [authGuard],
+      canDeactivate: [pendingChangesGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/purchases/purchase-form/purchase-form.component')
+      .then(m => m.PurchaseFormComponent),
+    },
+    {
+      path: 'report',
+      title: 'Reporte de Compras',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/purchases/purchase-report/purchase-report.component')
+      .then(m => m.PurchaseReportComponent),
+    }
+  ]
+},
+{
+  path: 'categories',
+  title: 'Categorías y Marcas',
+  canMatch: [authGuard],
+  children: [
+    {
+      path: '',
+      title: 'Categorías',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/categories/categories.component')
+      .then(m => m.CategoriesComponent),
+    },
+    {
+      path: 'category-list',
+      title: 'Lista de Categorías',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/categories/category-list/category-list.component')
+      .then(m => m.CategoryListComponent),
+    },
+    {
+      path: 'brand-list',
+      title: 'Lista de Marcas',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/categories/brand-list/brand-list.component')
+      .then(m => m.BrandListComponent),
+    }
+  ]
+},
+
+{
+  path: 'promotions',
+  title: 'Promociones',
+  canMatch: [authGuard],
+  children: [
+    {
+      path: '',
+      title: 'Promociones',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/promotions/promotions.component')
+      .then(m => m.PromotionsComponent),
+    },
+    {
+      path: 'new',
+      title: 'Nueva Promoción',
+      canMatch: [authGuard],
+      canDeactivate: [pendingChangesGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/promotions/discount-form/discount-form.component')
+      .then(m => m.DiscountFormComponent),
+    },
+    {
+      path: 'list',
+      title: 'Listado de Promociones',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/promotions/discount-list/discount-list.component')
+      .then(m => m.DiscountListComponent),
+    }
+  ]
+},
+{
+  path: 'branches',
+  title: 'Sucursales',
+  canMatch: [authGuard],
+  children: [
+    {
+      path: '',
+      title: 'Sucursales',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/branches/branches.component')
+      .then(m => m.BranchesComponent),
+    },
+    {
+      path: 'stock',
+      title: 'Stock por Sucursal',
+      canMatch: [authGuard],
+      loadComponent: () =>
+        import('./dashboard/pages/branches/branch-stock/branch-stock.component')
+      .then(m => m.BranchStockComponent),
+    }
+  ]
+},
+
+
+      {
         path: 'orders',
         title: 'Pedidos',
         // loadComponent: () => import('./dashboard/pages/orders/orders.component'),
