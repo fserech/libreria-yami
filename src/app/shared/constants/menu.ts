@@ -14,7 +14,13 @@ export class Menu {
         { icon: 'matLoyaltyOutline', label: 'Productos', route: '/dashboard/products' },
         { icon: 'matLocalShippingOutline', label: 'Pedidos', route: '/dashboard/orders' },
         { icon: 'matInsertDriveFileOutline', label: 'Reportes', route: '/dashboard/reports' },
-        { icon: 'matReceiptOutline', label: 'Recibos', route: '/dashboard/receipts' }
+        { icon: 'matReceiptOutline', label: 'Recibos', route: '/dashboard/receipts' },
+        { icon: 'matInventory2Outline', label: 'Inventario', route: '/dashboard/inventory' },
+        { icon: 'matProductionQuantityLimitsOutline', label: 'Proveedores', route: '/dashboard/suppliers' },
+        { icon: 'matAddShoppingCartOutline', label: 'Compras', route: '/dashboard/purchases' },
+        { icon: 'matCategoryOutline', label: 'Categorías', route: '/dashboard/categories' },
+        { icon: 'matAnimationOutline', label: 'Promociones', route: '/dashboard/promotions' },
+        { icon: 'matAltRouteOutline', label: 'Sucursales', route: '/dashboard/branches' },
       ]
     },
     // {

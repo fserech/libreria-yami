@@ -3,8 +3,8 @@ import { Component, Input } from '@angular/core';
 import { RouterLinkActive, RouterLink } from '@angular/router';
 import { SubMenuItem } from '../../../../interfaces/menu.model';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { matArrowForwardIosOutline, matGroupOutline, matGroupsOutline, matHomeOutline,
-         matInsertDriveFileOutline, matLocalShippingOutline, matLoyaltyOutline, matReceiptOutline,
+import { matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, matArrowForwardIosOutline, matCategoryOutline, matGroupOutline, matGroupsOutline, matHomeOutline,
+         matInsertDriveFileOutline, matInventory2Outline, matLocalShippingOutline, matLoyaltyOutline, matProductionQuantityLimitsOutline, matReceiptOutline,
          matTodayOutline } from '@ng-icons/material-icons/outline';
 
 @Component({
@@ -30,7 +30,13 @@ import { matArrowForwardIosOutline, matGroupOutline, matGroupsOutline, matHomeOu
       matInsertDriveFileOutline,
       matReceiptOutline,
       matTodayOutline,
-      matArrowForwardIosOutline
+      matArrowForwardIosOutline,
+      matInventory2Outline,
+    matProductionQuantityLimitsOutline ,
+    matAddShoppingCartOutline,
+    matCategoryOutline,
+    matAnimationOutline,
+    matAltRouteOutline
     })
   ]
 })
