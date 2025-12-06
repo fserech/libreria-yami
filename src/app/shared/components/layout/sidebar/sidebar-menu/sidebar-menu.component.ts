@@ -5,7 +5,7 @@ import { NgFor, NgClass, NgTemplateOutlet, NgIf } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { SidebarSubmenuComponent } from '../sidebar-submenu/sidebar-submenu.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { matArrowForwardIosOutline, matGroupOutline, matGroupsOutline, matHomeOutline, matInsertDriveFileOutline, matLocalShippingOutline, matLoyaltyOutline, matReceiptOutline, matTodayOutline } from '@ng-icons/material-icons/outline';
+import {  matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, matCategoryOutline, matFilterBAndWOutline, matGroupOutline, matGroupsOutline, matHomeOutline, matInsertDriveFileOutline, matInventory2Outline, matLocalOfferOutline, matLocalShippingOutline, matLoyaltyOutline, matProductionQuantityLimitsOutline, matReceiptOutline, matShoppingCartOutline, matStorefrontOutline, matTodayOutline, matViewInArOutline, matWarehouseOutline } from '@ng-icons/material-icons/outline';
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -19,7 +19,8 @@ import { matArrowForwardIosOutline, matGroupOutline, matGroupsOutline, matHomeOu
         RouterLinkActive,
         NgIf,
         SidebarSubmenuComponent,
-        NgIconComponent
+        NgIconComponent,
+
   ],
   templateUrl: './sidebar-menu.component.html',
   styleUrl: './sidebar-menu.component.scss',
@@ -32,7 +33,12 @@ import { matArrowForwardIosOutline, matGroupOutline, matGroupsOutline, matHomeOu
     matInsertDriveFileOutline,
     matTodayOutline,
     matReceiptOutline,
-    matArrowForwardIosOutline
+    matInventory2Outline,
+    matProductionQuantityLimitsOutline ,
+    matAddShoppingCartOutline,
+    matCategoryOutline,
+    matAnimationOutline,
+    matAltRouteOutline
      })]
 })
 export class SidebarMenuComponent {

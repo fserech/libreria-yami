@@ -20,7 +20,7 @@ export const routes: Routes =
       },
       {
         path: 'home',
-        title: 'BodegasApp',
+        title: 'LibreriaYami',
         canMatch: [authGuard],
         loadComponent: () => import('./dashboard/pages/home/home.component')
       },

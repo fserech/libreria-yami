@@ -33,6 +33,16 @@ export default class HomeComponent implements OnInit {
 
   permissions: any[] = [];
 
+  // Define los módulos que QUIERES mostrar en el centro
+  private allowedModules = [
+    'Roles y usuarios',
+    'Clientes',
+    'Productos',
+    'Pedidos',
+    'Reportes',
+    'Recibos'
+  ];
+
   constructor(
     public auth: AuthService,
     public menuService: MenuService,
@@ -41,7 +51,9 @@ export default class HomeComponent implements OnInit {
     .getPermissions()
     .subscribe({
       next:(res: any) => {
-        this.permissions = res.pages[0].items;
+         this.permissions = res.pages[0].items.filter((item: any) =>
+            this.allowedModules.includes(item.label)
+          );
       },
       error:(error: any) => {
         console.log(error);
