@@ -178,8 +178,7 @@ export const routes: Routes =
       title: 'Categorías',
       canMatch: [authGuard],
       loadComponent: () =>
-        import('./dashboard/pages/categories/categories.component')
-      .then(m => m.CategoriesComponent),
+        import('./dashboard/pages/categories/categories.component'),
     },
     {
       path: 'category-list',
@@ -194,8 +193,7 @@ export const routes: Routes =
       title: 'Lista de Marcas',
       canMatch: [authGuard],
       loadComponent: () =>
-        import('./dashboard/pages/categories/brand-list/brand-list.component')
-      .then(m => m.BrandListComponent),
+        import('./dashboard/pages/categories/brand-list/brand-list.component'),
     }
   ]
 },
