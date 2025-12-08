@@ -169,34 +169,40 @@ export const routes: Routes =
   ]
 },
 {
-  path: 'categories',
-  title: 'Categorías y Marcas',
-  canMatch: [authGuard],
-  children: [
-    {
-      path: '',
-      title: 'Categorías',
-      canMatch: [authGuard],
-      loadComponent: () =>
-        import('./dashboard/pages/categories/categories.component'),
-    },
-    {
-      path: 'category-list',
-      title: 'Lista de Categorías',
-      canMatch: [authGuard],
-      loadComponent: () =>
-        import('./dashboard/pages/categories/category-list/category-list.component')
-      .then(m => m.CategoryListComponent),
-    },
-    {
-      path: 'brand-list',
-      title: 'Lista de Marcas',
-      canMatch: [authGuard],
-      loadComponent: () =>
-        import('./dashboard/pages/categories/brand-list/brand-list.component'),
-    }
-  ]
-},
+        path: 'categories',
+        title: 'Categorias',
+        canMatch: [authGuard],
+        // loadComponent: () => import('./dashboard/pages/categories/categories.component'),
+
+        children: [
+          {
+            path: '',
+            redirectTo: '',
+            pathMatch: 'full'
+          },
+          {
+            path: '',
+            title: 'Categorias',
+            canMatch: [authGuard],
+            loadComponent: () => import('./dashboard/pages/categories/categories-grid-main/categories-grid-main.component'),
+          },
+          {
+            path: 'detail/:mode',
+            title: 'Categorias',
+            canMatch: [authGuard],
+            canDeactivate: [pendingChangesGuard],
+            loadComponent: () => import('./dashboard/pages/categories//categories.component'),
+          },
+          {
+            path: 'detail/:mode/:id',
+            title: 'Categorias',
+            canMatch: [authGuard],
+            canDeactivate: [pendingChangesGuard],
+            loadComponent: () => import('./dashboard/pages/categories/categories.component'),
+          }
+        ]
+      }
+,
 
 {
   path: 'promotions',
@@ -297,8 +303,9 @@ export const routes: Routes =
       {
         path: 'products',
         title: 'Productos',
-        // loadComponent: () => import('./dashboard/pages/products/products.component'),
         canMatch: [authGuard],
+        // loadComponent: () => import('./dashboard/pages/products/products.component'),
+
         children: [
           {
             path: '',
