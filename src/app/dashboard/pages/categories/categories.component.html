@@ -1,10 +1,10 @@
 <!-- HEADER -->
-<app-header headerTitle="Categorias" headerDescription="Gestión de módulo de categorias, crear, editar, activar, desactivar y eliminar categorias."></app-header>
+<app-header headerTitle="Categorias" headerDescription="Gestión de módulo de categorias, crear, editar, activar, desactivar y eliminar productos."></app-header>
 
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
   <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between">
     @if (mode==='new') {
-      <p class="text-gray-500 dark:text-gray-300 font-bold">Nueva Categoria</p>
+      <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo Categorias</p>
     }
     @if (mode === 'edit'|| mode === 'view') {
       <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID categoria: </b>{{ id }}</p>
@@ -37,7 +37,7 @@
 
     <app-input
       [form]="form"
-      name="brandDesc"
+      name="categoryDesc"
       icon="matDriveFileRenameOutlineOutline"
       label="Descripción de categoria"
       placeholder="Descripción de categoria"
@@ -53,10 +53,10 @@
 
   <app-toggle
     class="ml-4"
-    label="categoria Activa"
+    label="Categoria Activo"
     [form]="form"
     name="active"
-    (changes)="changeCategorieActive($event)"
+    (changes)="changeCategoryActive($event)"
     [load]="load">
   </app-toggle>
   </div>

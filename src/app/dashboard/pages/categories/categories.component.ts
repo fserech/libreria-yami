@@ -6,7 +6,7 @@ import { ToggleComponent } from '../../../shared/components/toggle/toggle.compon
 import { matArrowBackOutline } from '@ng-icons/material-icons/outline';
 import BaseForm from '../../../shared/classes/base-form';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { Categorie } from '../../../shared/interfaces/categorie';
+import {  Category } from '../../../shared/interfaces/category';
 import { CrudService } from '../../../shared/services/crud.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,6 +15,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { URL_CATEGORIES } from '../../../shared/constants/endpoints';
 import { REGUX_AFL } from '../../../shared/constants/reguex';
 import { firstValueFrom } from 'rxjs';
+import CategoryListComponent from './category-list/category-list.component';
 
 @Component({
   selector: 'app-categories',
@@ -27,7 +28,7 @@ import { firstValueFrom } from 'rxjs';
 export default class CategoriesComponent extends BaseForm implements OnInit {
 
   form: FormGroup;
-  categorie: Categorie;
+  category: Category;
 
   constructor(
     private crud: CrudService,
@@ -36,24 +37,27 @@ export default class CategoriesComponent extends BaseForm implements OnInit {
     private route: ActivatedRoute,
     private auth: AuthService,
     private bpo: BreakpointObserver
-  ) {
- super(crud, toast, auth, bpo);
- this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
- if (this.mode !== 'new') this.id = Number(this.route.snapshot.paramMap.get('id'));
-  this.crud.baseUrl = URL_CATEGORIES;
- this.form = new FormGroup({
-  name: new FormControl('', [Validators.required, Validators.pattern(REGUX_AFL)]),
-  categorieDesc: new FormControl('', [Validators.required]),
-  active: new FormControl(true)
- });
+    ){
+      super(crud, toast, auth, bpo);
+      this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
+      if(this.mode !== 'new') this.id = Number(this.route.snapshot.paramMap.get('id'));
 
-  if(this.mode === 'edit'){
+      this.crud.baseUrl = URL_CATEGORIES;
+      this.form = new FormGroup({
+        name: new FormControl('', [Validators.required, Validators.pattern(REGUX_AFL)]),
+        categoryDesc: new FormControl('', [Validators.required]),
+        //price: new FormControl('', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]),
+        active: new FormControl(true)
+      });
+
+      if(this.mode === 'edit'){
         this.load = true;
         firstValueFrom(this.crud.getId(this.id))
-        .then((categorie: Categorie) => {
-          this.form.controls['name'].setValue(categorie.categorieName);
-          this.form.controls['categorieDesc'].setValue(categorie.categorieDesc);
-          this.form.controls['active'].setValue(categorie.active);
+        .then((category: Category) => {
+          this.form.controls['name'].setValue(category.categoryName);
+          this.form.controls['categoryDesc'].setValue(category.categoryDesc);
+          //this.form.controls['price'].setValue(Number(product.price).toFixed(2));
+          this.form.controls['active'].setValue(category.active);
         })
         .catch((error: any) => {
           console.log('error id: ', error);
@@ -62,32 +66,35 @@ export default class CategoriesComponent extends BaseForm implements OnInit {
           this.load = false;
         });
       }
- }
+  }
 
-  ngOnInit(): void  {}
+  ngOnInit(): void {}
+
   isDirty(): boolean {
     return this.form.dirty;
   }
 
-  back(){
-    this.router.navigate(['/dashboard/categories']);
+  back() {
+    this.router.navigate(['dashboard/categories']);
   }
 
-    changeCategorieActive($event){
+  changeCategoryActive($event){
     const value: boolean = $event.target.checked;
   }
 
   async submit(){
-   this.load = true;
-   this.isSaving = true;
-   const categorie: Categorie = {
-   id: (this.id) ? this.id : null,
-   categorieName: this.form.controls['name'].value,
-   categorieDesc: this.form.controls['categorieDesc'].value,
-   active: this.form.controls['active'].value
-   }
-   if(this.mode === 'edit'){
-      await firstValueFrom(this.crud.updateId(this.id, categorie))
+    this.load = true;
+    this.isSaving = true;
+    const category: Category = {
+      id: (this.id) ? this.id : null,
+      categoryName: this.form.controls['name'].value,
+      categoryDesc: this.form.controls['categoryDesc'].value,
+      //price: this.form.controls['price'].value,
+      active: this.form.controls['active'].value
+    }
+
+    if(this.mode === 'edit'){
+      await firstValueFrom(this.crud.updateId(this.id, category))
             .then((response: any) => {
               this.toast.success(response.message);
               this.load = false;
@@ -101,7 +108,7 @@ export default class CategoriesComponent extends BaseForm implements OnInit {
               this.router.navigate(['dashboard/categories']);
             });
     }else if(this.mode === 'new'){
-      await firstValueFrom(this.crud.save(categorie))
+      await firstValueFrom(this.crud.save(category))
             .then((response: any) => {
               this.load = false;
               this.toast.success(response.message);
@@ -118,5 +125,5 @@ export default class CategoriesComponent extends BaseForm implements OnInit {
       this.toast.info('Estas en modo vista');
       this.router.navigate(['dashboard/categories']);
     }
-}
+  }
 }
