@@ -9,23 +9,22 @@ export interface FormComponent {
   isSaving: boolean;
 }
 
-export const pendingChangesGuard: CanDeactivateFn<FormComponent> = (
-  component: FormComponent,
-  currentRoute,
-  currentState,
-  nextState): Observable<boolean> | Promise<boolean> | boolean => {
-    const toastService = inject(ToastService);
+export const pendingChangesGuard: CanDeactivateFn<any> = (component: any) => {
 
-    if (component.isSaving) {
-      return true;
-    }
+  // Si Angular intenta ejecutar el guard ANTES de crear el componente
+  if (!component) return true;
 
-    if (component.isDirty()) {
-    return toastService
-          .confirm('Cambios sin guardar', null, null, '¿Descartar cambios?')
-          .then((result) => {
-            return result.isConfirmed;
-          });
+  // Si el componente no usa isSaving o isDirty, no debe bloquear navegación
+  if (typeof component.isSaving === 'undefined') return true;
+  if (typeof component.isDirty === 'undefined') return true;
+
+  if (component.isSaving) return true;
+
+  if (component.isDirty()) {
+    const toast = inject(ToastService);
+    return toast
+      .confirm('Cambios sin guardar', null, null, '¿Descartar cambios?')
+      .then(r => r.isConfirmed);
   }
 
   return true;

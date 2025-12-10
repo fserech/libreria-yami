@@ -2,31 +2,47 @@
   headerTitle="Categorías y Marcas"
   headerDescription="Gestión de clasificaciones de productos (Categorías y Marcas).">
 </app-header>
-
 <div class="p-2 m-2">
   <!-- Tabs -->
   <div class="flex gap-2 mb-4">
-    <button
-      (click)="setActiveTab('categories')"
-      [class]="activeTab === 'categories'
-        ? 'flex-1 py-3 px-6 rounded-lg bg-blue-600 text-white font-semibold shadow-md transition-all'
-        : 'flex-1 py-3 px-6 rounded-lg bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold transition-all'">
-      Categorías
-    </button>
+ <button
+  [routerLink]="['/dashboard/categories']"
+  [class]="activeTab === 'categories'
+    ? 'flex-1 py-3 px-6 rounded-lg bg-blue-400'
+    : 'flex-1 py-3 px-6 rounded-lg bg-white dark:bg-slate-900 text-gray-600'">
 
-    <button
-      (click)="setActiveTab('brands')"
-      [class]="activeTab === 'brands'
-        ? 'flex-1 py-3 px-6 rounded-lg bg-blue-600 text-white font-semibold shadow-md transition-all'
-        : 'flex-1 py-3 px-6 rounded-lg bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold transition-all'">
-      Marcas
-    </button>
+  <div class="flex text-center justify-center align-middle">
+    <p
+      class="text-sm md:text-base align-middle"
+      [class.text-white]="activeTab === 'categories'"
+      [class.font-bold]="activeTab === 'categories'">
+      Categorías
+    </p>
   </div>
 
-  <!-- Contenido -->
-  @if (activeTab === 'categories') {
-    <app-categories-grid-main></app-categories-grid-main>
-  } @else {
-    <app-brands-grid-main></app-brands-grid-main>
-  }
+</button>
+
+<button
+  [routerLink]="['/dashboard/categories/brands']"
+  [class]="activeTab === 'brands'
+    ? 'flex-1 py-3 px-6 rounded-lg bg-blue-400'
+    : 'flex-1 py-3 px-6 rounded-lg bg-white dark:bg-slate-900 text-gray-600'">
+
+  <div class="flex text-center justify-center align-middle">
+            <p
+      class="text-sm md:text-base align-middle"
+      [class.text-white]="activeTab === 'brands'"
+      [class.font-bold]="activeTab === 'brands'">
+      Marcas
+    </p>
+          </div>
+
+</button>
+
+
+
+  </div>
+
+  <!-- Aquí Angular cargará la lista, el formulario, edición, etc -->
+  <router-outlet></router-outlet>
 </div>

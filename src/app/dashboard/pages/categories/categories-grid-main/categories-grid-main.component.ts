@@ -19,7 +19,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../../shared/services/auth.service';
 import { ACTIONS_GRID_MAIN_ADMIN } from '../../../../shared/constants/actions-menu';
-import CategoryListComponent from '../category-list/category-list.component';
+import { CategoryListComponent } from '../category-list/category-list.component';
+
 @Component({
   selector: 'app-categories-grid-main',
   standalone: true,

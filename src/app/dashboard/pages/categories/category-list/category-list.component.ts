@@ -14,7 +14,7 @@ import { REGUEX_DECIMAL_INT, REGUEX_INT } from '../../../../shared/constants/reg
   templateUrl: './category-list.component.html',
   styleUrl: './category-list.component.scss'
 })
-export default class CategoryListComponent {
+export class CategoryListComponent {
     form: FormGroup;
     load: boolean = false;
      constructor(
