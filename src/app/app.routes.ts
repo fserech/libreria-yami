@@ -172,7 +172,7 @@ export const routes: Routes =
         path: 'categories',
         title: 'Categorias',
         canMatch: [authGuard],
-        // loadComponent: () => import('./dashboard/pages/categories/categories.component'),
+        loadComponent: () => import('./dashboard/pages/categories/categories.component'),
 
         children: [
           {
@@ -191,15 +191,52 @@ export const routes: Routes =
             title: 'Categorias',
             canMatch: [authGuard],
             canDeactivate: [pendingChangesGuard],
-            loadComponent: () => import('./dashboard/pages/categories//categories.component'),
+            loadComponent: () => import('./dashboard/pages/categories/category-forms/category-forms.component'),
           },
           {
             path: 'detail/:mode/:id',
             title: 'Categorias',
             canMatch: [authGuard],
             canDeactivate: [pendingChangesGuard],
-            loadComponent: () => import('./dashboard/pages/categories/categories.component'),
-          }
+            loadComponent: () => import('./dashboard/pages/categories/category-forms/category-forms.component'),
+          },
+
+            {
+      path: 'brands',
+      title: 'Marcas',
+      canMatch: [authGuard],
+      children: [
+        {
+          path: '',
+          redirectTo: '',
+          pathMatch: 'full'
+        },
+        {
+          path: '',
+          title: 'Marcas',
+          canMatch: [authGuard],
+          loadComponent: () =>
+            import('./dashboard/pages/categories/brands/brands-grid-main/brands-grid-main.component'),
+        },
+        {
+          path: 'detail/:mode',
+          title: 'Marcas',
+          canMatch: [authGuard],
+          canDeactivate: [pendingChangesGuard],
+          loadComponent: () =>
+            import('./dashboard/pages/categories/brands/brand-forms/brand-forms.component'),
+        },
+        {
+          path: 'detail/:mode/:id',
+          title: 'Marcas',
+          canMatch: [authGuard],
+          canDeactivate: [pendingChangesGuard],
+          loadComponent: () =>
+            import('./dashboard/pages/categories/brands/brand-forms/brand-forms.component'),
+        }
+      ]
+    }
+
         ]
       }
 ,
@@ -263,7 +300,7 @@ export const routes: Routes =
 
       {
         path: 'orders',
-        title: 'Pedidos',
+        title: 'Ventas',
         // loadComponent: () => import('./dashboard/pages/orders/orders.component'),
         canMatch: [authGuard],
         children: [
@@ -274,26 +311,26 @@ export const routes: Routes =
           },
           {
             path: '',
-            title: 'Pedidos',
+            title: 'Ventas',
             canMatch: [authGuard],
             loadComponent: () => import('./dashboard/pages/orders/orders-grid-main/orders-grid-main.component'),
           },
           {
             path: 'view/:id',
-            title: 'Pedidos',
+            title: 'Ventas',
             canMatch: [authGuard],
             loadComponent: () => import('./dashboard/pages/orders/components/orders-view/orders-view.component'),
           },
           {
             path: 'detail/:mode',
-            title: 'Pedidos',
+            title: 'Ventas',
             canMatch: [authGuard],
             canDeactivate: [pendingChangesGuard],
             loadComponent: () => import('./dashboard/pages/orders/orders-form/orders-form.component'),
           },
           {
             path: 'detail/:mode/:id',
-            title: 'Pedidos',
+            title: 'Ventas',
             canMatch: [authGuard],
             canDeactivate: [pendingChangesGuard],
             loadComponent: () => import('./dashboard/pages/orders/orders-form/orders-form.component'),

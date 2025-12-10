@@ -5,6 +5,7 @@ import { SubMenuItem } from '../../../../interfaces/menu.model';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, matArrowForwardIosOutline, matCategoryOutline, matGroupOutline, matGroupsOutline, matHomeOutline,
          matInsertDriveFileOutline, matInventory2Outline, matLocalShippingOutline, matLoyaltyOutline, matProductionQuantityLimitsOutline, matReceiptOutline,
+         matShoppingBagOutline,
          matTodayOutline } from '@ng-icons/material-icons/outline';
 
 @Component({
@@ -36,7 +37,8 @@ import { matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, mat
     matAddShoppingCartOutline,
     matCategoryOutline,
     matAnimationOutline,
-    matAltRouteOutline
+    matAltRouteOutline,
+    matShoppingBagOutline
     })
   ]
 })

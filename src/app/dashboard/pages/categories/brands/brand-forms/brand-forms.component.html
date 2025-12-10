@@ -1,10 +1,10 @@
 <!-- HEADER -->
-<app-header headerTitle="Marcas" headerDescription="Gestión de módulo de marcas, crear, editar, activar, desactivar y eliminar marcas."></app-header>
+<app-header headerTitle="Marcas" headerDescription="Gestión de módulo de marcas, crear, editar, activar, desactivar y eliminar productos."></app-header>
 
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
   <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between">
     @if (mode==='new') {
-      <p class="text-gray-500 dark:text-gray-300 font-bold">Nueva Marca</p>
+      <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo Marca</p>
     }
     @if (mode === 'edit'|| mode === 'view') {
       <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID marca: </b>{{ id }}</p>
@@ -37,7 +37,7 @@
 
     <app-input
       [form]="form"
-      name="brandDesc"
+      name="categoryDesc"
       icon="matDriveFileRenameOutlineOutline"
       label="Descripción de marca"
       placeholder="Descripción de marca"
@@ -53,10 +53,10 @@
 
   <app-toggle
     class="ml-4"
-    label="Marca Activa"
+    label="marca Activo"
     [form]="form"
     name="active"
-    (changes)="changeBrandActive($event)"
+    (changes)="changebrandActive($event)"
     [load]="load">
   </app-toggle>
   </div>

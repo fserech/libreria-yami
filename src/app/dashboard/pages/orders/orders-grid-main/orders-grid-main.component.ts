@@ -13,7 +13,7 @@ import { firstValueFrom } from 'rxjs';
 import { OptionsChatBubble } from '../../../../shared/interfaces/options-chat-bubble';
 import { bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarLeft, bootstrapChevronBarRight, bootstrapXCircle, bootstrapBoxSeam, bootstrapCheckCircleFill } from '@ng-icons/bootstrap-icons';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { matSearchOutline, matFilterAltOutline, matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline, matDeleteOutline, matEditOutline, matReceiptLongOutline, matRemoveRedEyeOutline, matLocalShippingOutline, matPersonOutline, matPlaylistAddCheckCircleOutline } from '@ng-icons/material-icons/outline';
+import { matSearchOutline, matFilterAltOutline, matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline, matDeleteOutline, matEditOutline, matReceiptLongOutline, matRemoveRedEyeOutline, matLocalShippingOutline, matPersonOutline, matPlaylistAddCheckCircleOutline, matShoppingBagOutline } from '@ng-icons/material-icons/outline';
 import { NgClass } from '@angular/common';
 import { ChatBubbleComponent } from '../../../../shared/components/chat-bubble/chat-bubble.component';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -41,7 +41,7 @@ import { MIN_DATE, MAX_DATE } from '../../../../shared/constants/date-min-max';
   viewProviders: [ provideIcons({ matSearchOutline, matFilterAltOutline, matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline,
     matDeleteOutline, matEditOutline, bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarLeft, bootstrapChevronBarRight,
     matReceiptLongOutline, bootstrapXCircle, bootstrapBoxSeam, bootstrapCheckCircleFill, matRemoveRedEyeOutline, matLocalShippingOutline,
-    matPersonOutline }) ]
+    matPersonOutline,matShoppingBagOutline }) ]
 })
 export default class OrdersGridMainComponent extends BaseForm implements OnInit {
 
@@ -100,7 +100,7 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
       width: this.getDialogWidth(),
       closeOnDestroy: true,
       data: {
-        title: 'Filtros de pedidos'
+        title: 'Filtros de ventas'
       },
       });
 
@@ -256,7 +256,7 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
 
   async finalizedOrder(id: number){
     this.load = true;
-    this.toast.confirm('¿Seguro que desea finalizar el pedido?', null, null, 'El registro se finalizará de forma permanente.', 'question')
+    this.toast.confirm('¿Seguro que desea finalizar la venta?', null, null, 'El registro se finalizará de forma permanente.', 'question')
     .then(async (result) => {
       if (result.isConfirmed) {
         await firstValueFrom(this.crud.updateId(id, { id: id, status: 'FINALIZED' }))
@@ -280,7 +280,7 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
   async cancelOrder(id: number){
 
     this.load = true;
-    this.toast.confirm('¿Seguro que desea anular el pedido?', null, null, 'El registro se anulará de forma permanente.', 'question')
+    this.toast.confirm('¿Seguro que desea anular la venta?', null, null, 'El registro se anulará de forma permanente.', 'question')
     .then(async (result) => {
       if (result.isConfirmed) {
         await firstValueFrom(this.crud.updateId(id, { id: id, status: 'CANCEL' }))

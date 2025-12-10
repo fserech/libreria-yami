@@ -6,7 +6,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { MenuService } from '../../../shared/services/menu.service';
 import { Route, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { matHomeOutline, matGroupOutline, matGroupsOutline, matLoyaltyOutline, matLocalShippingOutline, matInsertDriveFileOutline, matTodayOutline, matReceiptOutline, matArrowForwardIosOutline } from '@ng-icons/material-icons/outline';
+import { matHomeOutline, matGroupOutline, matGroupsOutline, matLoyaltyOutline, matLocalShippingOutline, matInsertDriveFileOutline, matTodayOutline, matReceiptOutline, matArrowForwardIosOutline, matShoppingBagOutline } from '@ng-icons/material-icons/outline';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 @Component({
   selector: 'app-home',
@@ -26,7 +26,8 @@ import { HeaderComponent } from '../../../shared/components/header/header.compon
     matInsertDriveFileOutline,
     matTodayOutline,
     matReceiptOutline,
-    matArrowForwardIosOutline
+    matArrowForwardIosOutline,
+    matShoppingBagOutline
      })]
 })
 export default class HomeComponent implements OnInit {
@@ -38,7 +39,7 @@ export default class HomeComponent implements OnInit {
     'Roles y usuarios',
     'Clientes',
     'Productos',
-    'Pedidos',
+    'Ventas',
     'Reportes',
     'Recibos'
   ];

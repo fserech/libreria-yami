@@ -63,7 +63,7 @@ export class OrdersConfirmComponent {
         this.products.splice(index, 1);
       }
     }else{
-      this.toast.error('El pedido debe tener al menos 1 producto')
+      this.toast.error('La venta debe tener al menos 1 producto')
     }
   }
 
@@ -94,7 +94,7 @@ export class OrdersConfirmComponent {
     this.backStep.emit(true);
   }
 
-  
+
 
   buildOrder(){
     this.load = true;
@@ -117,7 +117,7 @@ export class OrdersConfirmComponent {
 
     this.confirmOrder.emit(order);
     }else{
-      this.toast.info('cargando pedido...');
+      this.toast.info('cargando venta...');
     }
 
   }

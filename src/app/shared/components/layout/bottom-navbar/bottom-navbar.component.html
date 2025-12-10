@@ -15,7 +15,7 @@
         }
       } @else if (menu.group === 'Dashboard' && authService?.decodeToken()?.role === 'ROLE_USER') {
         @for (item of menu.items; track item.active) {
-          @if (item.label === 'Inicio' || item.label === 'Pedidos' || item.label === 'Clientes' || item.label === 'Productos') {
+          @if (item.label === 'Inicio' || item.label === 'Ventas' || item.label === 'Clientes' || item.label === 'Productos') {
             <button routerLink="{{ item.route }}" routerLinkActive="active-item"
               class="flex w-full h-full flex-col items-center justify-center pt-3 pb-3 text-center hover:text-gray-800 hover:dark:text-slate-100">
               <ng-icon class="text-gray-400" name="{{ item.icon }}"  size="27"></ng-icon>

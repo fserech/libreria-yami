@@ -5,7 +5,7 @@ import { SubMenuItem } from '../../../../../interfaces/menu.model';
 import { MenuService } from '../../../../../services/menu.service';
 import { NavbarMobileSubmenuComponent } from '../navbar-mobile-submenu/navbar-mobile-submenu.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, matArrowForwardIosOutline, matCategoryOutline, matGroupOutline, matGroupsOutline, matHomeOutline, matInsertDriveFileOutline, matInventory2Outline, matLocalShippingOutline, matLoyaltyOutline, matProductionQuantityLimitsOutline, matReceiptOutline, matTodayOutline } from '@ng-icons/material-icons/outline';
+import { matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, matArrowForwardIosOutline, matCategoryOutline, matGroupOutline, matGroupsOutline, matHomeOutline, matInsertDriveFileOutline, matInventory2Outline, matLocalShippingOutline, matLoyaltyOutline, matProductionQuantityLimitsOutline, matReceiptOutline, matShoppingBagOutline, matTodayOutline } from '@ng-icons/material-icons/outline';
 
 @Component({
   selector: 'app-navbar-mobile-menu',
@@ -36,7 +36,8 @@ import { matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, mat
     matAddShoppingCartOutline,
     matCategoryOutline,
     matAnimationOutline,
-    matAltRouteOutline
+    matAltRouteOutline,
+    matShoppingBagOutline
      })]
 })
 export class NavbarMobileMenuComponent implements OnInit, OnDestroy {

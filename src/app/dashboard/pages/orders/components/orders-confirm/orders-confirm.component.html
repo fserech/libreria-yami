@@ -15,7 +15,7 @@
         </button>
         <button [disabled]="products.length === 0" (click)="buildOrder()" type="button" class="btn-primary float-end h-12 w-40 mb-5">
           <div class="flex text-center justify-center align-middle w-full">
-            <p class="text-sm md:text-base">Finalizar pedido</p>
+            <p class="text-sm md:text-base">Finalizar venta</p>
             <ng-icon class="text-white font-bold m-1" size="20" name="bootstrapCheckCircleFill"></ng-icon>
           </div>
         </button>
@@ -23,7 +23,7 @@
         <button class="btn-success h-10 w-36 font-bold animate-pulse"></button>
         <button class="btn-primary h-10 w-36 font-bold animate-pulse"></button>
       }
-      
+
     </div>
   </div>
 
@@ -38,7 +38,7 @@
     <!-- Boton Finalizar -->
     <button (click)="buildOrder()" type="button" class="btn-primary h-12 w-48 mb-2 sm:mb-0 hidden sm:inline-block">
       <div class="flex text-center justify-center align-middle">
-        <p class="text-sm md:text-base">Finalizar pedido</p>
+        <p class="text-sm md:text-base">Finalizar venta</p>
         <ng-icon class="text-white font-bold m-1" size="20" name="bootstrapCheckCircleFill"></ng-icon>
       </div>
     </button>
@@ -140,7 +140,7 @@
                 }
               </div>
             }
-            
+
           </li>
         }@empty {
           <li class="flex py-4 first:pt-0 last:pb-0">

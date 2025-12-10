@@ -1,13 +1,13 @@
 <!-- HEADER -->
-<app-header headerTitle="Pedidos" headerDescription="Gestión de módulo de pedidos para su posterior despacho."></app-header>
+<app-header headerTitle="Ventas" headerDescription="Gestión de módulo de ventas para su posterior despacho."></app-header>
 
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
   <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between">
     @if (mode==='new') {
-      <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo pedido</p>
+      <p class="text-gray-500 dark:text-gray-300 font-bold">Nueva venta</p>
     }
     @if (mode === 'edit'|| mode === 'view') {
-      <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID pedido: </b>{{ id }}</p>
+      <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID venta: </b>{{ id }}</p>
     }
 
     <button (click)="back()" class="btn-back">

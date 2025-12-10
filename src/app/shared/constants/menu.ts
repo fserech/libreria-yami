@@ -12,7 +12,7 @@ export class Menu {
         { icon: 'matGroupOutline', label: 'Roles y usuarios', route: '/dashboard/users' },
         { icon: 'matGroupsOutline', label: 'Clientes', route: '/dashboard/clients' },
         { icon: 'matLoyaltyOutline', label: 'Productos', route: '/dashboard/products' },
-        { icon: 'matLocalShippingOutline', label: 'Pedidos', route: '/dashboard/orders' },
+        { icon: 'matShoppingBagOutline', label: 'Ventas', route: '/dashboard/orders' },
         { icon: 'matInsertDriveFileOutline', label: 'Reportes', route: '/dashboard/reports' },
         { icon: 'matReceiptOutline', label: 'Recibos', route: '/dashboard/receipts' },
         { icon: 'matInventory2Outline', label: 'Inventario', route: '/dashboard/inventory' },

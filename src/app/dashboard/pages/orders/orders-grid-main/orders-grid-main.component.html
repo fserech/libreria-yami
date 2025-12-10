@@ -1,5 +1,5 @@
 <!-- HEADER -->
-<app-header headerTitle="Pedidos" headerDescription="Gestión de módulo de pedidos u ordenes, se encarga de ingresar, cambiar de estado hasta finalizar cada pedido. En este módulo permite generar recibos por cada pedido."></app-header>
+<app-header headerTitle="Ventas" headerDescription="Gestión de módulo de ventas u ordenes, se encarga de ingresar, cambiar de estado hasta finalizar cada venta. En este módulo permite generar recibos por cada venta."></app-header>
 
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
 
@@ -307,7 +307,7 @@
           <tr>
             <th>
               <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1" (click)="changeSortOrderBy('dateCreated')">
-              <p>Pedidos por fecha de creación</p>
+              <p>Ventas por fecha de creación</p>
               @if(sortConfig.sortBy === 'dateCreated' && sortConfig.sortOrder === 'desc'){
                 <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
               }
@@ -331,7 +331,7 @@
                         @if (order.status === 'PENDING') {<span class="relative inline-flex rounded-full h-2 w-2 bg-red-400"></span>}
                         @if (order.status === 'CANCEL') {<span class="relative inline-flex rounded-full h-2 w-2 bg-red-400"></span>}
                         <b class="ml-2 font-semibold text-xs text-gray-400">ID: {{ order.id }}</b>
-                        <ng-icon class="mr-1 ml-4" size="16" name="matLocalShippingOutline"></ng-icon>
+                        <ng-icon class="mr-1 ml-4" size="16" name="matShoppingBagOutline"></ng-icon>
                         <b class="dark:text-gray-400 text-xs">{{ getValuePanel(order.transportDelivery) }}</b>
                       </p>
                       @if(order.client && order.client.name && order.client.id){
@@ -372,7 +372,7 @@
             <th>
               <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1"
                       (click)="changeSortOrderBy('dateCreated')">
-              <p>pedidos por fecha de creación</p>
+              <p>ventas por fecha de creación</p>
               @if(sortConfig.sortBy === 'dateCreated' && sortConfig.sortOrder === 'desc'){
                 <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
               }

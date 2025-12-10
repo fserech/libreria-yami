@@ -5,7 +5,7 @@ import { NgFor, NgClass, NgTemplateOutlet, NgIf } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { SidebarSubmenuComponent } from '../sidebar-submenu/sidebar-submenu.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import {  matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, matCategoryOutline, matFilterBAndWOutline, matGroupOutline, matGroupsOutline, matHomeOutline, matInsertDriveFileOutline, matInventory2Outline, matLocalOfferOutline, matLocalShippingOutline, matLoyaltyOutline, matProductionQuantityLimitsOutline, matReceiptOutline, matShoppingCartOutline, matStorefrontOutline, matTodayOutline, matViewInArOutline, matWarehouseOutline } from '@ng-icons/material-icons/outline';
+import {  matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, matCategoryOutline, matFilterBAndWOutline, matGroupOutline, matGroupsOutline, matHomeOutline, matInsertDriveFileOutline, matInventory2Outline, matLocalOfferOutline, matLocalShippingOutline, matLoyaltyOutline, matProductionQuantityLimitsOutline, matReceiptOutline, matShoppingBagOutline, matShoppingCartOutline, matStorefrontOutline, matTodayOutline, matViewInArOutline, matWarehouseOutline } from '@ng-icons/material-icons/outline';
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -38,7 +38,8 @@ import {  matAddShoppingCartOutline, matAltRouteOutline, matAnimationOutline, ma
     matAddShoppingCartOutline,
     matCategoryOutline,
     matAnimationOutline,
-    matAltRouteOutline
+    matAltRouteOutline,
+    matShoppingBagOutline
      })]
 })
 export class SidebarMenuComponent {

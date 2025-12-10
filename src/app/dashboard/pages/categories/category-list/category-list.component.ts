@@ -17,7 +17,8 @@ import { REGUEX_DECIMAL_INT, REGUEX_INT } from '../../../../shared/constants/reg
 export default class CategoryListComponent {
     form: FormGroup;
     load: boolean = false;
-     constructor(@Inject(DIALOG_DATA) public data: DialogData,
+     constructor(
+      @Inject(DIALOG_DATA) public data: DialogData,
                   public dialogRef: DialogRef,
                   private toast: ToastService) {
         this.form = new FormGroup({

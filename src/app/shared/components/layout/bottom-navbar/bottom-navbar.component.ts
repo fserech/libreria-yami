@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { matArrowForwardIosOutline, matGroupOutline, matGroupsOutline, matHomeOutline, matInsertDriveFileOutline, matLocalShippingOutline, matLoyaltyOutline, matReceiptOutline, matTodayOutline } from '@ng-icons/material-icons/outline';
+import { matArrowForwardIosOutline, matGroupOutline, matGroupsOutline, matHomeOutline, matInsertDriveFileOutline, matLocalShippingOutline, matLoyaltyOutline, matReceiptOutline, matShoppingBagOutline, matTodayOutline } from '@ng-icons/material-icons/outline';
 import { MenuService } from '../../../services/menu.service';
 import { AuthService } from '../../../services/auth.service';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -23,7 +23,8 @@ import { NgFor, NgIf } from '@angular/common';
     matInsertDriveFileOutline,
     matTodayOutline,
     matReceiptOutline,
-    matArrowForwardIosOutline
+    matArrowForwardIosOutline,
+    matShoppingBagOutline
      })]
 })
 export class BottomNavbarComponent implements OnInit, OnDestroy {
