@@ -46,7 +46,7 @@ export default class BrandsGridMainComponent extends BaseForm implements OnInit 
        private auth: AuthService,
        private bpo: BreakpointObserver){
          super(crud, toast, auth, bpo);
-         this.sortConfig.sortBy = 'categoryName';
+         this.sortConfig.sortBy = 'brandName';
          this.sortConfig.sortOrder = 'asc';
          this.crud.baseUrl = URL_BRANDS;
          this.form = new FormGroup({

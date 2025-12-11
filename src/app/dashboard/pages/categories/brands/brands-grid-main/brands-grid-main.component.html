@@ -153,8 +153,8 @@
 
               <td class="hidden sm:table-cell">
                 <h1>
-                  <p class="font-bold">{{ brand.categoryName }}</p>
-                  <p class="text-xs text-wrap">{{ brand.categoryDesc }}</p>
+                  <p class="font-bold">{{ brand.brandName }}</p>
+                  <p class="text-xs text-wrap">{{ brand.brandDesc }}</p>
                 </h1>
               </td>
 
@@ -168,7 +168,7 @@
                     </p>
 
                     <p class="font-bold text-gray-400">{{ brand.brandName }}</p>
-                    <p class="text-xs text-wrap">{{ brand.categoryDesc }}</p>
+                    <p class="text-xs text-wrap">{{ brand.brandDesc }}</p>
                   </h1>
 
                   @if (user.role === 'ROLE_ADMIN') {
