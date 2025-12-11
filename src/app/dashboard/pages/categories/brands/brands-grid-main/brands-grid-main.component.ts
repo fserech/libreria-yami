@@ -104,11 +104,11 @@ export default class BrandsGridMainComponent extends BaseForm implements OnInit 
    }
 
    edit(id: number){
-     this.router.navigate([`/dashboard/categories/brand-forms/detail/edit/${id}`]);
+     this.router.navigate([`/dashboard/categories/brands/detail/edit/${id}`]);
    }
 
    add(){
-     this.router.navigate([`/dashboard/categories/brand-forms/detail/new`]);
+     this.router.navigate([`/dashboard/categories/brands/detail/new`]);
    }
 
    introSearch(){
