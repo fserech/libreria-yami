@@ -5,11 +5,14 @@ import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { DialogData } from '../../../../shared/interfaces/dialog-data';
 import { REGUEX_INT } from '../../../../shared/constants/reguex';
+import { ToggleComponent } from '../../../../shared/components/toggle/toggle.component';
+import { NgIconComponent } from '@ng-icons/core';
+import { HeaderComponent } from '../../../../shared/components/header/header.component';
 
 @Component({
   selector: 'app-category-list',
   standalone: true,
-  imports: [FormsModule],
+  imports: [HeaderComponent,NgIconComponent , InputComponent,ToggleComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './category-list.component.html',
   styleUrl: './category-list.component.scss'
@@ -30,8 +33,7 @@ export class CategoryListComponent {
 
       filter(){
         if(this.form.valid){
-          if(this.form.controls['initPrice'].value !== '' && this.form.controls['endPrice'].value !== '' ||
-           this.form.controls['initPrice'].value === '' && this.form.controls['endPrice'].value === ''){
+          {
           const filters = {
             id: (this.form.controls['id'].value && this.form.controls['id'].value !== '') ? Number(this.form.controls['id'].value) : null,
             name: (this.form.controls['name'].value && this.form.controls['name'].value !== '') ? this.form.controls['name'].value : null,
