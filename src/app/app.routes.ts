@@ -67,14 +67,15 @@ export const routes: Routes =
   path: 'inventory',
   title: 'Inventario',
   canMatch: [authGuard],
+   loadComponent: () => import('./dashboard/pages/inventory/inventory.component'),
   children: [
     {
       path: '',
       title: 'Inventario',
       canMatch: [authGuard],
       loadComponent: () =>
-        import('./dashboard/pages/inventory/inventory.component')
-        .then(m => m.InventoryComponent),
+        import('./dashboard/pages/inventory/stock-movements/stock-movements.component')
+        .then(m => m.StockMovementsComponent),
     },
     {
       path: 'movements',

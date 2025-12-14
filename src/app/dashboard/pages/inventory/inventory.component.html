@@ -1,1 +1,116 @@
-<p>inventory works!</p>
+
+
+<div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="kpi-card dark:bg-slate-800">
+    <lucide-icon [img]="Package"></lucide-icon>
+    <p>Valor Inventario</p>
+    <h3>Q {{ totalValue | number }}</h3>
+  </div>
+
+  <div class="kpi-card dark:bg-slate-800">
+    <lucide-icon [img]="TrendingUp"></lucide-icon>
+    <p>Ganancia Potencial</p>
+    <h3>Q {{ potentialProfit | number }}</h3>
+  </div>
+
+  <div class="kpi-card dark:bg-slate-800">
+    <lucide-icon [img]="BarChart3"></lucide-icon>
+    <p>Items Totales</p>
+    <h3>{{ totalItems }}</h3>
+  </div>
+
+  <div class="kpi-card dark:bg-slate-800">
+    <lucide-icon [img]="AlertTriangle"></lucide-icon>
+    <p>Alertas Stock</p>
+    <h3>{{ lowStockCount }}</h3>
+  </div>
+</div>
+<div class="flex flex-col lg:flex-row gap-4 mb-6 bg-white dark:bg-slate-900 border-b dark:border-slate-700 p-2 rounded">
+  <input
+    type="text"
+    [(ngModel)]="searchTerm"
+    (input)="applyFilters()"
+    placeholder="Buscar producto..."
+    class="input dark:bg-slate-800 dark:text-white dark:border-slate-700"
+  />
+
+  <select
+    [(ngModel)]="selectedCategory"
+    (change)="applyFilters()"
+    class="input dark:bg-slate-800 dark:text-white dark:border-slate-700"
+  >
+    <option value="all">Todas</option>
+    @for (cat of categories; track cat) {
+      <option [value]="cat">{{ cat }}</option>
+    }
+  </select>
+
+  <button (click)="addProduct()" class="btn-primary h-10">
+    <lucide-icon [img]="Plus"></lucide-icon>
+    Agregar
+  </button>
+</div>
+
+<div class="rounded-lg overflow-x-auto">
+  <table class="table-grid w-full">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Categoría</th>
+        <th>Proveedor</th>
+        <th>Stock</th>
+        <th>Margen</th>
+        <th>Rotación</th>
+        <th>Nivel</th>
+       </tr>
+    </thead>
+
+    <tbody>
+      @for (product of filteredProducts; track product.id) {
+        <tr
+          class="border-b dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800"
+          [ngClass]="{'bg-gray-100 dark:bg-slate-950': $odd}"
+        >
+          <td class="font-bold">
+            {{ product.productName }}
+          </td>
+
+          <td>
+            {{ product.categoryName || 'N/A' }}
+          </td>
+
+          <td>
+            {{ product.supplierName || 'N/A' }}
+          </td>
+
+          <td>
+            {{ product.stock }} / {{ product.maxStock }}
+          </td>
+
+          <td>
+            {{ getMargin(product) }}%
+          </td>
+
+          <td>
+            {{ getRotationRate(product) }}
+          </td>
+
+          <td class="w-40">
+            <div class="w-full bg-gray-200 dark:bg-slate-700 h-2 rounded">
+              <div
+                class="h-2 rounded"
+                [class]="getStockBarColor(getStockStatus(product))"
+                [style.width.%]="(product.stock / product.maxStock) * 100"
+              ></div>
+            </div>
+          </td>
+       </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<router-outlet></router-outlet>
+</div>
+
