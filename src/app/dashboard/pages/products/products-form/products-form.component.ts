@@ -9,7 +9,7 @@ import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@ang
 import { InputComponent } from '../../../../shared/components/input/input.component';
 import { Product } from '../../../../shared/interfaces/product';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { matArrowBackOutline } from '@ng-icons/material-icons/outline';
+import { matAddCircleOutlineOutline, matArrowBackOutline, matCheckCircleOutline, matDriveFileRenameOutlineOutline } from '@ng-icons/material-icons/outline';
 import { ToggleComponent } from '../../../../shared/components/toggle/toggle.component';
 import { firstValueFrom } from 'rxjs';
 import { REGUEX_DECIMAL_INT, REGUX_AFL } from '../../../../shared/constants/reguex';
@@ -29,7 +29,7 @@ import { CheckboxComponent } from "../../../../shared/components/checkbox/checkb
   imports: [HeaderComponent, InputComponent, NgIconComponent, ToggleComponent, SelectComponent, CheckboxComponent],
   templateUrl: './products-form.component.html',
   styleUrl: './products-form.component.scss',
-  viewProviders: [ provideIcons({ matArrowBackOutline })]
+  viewProviders: [ provideIcons({ matArrowBackOutline,matCheckCircleOutline, matAddCircleOutlineOutline,matDriveFileRenameOutlineOutline })]
 })
 export default class ProductsFormComponent extends BaseForm implements OnInit{
 
@@ -39,8 +39,8 @@ export default class ProductsFormComponent extends BaseForm implements OnInit{
   supplierId: Supplier;
   categoryId: Category;
   categoryOptions: InputOptionsSelect[] = [];
-brandOptions: InputOptionsSelect[] = [];
-supplierOptions: InputOptionsSelect[] = [];
+  brandOptions: InputOptionsSelect[] = [];
+  supplierOptions: InputOptionsSelect[] = [];
 
   get brandLabels(): string[] {
     return this.brandOptions.map(opt => opt.label);
@@ -57,7 +57,7 @@ supplierOptions: InputOptionsSelect[] = [];
     private route: ActivatedRoute,
     private auth: AuthService,
     private bpo: BreakpointObserver,
-     private fb: FormBuilder
+    private fb: FormBuilder
     ){
       super(crud, toast, auth, bpo);
       this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
@@ -65,99 +65,109 @@ supplierOptions: InputOptionsSelect[] = [];
 
       this.crud.baseUrl = URL_PRODUCTS;
       this.form = new FormGroup({
-      name: new FormControl('', [Validators.required, Validators.pattern(REGUX_AFL)]),
-      productDesc: new FormControl('', [Validators.required]),
-      costPrice: new FormControl('', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]),
-      salePrice: new FormControl('', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]),
-      categoryId: new FormControl('', [Validators.required]),
-      brandRef: this.fb.array([]),
-      supplierId: this.fb.array([]),
-      minStock: new FormControl('', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]),
-      maxStock: new FormControl('', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]),
-      active: new FormControl(true)
-    });
-
-      if(this.mode === 'edit'){
-      this.load = true;
-      firstValueFrom(this.crud.getId(this.id))
-      .then(async (product: Product) => {
-        // Esperar a que se carguen las opciones
-        await this.loadSelectOptions();
-        this.form.controls['name'].setValue(product.productName);
-        this.form.controls['productDesc'].setValue(product.productDesc);
-        this.form.controls['costPrice'].setValue(Number(product.costPrice).toFixed(2));
-        this.form.controls['salePrice'].setValue(Number(product.salePrice).toFixed(2));
-        this.form.controls['categoryId'].setValue(product.categoryId);
-            // Marcar las marcas seleccionadas
-        const brandFormArray = this.form.get('brandRef') as FormArray;
-        const selectedBrands = Array.isArray(product.brandRef) ? product.brandRef : [product.brandRef];
-        this.brandOptions.forEach((option, index) => {
-          const isSelected = selectedBrands.includes(Number(option.value));
-          brandFormArray.at(index).setValue(isSelected);
-        });
-      // Marcar los proveedores seleccionados
-      const supplierFormArray = this.form.get('supplierId') as FormArray;
-      const selectedSuppliers = Array.isArray(product.supplierId) ? product.supplierId : [product.supplierId];
-      this.supplierOptions.forEach((option, index) => {
-        const isSelected = selectedSuppliers.includes(Number(option.value));
-        supplierFormArray.at(index).setValue(isSelected);
+        name: new FormControl('', [Validators.required, Validators.pattern(REGUX_AFL)]),
+        productDesc: new FormControl('', [Validators.required]),
+        costPrice: new FormControl('', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]),
+        salePrice: new FormControl('', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]),
+        categoryId: new FormControl('', [Validators.required]),
+        brandRef: this.fb.array([]),
+        supplierId: this.fb.array([]),
+        minStock: new FormControl('', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]),
+        maxStock: new FormControl('', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]),
+        active: new FormControl(true)
       });
-        this.form.controls['minStock'].setValue(product.minStock);
-        this.form.controls['maxStock'].setValue(product.maxStock);
-        this.form.controls['active'].setValue(product.active);
-      })
-      .catch((error: any) => {
-        console.log('error id: ', error);
-      })
-      .finally(() => {
-        this.load = false;
-      });
-    }
   }
 
   async ngOnInit(): Promise<void> {
     await this.loadSelectOptions();
+
+    if(this.mode === 'edit'){
+      this.load = true;
+      try {
+        const product: Product = await firstValueFrom(this.crud.getId(this.id));
+        this.form.controls['name'].setValue(product.productName);
+        this.form.controls['productDesc'].setValue(product.productDesc);
+        this.form.controls['costPrice'].setValue(Number(product.costPrice).toFixed(2));
+        this.form.controls['salePrice'].setValue(Number(product.salePrice).toFixed(2));
+        this.form.controls['categoryId'].setValue(product.categoryId?.toString());
+
+        // Setear marcas seleccionadas
+        const brandFormArray = this.form.get('brandRef') as FormArray;
+        const selectedBrands = Array.isArray(product.brandRef) ? product.brandRef : (product.brandRef ? [product.brandRef] : []);
+        this.brandOptions.forEach((option, index) => {
+          const isSelected = selectedBrands.includes(Number(option.value));
+          brandFormArray.at(index).setValue(isSelected);
+        });
+
+        // Setear proveedores seleccionados
+        const supplierFormArray = this.form.get('supplierId') as FormArray;
+        const selectedSuppliers = Array.isArray(product.supplierId) ? product.supplierId : (product.supplierId ? [product.supplierId] : []);
+        this.supplierOptions.forEach((option, index) => {
+          const isSelected = selectedSuppliers.includes(Number(option.value));
+          supplierFormArray.at(index).setValue(isSelected);
+        });
+
+        this.form.controls['minStock'].setValue(product.minStock);
+        this.form.controls['maxStock'].setValue(product.maxStock);
+        this.form.controls['active'].setValue(product.active);
+      } catch (error) {
+        console.log('error al cargar producto:', error);
+        this.toast.error('Error al cargar el producto');
+      } finally {
+        this.load = false;
+      }
+    }
   }
 
   async loadSelectOptions(): Promise<void> {
-  try {
-    // Cargar categorías
-    const categoriesUrl = `${environment.apiUrl}/api/v1/categories`;
-    const categories = await firstValueFrom(this.crud.http.get<Category[]>(categoriesUrl));
-    this.categoryOptions = categories.map((cat: Category) => ({
-      value: cat.id.toString(),
-      label: cat.categoryName
-    }));
+    try {
+      // Cargar categorías
+      const categoriesUrl = `${environment.apiUrl}/api/v1/categories`;
+      const categories = await firstValueFrom(this.crud.http.get<any[]>(categoriesUrl));
+      this.categoryOptions = categories.map((cat: any) => ({
+        value: cat.id.toString(),
+        label: cat.categoryName || cat.name
+      }));
 
-    // Cargar marcas
-    const brandsUrl = `${environment.apiUrl}/api/v1/categories/brands`;
-    const brands = await firstValueFrom(this.crud.http.get<Brand[]>(brandsUrl));
-    this.brandOptions = brands.map((brand: Brand) => ({
-      value: brand.id.toString(),
-      label: brand.brandName
-    }));
+      // Cargar marcas
+      const brandsUrl = `${environment.apiUrl}/api/v1/categories/brands`;
+      const brands = await firstValueFrom(this.crud.http.get<any[]>(brandsUrl));
+      console.log('Marcas cargadas:', brands);
 
-    // Inicializar FormArray de marcas
-    const brandFormArray = this.form.get('brandRef') as FormArray;
-    brands.forEach(() => brandFormArray.push(new FormControl(false)));
+      this.brandOptions = brands.map((brand: any) => ({
+        value: brand.id.toString(),
+        label: brand.brandName || brand.name
+      }));
 
-    // Cargar proveedores
-    const suppliersUrl = `${environment.apiUrl}/api/v1/suppliers`;
-    const suppliers = await firstValueFrom(this.crud.http.get<Supplier[]>(suppliersUrl));
-    this.supplierOptions = suppliers.map((supplier: Supplier) => ({
-      value: supplier.id.toString(),
-      label: supplier.supplierName
-    }));
+      // Inicializar FormArray de marcas
+      const brandFormArray = this.form.get('brandRef') as FormArray;
+      while (brandFormArray.length > 0) {
+        brandFormArray.removeAt(0);
+      }
+      brands.forEach(() => brandFormArray.push(new FormControl(false)));
 
-    // Inicializar FormArray de proveedores
-    const supplierFormArray = this.form.get('supplierId') as FormArray;
-    suppliers.forEach(() => supplierFormArray.push(new FormControl(false)));
+      // Cargar proveedores
+      const suppliersUrl = `${environment.apiUrl}/api/v1/suppliers`;
+      const suppliersResponse = await firstValueFrom(this.crud.http.get<any>(suppliersUrl));
+      const suppliersList = Array.isArray(suppliersResponse) ? suppliersResponse : (suppliersResponse.content || []);
 
-  } catch (error) {
-    console.error('Error cargando opciones de selects:', error);
-    this.toast.error('Error al cargar las opciones');
+      this.supplierOptions = suppliersList.map((supplier: any) => ({
+        value: supplier.id.toString(),
+        label: supplier.supplierName
+      }));
+
+      // Inicializar FormArray de proveedores
+      const supplierFormArray = this.form.get('supplierId') as FormArray;
+      while (supplierFormArray.length > 0) {
+        supplierFormArray.removeAt(0);
+      }
+      suppliersList.forEach(() => supplierFormArray.push(new FormControl(false)));
+
+    } catch (error) {
+      console.error('Error cargando opciones de selects:', error);
+      this.toast.error('Error al cargar las opciones');
+    }
   }
-}
 
   isDirty(): boolean {
     return this.form.dirty;
@@ -174,31 +184,33 @@ supplierOptions: InputOptionsSelect[] = [];
   async submit(){
     this.load = true;
     this.isSaving = true;
+
     // Obtener IDs de marcas seleccionadas
     const brandFormArray = this.form.get('brandRef') as FormArray;
     const selectedBrands = this.brandOptions
       .filter((_, index) => brandFormArray.at(index).value)
       .map(option => Number(option.value));
+
     // Obtener IDs de proveedores seleccionados
     const supplierFormArray = this.form.get('supplierId') as FormArray;
     const selectedSuppliers = this.supplierOptions
       .filter((_, index) => supplierFormArray.at(index).value)
       .map(option => Number(option.value));
-    const product: Product = {
-  id: (this.id) ? this.id : null,
-  productName: this.form.controls['name'].value,
-  productDesc: this.form.controls['productDesc'].value,
-  costPrice: this.form.controls['costPrice'].value,
-  salePrice: this.form.controls['salePrice'].value,
-  categoryId: this.form.controls['categoryId'].value,
-  brandRef: selectedBrands,
-  supplierId: selectedSuppliers,
-  minStock: this.form.controls['minStock'].value,
-  maxStock: this.form.controls['maxStock'].value,
-  active: this.form.controls['active'].value,
-   isSelected: this.form.controls['active'].value,
 
-}
+    const product: Product = {
+      id: (this.id) ? this.id : null,
+      productName: this.form.controls['name'].value,
+      productDesc: this.form.controls['productDesc'].value,
+      costPrice: this.form.controls['costPrice'].value,
+      salePrice: this.form.controls['salePrice'].value,
+      categoryId: Number(this.form.controls['categoryId'].value),
+      brandRef: selectedBrands,
+      supplierId: selectedSuppliers,
+      minStock: this.form.controls['minStock'].value,
+      maxStock: this.form.controls['maxStock'].value,
+      active: this.form.controls['active'].value,
+      isSelected: false
+    }
 
     if(this.mode === 'edit'){
       await firstValueFrom(this.crud.updateId(this.id, product))
@@ -234,7 +246,7 @@ supplierOptions: InputOptionsSelect[] = [];
     }
   }
 
-   validateStockMinMax() {
+  validateStockMinMax() {
     const stockMaxControl = this.form.get('maxStock');
     const stockMinControl = this.form.get('minStock');
 
