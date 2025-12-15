@@ -11,7 +11,7 @@ export class CrudService {
 
   baseUrl: string = `${environment.apiUrl}/api/v1/`;
 
-  constructor(private http: HttpClient) { }
+  constructor(public http: HttpClient) { }
 
   getAllItems(url: string){}
 
@@ -22,9 +22,12 @@ export class CrudService {
     return await firstValueFrom(this.http.get<any>(`${this.baseUrl}/page?sortOrder=${sortOrder}&sortBy=${sortBy}&pageSize=${pageSize}&page=${page}`));
   }
 
-  // async getAll(): Promise<any>{
-  //   return await firstValueFrom(this.http.get<any>(`${this.baseUrl}`));
-  // }
+ async getAll(endpoint: string): Promise<any[]> {
+  return await firstValueFrom(
+    this.http.get<any[]>(`${this.baseUrl}${endpoint}`)
+  );
+}
+
 
   async getUsers(id_users?: number, name?: string, email?: string,): Promise<any> {
     let params = new HttpParams();
@@ -42,7 +45,7 @@ export class CrudService {
   getUserForClients(id: number): Observable<User> {
     return this.http.get<User>(`${URL_USERS}/page?id=${id}`);
   }
-  
+
   async getUsersForClients(id_users?: number, name?: string, email?: string,): Promise<any> {
     let params = new HttpParams();
     if (id_users !== undefined) params = params.set('id', id_users.toString());

@@ -53,7 +53,8 @@ export default class InventoryComponent implements OnInit {
 
   categories: string[] = ['all'];
   searchTerm = '';
-  selectedCategory = 'all';
+  selectedCategory: number | 'all' = 'all';
+
   load = false;
 
   // KPIs
@@ -92,31 +93,44 @@ export default class InventoryComponent implements OnInit {
   }
 
   extractCategories(): void {
-    const cats = new Set(this.products.map(p => p.categoryName).filter(Boolean));
-    this.categories = ['all', ...Array.from(cats) as string[]];
-  }
+  const cats = new Set<number>(
+    this.products
+      .map(p => p.categoryId)
+      .filter((id): id is number => id !== null && id !== undefined)
+  );
+
+  this.categories = [
+    'all',
+    ...Array.from(cats).map(id => id.toString())
+  ];
+}
+
 
   calculateKPIs(): void {
     this.lowStockCount = this.products.filter(p => p.stock < p.minStock).length;
-    this.totalValue = this.products.reduce((s, p) => s + p.stock * p.cost, 0);
+    this.totalValue = this.products.reduce((s, p) => s + p.stock * p.costPrice, 0);
     this.totalItems = this.products.reduce((s, p) => s + p.stock, 0);
-    this.totalRevenue = this.products.reduce((s, p) => s + p.stock * p.price, 0);
+    this.totalRevenue = this.products.reduce((s, p) => s + p.stock * p.salePrice, 0);
     this.potentialProfit = this.totalRevenue - this.totalValue;
   }
+applyFilters(): void {
+  const term = this.searchTerm.toLowerCase();
 
-  applyFilters(): void {
-    this.filteredProducts = this.products.filter(p => {
-      const matchText =
-        p.productName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        (p.productDesc?.toLowerCase().includes(this.searchTerm.toLowerCase()) ?? false);
+  this.filteredProducts = this.products.filter(p => {
+    const matchText =
+      p.productName.toLowerCase().includes(term) ||
+      (p.productDesc?.toLowerCase().includes(term) ?? false);
 
-      const matchCategory =
-        this.selectedCategory === 'all' ||
-        p.categoryName === this.selectedCategory;
+    const matchCategory =
+      this.selectedCategory === 'all'
+        ? true
+        : p.categoryId === this.selectedCategory;
 
-      return matchText && matchCategory;
-    });
-  }
+    return matchText && matchCategory;
+  });
+}
+
+
 
   getStockStatus(p: Inventory): InventoryStatus {
     if (p.stock < p.minStock) return 'critical';
@@ -132,8 +146,8 @@ export default class InventoryComponent implements OnInit {
   }
 
   getMargin(p: Inventory): string {
-    if (!p.price) return '0';
-    return (((p.price - p.cost) / p.price) * 100).toFixed(0);
+    if (!p.salePrice) return '0';
+    return (((p.salePrice - p.costPrice) / p.salePrice) * 100).toFixed(0);
   }
 
   getStockBarColor(status: InventoryStatus): string {

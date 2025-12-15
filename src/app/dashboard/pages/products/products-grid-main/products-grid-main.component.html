@@ -135,12 +135,12 @@
           </th>
 
           <th class="content-desktop-custom">
-            <button (click)="changeSortOrderBy('price')">
+            <button (click)="changeSortOrderBy('salePrice')">
               <p>Precio</p>
-              @if(sortConfig.sortBy === 'price' && sortConfig.sortOrder === 'asc'){
+              @if(sortConfig.sortBy === 'salePrice' && sortConfig.sortOrder === 'asc'){
                 <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
               }
-              @if(sortConfig.sortBy === 'price' && sortConfig.sortOrder === 'desc'){
+              @if(sortConfig.sortBy === 'salePrice' && sortConfig.sortOrder === 'desc'){
                 <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
               }
             </button>
@@ -189,14 +189,14 @@
                        <p class="text-xs text-wrap">{{ product.productDesc }}</p>
                     </h1>
 
-                    <p><b class="bg-gray-100 dark:bg-slate-800 dark:text-gray-300 ml-0  p-1 m-2 w-auto rounded">Q {{ product.price.toFixed(2) }}</b></p>
+                    <p><b class="bg-gray-100 dark:bg-slate-800 dark:text-gray-300 ml-0  p-1 m-2 w-auto rounded">Q {{ product.salePrice.toFixed(2) }}</b></p>
                   </h1>
                   @if (user.role === 'ROLE_ADMIN') {
                     <app-chat-bubble [id]="product.id" [options]="actionsGrid" (selectOption)="selectOption($event)"></app-chat-bubble>
                   }
                 </div>
               </td>
-              <td class="hidden sm:table-cell">Q {{ product.price.toFixed(2) }}</td>
+              <td class="hidden sm:table-cell">Q {{ product.salePrice.toFixed(2) }}</td>
 
               @if (user.role === 'ROLE_ADMIN') {
                 <td class="hidden sm:table-cell">

@@ -32,6 +32,7 @@ export class InputComponent implements OnInit, AfterViewInit {
   @Input() type: string;
   @Input() patternHint = '';
   @Input() required = false;
+   @Input() help: string;
   @Input() load = false;
   @Input() helpMessage: string;
   @Input() min: number = null;

@@ -71,7 +71,7 @@ export class OrdersConfirmComponent {
     if (!productOrder || !productOrder.product) {
       return this.formatCurrency(0);
     }
-    const subtotal = productOrder.quantity * productOrder.product.price;
+    const subtotal = productOrder.quantity * productOrder.product.salePrice;
     return this.formatCurrency(subtotal);
   }
 
@@ -81,7 +81,7 @@ export class OrdersConfirmComponent {
       return this.formatCurrency(0);
     }
     const total = this.products.reduce((sum, productOrder) => {
-      return sum + productOrder.quantity * productOrder.product.price;
+      return sum + productOrder.quantity * productOrder.product.salePrice;
     }, 0);
     return this.formatCurrency(total);
   }
@@ -124,10 +124,10 @@ export class OrdersConfirmComponent {
 
   buildProducts(products: ProductOrderSelect[]): ProductOrder[] {
     return products.map(product => {
-      const subtotal = parseFloat((product.product.price * product.quantity).toFixed(2));
+      const subtotal = parseFloat((product.product.salePrice * product.quantity).toFixed(2));
       return {
         productId: product.product.id,
-        priceSale: product.product.price,
+        priceSale: product.product.salePrice,
         quantity: product.quantity,
         subtotal: subtotal
       };

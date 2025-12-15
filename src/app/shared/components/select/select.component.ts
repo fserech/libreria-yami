@@ -10,6 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {MatIconModule} from '@angular/material/icon';
+import { InputOptionsSelect } from '../../interfaces/input';
 @Component({
   selector: 'app-select',
   standalone: true,
@@ -24,7 +25,7 @@ import {MatIconModule} from '@angular/material/icon';
      bootstrapTruck, matRuleOutline }) ]
 })
 export class SelectComponent implements OnInit, AfterViewInit {
-  @Input() options: { value: any, label: string }[];
+
   @Input() icon: string;
   @Input() label: string;
   @Input() placeholder: string;
@@ -33,6 +34,10 @@ export class SelectComponent implements OnInit, AfterViewInit {
   @Input() type: string;
   @Input() required = false;
   @Input() load = false;
+   @Input() disabled = false;
+  @Input() multiple = false;
+ @Input() options: InputOptionsSelect[] = [];
+
   @Output() changes = new EventEmitter<string>();
   errorMessage: any;
 

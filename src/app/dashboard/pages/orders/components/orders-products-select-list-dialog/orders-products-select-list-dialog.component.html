@@ -15,7 +15,7 @@
                  class="text-sm font-medium">{{product.product.productName}}</p>
               <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-200': $odd && darkmode === 'dark' }"
                  class="text-sm truncate">
-                 <b class="text-sm">Q {{ product.product.price.toFixed(2) }}</b>
+                 <b class="text-sm">Q {{ product.product.salePrice.toFixed(2) }}</b>
               </p>
 
               <button (click)="removeProduct(product)" [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-200': $odd && darkmode === 'dark' }"

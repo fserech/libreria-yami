@@ -109,7 +109,7 @@
 
             <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
               class="text-sm truncate">
-              <b>Q </b><b class="text-sm font-bold text-blue-500">{{ formatCurrency(item.product.price) }}</b> x <b class="text-blue-500">{{ item.quantity }}</b><b> Unidades</b>
+              <b>Q </b><b class="text-sm font-bold text-blue-500">{{ formatCurrency(item.product.costPrice) }}</b> x <b class="text-blue-500">{{ item.quantity }}</b><b> Unidades</b>
             </p>
 
             <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"

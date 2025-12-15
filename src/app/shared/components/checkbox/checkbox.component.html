@@ -1,43 +1,38 @@
 @if (!load) {
-  <h2 class="mb-2 text-gray-500 dark:text-gray-400">{{ label }}</h2>
+  <mat-form-field class="w-full" [appearance]="'fill'">
+    @if (icon) {
+      <ng-icon class="text-gray-500 absolute top-4 left-2 z-10" size="20" [name]="icon"></ng-icon>
+    }
 
-  <div [formGroup]="form">
-    <ng-container formArrayName="{{name}}">
-      <section class="example-section">
-        <div *ngFor="let option of formArrayOptions; let i = index" class="w-48">
-          <mat-checkbox [formControlName]="i" color="primary">
-            {{ option.label }}
-          </mat-checkbox>
-        </div>
-      </section>
-    </ng-container>
-  </div>
-}@else {
-  <div class="rounded-md max-w-sm w-full mx-auto ml-0 mb-5">
-    <div class="animate-pulse flex space-x-4">
-      <div class="flex-1 space-y-6 py-1 w-full">
-        <div class="h-3 w-52 bg-gray-300 dark:bg-gray-700 rounded-lg"></div>
-      </div>
-    </div>
-    <div class="animate-pulse flex mt-1">
-      <div class="ml-2 rounded-sm bg-gray-300 dark:bg-gray-700 h-5 w-5"></div>
-      <div class="ml-1 h-4 w-20 bg-gray-300 dark:bg-gray-800 rounded-lg"></div>
+    <mat-select
+      [placeholder]="placeholder"
+      [formControl]="selectControl"
+      multiple>
 
-      <div class="ml-2 rounded-sm bg-gray-300 dark:bg-slate-700 h-5 w-5"></div>
-      <div class="ml-1 h-4 w-20 bg-gray-300 dark:bg-gray-800 rounded-lg"></div>
+      @for (option of formArrayOptions; track option.index) {
+        <mat-option [value]="option.index">
+          {{ option.label }}
+        </mat-option>
+      }
+    </mat-select>
 
-      <div class="ml-2 rounded-sm bg-gray-300 dark:bg-gray-700 h-5 w-5"></div>
-      <div class="ml-1 h-4 w-20 bg-gray-300 dark:bg-gray-800 rounded-lg"></div>
+    @if(isValid) {
+      <ng-icon class="text-green-500 absolute right-2 top-4 z-10" size="20" name="matCheckCircleOutline"></ng-icon>
+    }
+    @if(!isValid) {
+      <ng-icon class="text-red-500 transform rotate-45 absolute right-2 top-4 z-10" size="20" name="matAddCircleOutlineOutline"></ng-icon>
+    }
+  </mat-form-field>
+} @else {
+  <div class="relative">
+    <input class="relative w-full pl-12 pr-3 py-2 rounded-2xl bg-gray-300 dark:bg-gray-700 dark:text-white border-none focus:border focus:border-gray-300 animate-pulse" disabled>
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      @if(icon){
+        <span class="top-1/4">
+          <ng-icon class="text-slate-500 font-bold dark:text-slate-400 animate-pulse" size="20" [name]="icon"></ng-icon>
+        </span>
+      }
     </div>
   </div>
 }
-
-
-
-
-
-
-
-
-
 

@@ -1,28 +1,49 @@
-import { AfterViewInit, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef, Component, DoCheck, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import {FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import { AfterViewInit, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule, NgIf } from '@angular/common';
-import { NgIconComponent } from '@ng-icons/core';
-import {MatCheckboxChange, MatCheckboxModule} from '@angular/material/checkbox';
-import {MatCardModule} from '@angular/material/card';
-import {MatRadioModule} from '@angular/material/radio';
-
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatIconModule } from '@angular/material/icon';
+import { matCheckCircleOutline, matAddCircleOutlineOutline } from '@ng-icons/material-icons/outline';
 
 @Component({
   selector: 'app-checkbox',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgIf, NgIconComponent, MatCardModule, MatCheckboxModule, FormsModule, MatRadioModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    NgIf,
+    NgIconComponent,
+    MatCheckboxModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatIconModule
+  ],
   templateUrl: './checkbox.component.html',
   styleUrl: './checkbox.component.scss',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  viewProviders: [
+    provideIcons({
+      matCheckCircleOutline,
+      matAddCircleOutlineOutline
+    })
+  ]
 })
-export class CheckboxComponent implements OnInit, AfterViewInit{
-
+export class CheckboxComponent implements OnInit, AfterViewInit {
+  @Input() icon: string;
   @Input() label: string;
   @Input() labels: string[];
   @Input() form: FormGroup;
   @Input() name: string;
   @Input() load: boolean;
+  @Input() placeholder: string = 'Selecciona opciones';
   @Output() changes = new EventEmitter<FormArray>();
+
+  // Control temporal para el mat-select
+  selectControl = new FormControl([]);
 
   constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef) {}
 
@@ -31,28 +52,39 @@ export class CheckboxComponent implements OnInit, AfterViewInit{
   }
 
   ngOnInit(): void {
-    this.setCheckboxes();
+    this.syncSelectWithFormArray();
   }
 
-  setCheckboxes() {
+  syncSelectWithFormArray() {
     const formArray = this.form.get(this.name) as FormArray;
-    formArray.valueChanges.subscribe(() => this.onCheckboxChange());
-  }
 
-  onCheckboxChange() {
-    const formArray = this.form.get(this.name) as FormArray;
-    this.changes.emit(formArray);
+    // Sincronizar valores iniciales
+    const initialSelected: number[] = [];
+    formArray.controls.forEach((control, index) => {
+      if (control.value === true) {
+        initialSelected.push(index);
+      }
+    });
+    this.selectControl.setValue(initialSelected);
+
+    // Escuchar cambios del select y actualizar el FormArray
+    this.selectControl.valueChanges.subscribe((selectedIndexes: number[]) => {
+      formArray.controls.forEach((control, index) => {
+        control.setValue(selectedIndexes.includes(index), { emitEvent: false });
+      });
+      this.changes.emit(formArray);
+    });
   }
 
   get formArrayOptions() {
-    return (this.form.get(this.name) as FormArray).controls.map((control, index) => ({
-      value: control.value,
-      label: this.labels[index]
+    return this.labels.map((label, index) => ({
+      label: label,
+      index: index
     }));
   }
+
+  get isValid(): boolean {
+    const formArray = this.form.get(this.name) as FormArray;
+    return formArray.controls.some(control => control.value === true);
+  }
 }
-
-
-
-
-

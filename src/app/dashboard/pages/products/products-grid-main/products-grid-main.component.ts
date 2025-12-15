@@ -52,7 +52,7 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
         this.form = new FormGroup({
           id: new FormControl(),
           name: new FormControl(),
-          price: new FormControl(),
+          salePrice: new FormControl(),
           active: new FormControl()
         });
   }

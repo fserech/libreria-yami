@@ -49,12 +49,12 @@
       [load]="load">
     </app-input>
 
-    <app-input
+   <app-input
     [form]="form"
-    name="price"
+    name="costPrice"
     icon="matAttachMoneyOutline"
-    label="Precio de producto"
-    placeholder="Precio de producto"
+    label="Precio de compra"
+    placeholder="Precio de compra"
     helpMessage="Sólo se aceptan números enteros o decimales"
     errorMessage="Error message."
     [minlength]="1"
@@ -62,6 +62,79 @@
     [counter]="true"
     [load]="load">
   </app-input>
+
+
+    <app-input
+    [form]="form"
+    name="salePrice"
+    icon="matAttachMoneyOutline"
+    label="Precio de venta"
+    placeholder="Precio de venta"
+    helpMessage="Sólo se aceptan números enteros o decimales"
+    errorMessage="Error message."
+    [minlength]="1"
+    [maxlength]="10"
+    [counter]="true"
+    [load]="load">
+  </app-input>
+
+ <app-select
+  [form]="form"
+  name="categoryId"
+  label="Categoría"
+  placeholder="Selecciona una categoría"
+  helpMessage="Sólo se aceptan números enteros o decimales"
+    errorMessage="Error message."
+  [required]="true"
+  [load]="load"
+  [options]="categoryOptions">
+</app-select>
+
+
+<app-checkbox
+  [form]="form"
+  name="brandRef"
+  icon="matDriveFileRenameOutlineOutline"
+  label="Marca"
+  placeholder="Selecciona marcas"
+  [labels]="brandLabels"
+  [load]="load">
+</app-checkbox>
+
+<app-checkbox
+  [form]="form"
+  name="supplierId"
+  icon="matDriveFileRenameOutlineOutline"
+  label="Proveedor"
+  placeholder="Selecciona proveedores"
+  [labels]="supplierLabels"
+  [load]="load">
+</app-checkbox>
+
+ <app-input
+  [form]="form"
+  name="minStock"
+  label="Stock mínimo"
+  placeholder="Stock mínimo"
+  helpMessage="Sólo se aceptan números enteros o decimales"
+    errorMessage="Error message."
+  [required]="true"
+  [load]="load"
+  (changes)="validateStockMinMax()">
+</app-input>
+
+<app-input
+  [form]="form"
+  name="maxStock"
+  label="Stock máximo"
+  placeholder="Stock máximo"
+  helpMessage="Sólo se aceptan números enteros o decimales"
+    errorMessage="Error message."
+  [required]="true"
+  [load]="load"
+  (changes)="validateStockMinMax()">
+</app-input>
+
 
   <app-toggle
     class="ml-4"
