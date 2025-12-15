@@ -104,29 +104,38 @@ export const routes: Routes =
   ]
 },
 {
-  path: 'suppliers',
-  title: 'Proveedores',
-  canMatch: [authGuard],
-  children: [
-    {
-      path: '',
-      title: 'Lista de Proveedores',
-      canMatch: [authGuard],
-      loadComponent: () =>
-        import('./dashboard/pages/suppliers/suppliers.component')
-      .then(m => m.SuppliersComponent),
-    },
-    {
-      path: 'detail/:mode',
-      title: 'Proveedor',
-      canMatch: [authGuard],
-      canDeactivate: [pendingChangesGuard],
-      loadComponent: () =>
-        import('./dashboard/pages/suppliers/supplier-form/supplier-form.component')
-      .then(m => m.SupplierFormComponent),
-    }
-  ]
-},
+        path: 'suppliers',
+        title: 'Proveedores',
+        // loadComponent: () => import('./dashboard/pages/clients/clients.component'),
+        canMatch: [authGuard],
+        children: [
+          {
+            path: '',
+            redirectTo: '',
+            pathMatch: 'full'
+          },
+          {
+            path: '',
+            title: 'Proveedores',
+            canMatch: [authGuard],
+            loadComponent: () => import('./dashboard/pages/suppliers/suppliers-grid-main/suppliers-grid-main.component'),
+          },
+          {
+            path: 'detail/:mode',
+            title: 'Clientes',
+            canMatch: [authGuard],
+            canDeactivate: [pendingChangesGuard],
+            loadComponent: () => import('./dashboard/pages/suppliers/suppliers-form/supplier-form.component'),
+          },
+          {
+            path: 'detail/:mode/:id',
+            title: 'Proveedores',
+            canMatch: [authGuard],
+            canDeactivate: [pendingChangesGuard],
+            loadComponent: () => import('./dashboard/pages/suppliers/suppliers-form/supplier-form.component'),
+          }
+        ]
+      },
 
 {
   path: 'purchases',

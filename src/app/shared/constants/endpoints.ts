@@ -9,6 +9,7 @@ export const URL_ORDERS: string = `${API_BASE}orders`;
 export const URL_BRANDS: string = `${API_BASE}categories/brands`;
 export const URL_CATEGORIES: string = `${API_BASE}categories`;
 export const URL_PRODUCTS: string = `${API_BASE}products`;
+export const URL_SUPPLIERS: string = `${API_BASE}suppliers`;
 export const URL_REPORTS: string = `${API_BASE}/`;
 export const URL_RECEIPTS: string = `${API_BASE}reports/orders-day`;
 export const URL_USERS: string = `${API_BASE}users`;

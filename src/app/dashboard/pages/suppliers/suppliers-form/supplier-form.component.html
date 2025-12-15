@@ -1,0 +1,110 @@
+<!-- HEADER -->
+<app-header headerTitle="Proveedores" headerDescription="Gestión de módulo de proveedores, crear, editar, activar, desactivar y eliminar proveedores."></app-header>
+
+<div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
+  <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between">
+    @if (mode==='new') {
+      <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo Proveedor</p>
+    }
+    @if (mode === 'edit'|| mode === 'view') {
+      <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID proveedor: </b>{{ id }}</p>
+    }
+    <button (click)="back()" class="btn-back">
+      <ng-icon class="btn-back-icon" size="20" name="matArrowBackOutline"></ng-icon>
+      <p class="hidden sm:block text-sm font-bold">Regresar</p>
+    </button>
+  </div>
+
+  <div class="w-full text-lg dark:border-slate-700 mb-4 pb-2">
+    <p class="text-gray-500 dark:text-gray-300 text-base">Información General</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <app-input
+      [form]="form"
+      name="name"
+      icon="matDriveFileRenameOutlineOutline"
+      label="Nombre de proveedor"
+      placeholder="Nombre de proveedor"
+      helpMessage="Sólo se aceptan caracteres alfabeticos"
+      errorMessage="Error message."
+      [minlength]="1"
+      [maxlength]="80"
+      [counter]="true"
+      [load]="load">
+    </app-input>
+
+    <app-input
+      [form]="form"
+      name="supplierDesc"
+      icon="matDriveFileRenameOutlineOutline"
+      label="Descripción de proveedor"
+      placeholder="Descripción de proveedor"
+      helpMessage="Sólo se aceptan alfanumericos"
+      errorMessage="Error message."
+      [minlength]="1"
+      [maxlength]="100"
+      [counter]="true"
+      [load]="load">
+    </app-input>
+
+    <app-input
+      [form]="form"
+      name="email"
+      icon="matEmailOutline"
+      label="Correo electrónico"
+      placeholder="correo@ejemplo.com"
+      helpMessage="Ingresa un correo válido"
+      errorMessage="El correo no es válido"
+      [minlength]="5"
+      [maxlength]="100"
+      [counter]="true"
+      [load]="load">
+    </app-input>
+
+    <app-input
+      [form]="form"
+      name="phone"
+      icon="matPhoneOutline"
+      label="Teléfono"
+      placeholder="Número de teléfono"
+      helpMessage="Ingresa el número de contacto"
+      errorMessage="Error message."
+      [minlength]="7"
+      [maxlength]="20"
+      [counter]="true"
+      [load]="load">
+    </app-input>
+
+    <app-input
+      [form]="form"
+      name="address"
+      icon="matLocationOnOutline"
+      label="Dirección"
+      placeholder="Dirección del proveedor"
+      helpMessage="Ingresa la dirección completa"
+      errorMessage="Error message."
+      [minlength]="5"
+      [maxlength]="150"
+      [counter]="true"
+      [load]="load">
+    </app-input>
+
+    <app-toggle
+      class="ml-4"
+      label="Proveedor Activo"
+      [form]="form"
+      name="active"
+      (changes)="changeSupplierActive($event)"
+      [load]="load">
+    </app-toggle>
+  </div>
+
+  <div class="w-full border-b dark:border-slate-700 pb-3 pt-3 flex justify-center sm:justify-end mb-2">
+    @if(!load){
+    <button (click)="submit()" [disabled]="form.invalid" class="btn-primary h-10 w-36 font-bold">Guardar</button>
+    } @else if(load){
+      <button class="btn-primary h-10 w-36 font-bold animate-pulse"></button>
+    }
+  </div>
+</div>

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { SupplierFormComponent } from './supplier-form.component';
+import { SupplierFormComponent } from './suppliers-filters-dialog.component';
 
 describe('SupplierFormComponent', () => {
   let component: SupplierFormComponent;
@@ -11,7 +11,7 @@ describe('SupplierFormComponent', () => {
       imports: [SupplierFormComponent]
     })
     .compileComponents();
-    
+
     fixture = TestBed.createComponent(SupplierFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
