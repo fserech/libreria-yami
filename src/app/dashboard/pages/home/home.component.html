@@ -83,58 +83,59 @@
   </div>
 
   <!-- Inventory Alerts -->
-  <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-xl font-bold dark:text-white">Alertas de Inventario</h3>
-      <span class="text-sm text-orange-600 dark:text-orange-400 flex items-center gap-1 font-medium">
-        <lucide-icon [img]="AlertTriangle" class="w-4 h-4"></lucide-icon>
-        3 productos requieren atención
-      </span>
-    </div>
-   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-  @for (alert of inventoryAlerts; track alert.product) {
-    <div
-      class="p-4 rounded-lg border transition-colors overflow-hidden"
-      [ngClass]="getAlertClasses(alert.status)">
-
-      <div class="flex items-start justify-between gap-2 mb-2">
-        <p
-          class="text-sm font-medium dark:text-white truncate max-w-[85%]"
-          [title]="alert.product">
-          {{ alert.product }}
-        </p>
-
-        @if (alert.status === 'critical' || alert.status === 'warning') {
-          <lucide-icon
-            [img]="AlertTriangle"
-            class="w-4 h-4 flex-shrink-0"
-            [ngClass]="getAlertIconColor(alert.status)">
-          </lucide-icon>
-        }
-      </div>
-
-      <div class="flex items-baseline gap-2">
-        <span class="text-xl font-bold dark:text-white">
-          {{ alert.stock }}
-        </span>
-        <span class="text-sm text-gray-600 dark:text-gray-400">
-          / {{ alert.minStock }} mín.
-        </span>
-      </div>
-
-      <div class="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-        <div
-          class="h-2 rounded-full transition-all"
-          [ngClass]="getAlertBarColor(alert.status)"
-          [style.width.%]="getStockPercentage(alert.stock, alert.minStock)">
-        </div>
-      </div>
-
-    </div>
-  }
-</div>
-
+<div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-xl font-bold dark:text-white">Alertas de Inventario</h3>
+   <span class="text-sm text-orange-600 dark:text-orange-400 flex items-center gap-1 font-medium">
+  <lucide-icon [img]="AlertTriangle" class="w-4 h-4"></lucide-icon>
+  {{ alertCount }} productos requieren atención
+</span>
   </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    @for (alert of inventoryAlerts; track alert.product) {
+      <div
+        class="p-4 rounded-lg border transition-colors overflow-hidden"
+        [ngClass]="getAlertClasses(alert.status)">
+
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <p
+            class="text-sm font-medium dark:text-white truncate max-w-[85%]"
+            [title]="alert.product">
+            {{ alert.product }}
+          </p>
+
+          @if (alert.status === 'critical' || alert.status === 'warning') {
+            <lucide-icon
+              [img]="AlertTriangle"
+              class="w-4 h-4 flex-shrink-0"
+              [ngClass]="getAlertIconColor(alert.status)">
+            </lucide-icon>
+          } @else {
+            <span class="text-green-600 dark:text-green-400 text-xl">✓</span>
+          }
+        </div>
+
+        <div class="flex items-baseline gap-2">
+          <span class="text-xl font-bold dark:text-white">
+            {{ alert.stock }}
+          </span>
+          <span class="text-sm text-gray-600 dark:text-gray-400">
+            / {{ alert.minStock }} mín.
+          </span>
+        </div>
+
+        <div class="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+          <div
+            class="h-2 rounded-full transition-all"
+            [ngClass]="getAlertBarColor(alert.status)"
+            [style.width.%]="getStockPercentage(alert.stock, alert.minStock)">
+          </div>
+        </div>
+
+      </div>
+    }
+  </div>
+</div>
 
   <!-- Top Products Table -->
   <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
