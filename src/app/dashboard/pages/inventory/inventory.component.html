@@ -125,11 +125,7 @@
                 {{ product.categoryName || 'N/A' }}
               </td>
               <td>
-                @if (product.brandNames && product.brandNames.length > 0) {
-                  {{ product.brandNames.join(', ') }}
-                } @else {
-                  <span class="text-gray-400">N/A</span>
-                }
+               {{ product.brandNames || 'Sin marca' }}
               </td>
               <td>
                 @if (product.supplierNames && product.supplierNames.length > 0) {

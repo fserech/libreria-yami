@@ -1,4 +1,4 @@
-import { AfterViewInit, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { AfterViewInit, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule, NgIf } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { matCheckCircleOutline, matAddCircleOutlineOutline, matDriveFileRenameOutlineOutline } from '@ng-icons/material-icons/outline';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-checkbox',
@@ -33,7 +34,7 @@ import { matCheckCircleOutline, matAddCircleOutlineOutline, matDriveFileRenameOu
     })
   ]
 })
-export class CheckboxComponent implements OnInit, AfterViewInit, OnChanges {
+export class CheckboxComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
   @Input() icon: string;
   @Input() label: string;
   @Input() labels: string[] = [];
@@ -45,27 +46,42 @@ export class CheckboxComponent implements OnInit, AfterViewInit, OnChanges {
 
   selectControl = new FormControl([]);
 
+  // ✅ Para limpiar suscripciones
+  private destroy$ = new Subject<void>();
+  private isInitialized = false;
+
   constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit(): void {
+    // ✅ Solo inicializar una vez
+    if (!this.isInitialized) {
+      this.syncSelectWithFormArray();
+      this.isInitialized = true;
+    }
+  }
 
   ngAfterViewInit(): void {
     this.cdr.detectChanges();
   }
 
-  ngOnInit(): void {
-    this.syncSelectWithFormArray();
+  ngOnChanges(changes: SimpleChanges): void {
+    // ✅ Solo actualizar si los labels cambian Y ya está inicializado
+    if (changes['labels'] && !changes['labels'].firstChange && this.isInitialized) {
+      this.updateSelectedValues();
+    }
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['labels'] && !changes['labels'].firstChange) {
-      console.log(`${this.name} - Labels actualizados:`, this.labels);
-      this.syncSelectWithFormArray();
-    }
+  ngOnDestroy(): void {
+    // ✅ Limpiar suscripciones
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   syncSelectWithFormArray() {
     const formArray = this.form.get(this.name) as FormArray;
     if (!formArray) return;
 
+    // ✅ Obtener valores iniciales seleccionados
     const initialSelected: number[] = [];
     formArray.controls.forEach((control, index) => {
       if (control.value === true) {
@@ -73,17 +89,34 @@ export class CheckboxComponent implements OnInit, AfterViewInit, OnChanges {
       }
     });
 
-    console.log(`${this.name} - Selected indices:`, initialSelected);
-    console.log(`${this.name} - Labels:`, this.labels);
+    // ✅ Setear sin emitir evento
+    this.selectControl.setValue(initialSelected, { emitEvent: false });
 
-    this.selectControl.setValue(initialSelected);
-
-    this.selectControl.valueChanges.subscribe((selectedIndexes: number[]) => {
-      formArray.controls.forEach((control, index) => {
-        control.setValue(selectedIndexes.includes(index), { emitEvent: false });
+    // ✅ Suscribirse UNA SOLA VEZ con takeUntil
+    this.selectControl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((selectedIndexes: number[]) => {
+        formArray.controls.forEach((control, index) => {
+          control.setValue(selectedIndexes.includes(index), { emitEvent: false });
+        });
+        this.changes.emit(formArray);
       });
-      this.changes.emit(formArray);
+  }
+
+  // ✅ Método separado para actualizar valores sin recrear suscripción
+  updateSelectedValues() {
+    const formArray = this.form.get(this.name) as FormArray;
+    if (!formArray) return;
+
+    const currentSelected: number[] = [];
+    formArray.controls.forEach((control, index) => {
+      if (control.value === true) {
+        currentSelected.push(index);
+      }
     });
+
+    // ✅ Actualizar sin emitir evento
+    this.selectControl.setValue(currentSelected, { emitEvent: false });
   }
 
   get formArrayOptions() {
@@ -113,7 +146,6 @@ export class CheckboxComponent implements OnInit, AfterViewInit, OnChanges {
       .filter(opt => this.isOptionSelected(opt.index))
       .map(opt => opt.label)
       .join(', ');
-
     return selectedLabels || this.placeholder;
   }
 }

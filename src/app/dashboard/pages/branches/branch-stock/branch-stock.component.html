@@ -1,1 +1,228 @@
-<p>branch-stock works!</p>
+<div class="p-4 space-y-6">
+  <!-- Estadísticas -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Total Sucursales</p>
+          <p class="text-2xl font-bold dark:text-white">{{ totalBranches }}</p>
+        </div>
+        <ng-icon name="matStoreOutline" size="32" class="text-blue-500"></ng-icon>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Sucursales Activas</p>
+          <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ activeBranches }}</p>
+        </div>
+        <ng-icon name="matStoreOutline" size="32" class="text-green-500"></ng-icon>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Sucursales Inactivas</p>
+          <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ inactiveBranches }}</p>
+        </div>
+        <ng-icon name="matStoreOutline" size="32" class="text-red-500"></ng-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros y búsqueda -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+    <div class="flex flex-col lg:flex-row gap-4">
+      <!-- Búsqueda -->
+      <div class="flex-1 relative">
+        <ng-icon
+          name="matSearchOutline"
+          size="20"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+        </ng-icon>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange()"
+          placeholder="Buscar sucursal por nombre, código, ciudad..."
+          class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+
+      <!-- Filtro de estado -->
+      <select
+        [(ngModel)]="statusFilter"
+        (change)="onStatusFilterChange()"
+        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+               bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+               focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="all">Todas</option>
+        <option value="active">Activas</option>
+        <option value="inactive">Inactivas</option>
+      </select>
+
+      <!-- Botón agregar -->
+      <button
+        (click)="addBranch()"
+        class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
+               flex items-center gap-2 font-medium transition-colors"
+      >
+        <ng-icon name="matAddOutline" size="20"></ng-icon>
+        Nueva Sucursal
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading) {
+    <div class="flex justify-center items-center p-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+    </div>
+  }
+
+  <!-- Grid de sucursales -->
+  @if (!loading && filteredBranches.length > 0) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (branch of filteredBranches; track branch.id) {
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700
+                    hover:shadow-lg transition-shadow overflow-hidden">
+          <!-- Header de la tarjeta -->
+          <div class="p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                  {{ branch.branchName }}
+                  @if (branch.isHeadquarters) {
+                    <span class="ml-2 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded">
+                      Principal
+                    </span>
+                  }
+                </h3>
+                @if (branch.branchCode) {
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Código: {{ branch.branchCode }}
+                  </p>
+                }
+              </div>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-medium"
+                [ngClass]="getStatusClass(branch.active)">
+                {{ getStatusText(branch.active) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Contenido -->
+          <div class="p-4 space-y-3">
+            <!-- Dirección -->
+            <div class="flex items-start gap-2">
+              <ng-icon name="matLocationOnOutline" size="18" class="text-gray-400 mt-0.5 flex-shrink-0"></ng-icon>
+              <div class="text-sm">
+                <p class="text-gray-900 dark:text-white">{{ branch.address }}</p>
+                <p class="text-gray-600 dark:text-gray-400">
+                  {{ branch.city }}@if (branch.state) {, {{ branch.state }}}
+                </p>
+              </div>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="flex items-center gap-2">
+              <ng-icon name="matPhoneOutline" size="18" class="text-gray-400"></ng-icon>
+              <a
+                href="tel:{{ branch.phone }}"
+                class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                {{ branch.phone }}
+              </a>
+            </div>
+
+            <!-- Email -->
+            @if (branch.email) {
+              <div class="flex items-center gap-2">
+                <ng-icon name="matEmailOutline" size="18" class="text-gray-400"></ng-icon>
+                <a
+                  href="mailto:{{ branch.email }}"
+                  class="text-sm text-blue-600 dark:text-blue-400 hover:underline truncate">
+                  {{ branch.email }}
+                </a>
+              </div>
+            }
+
+            <!-- Gerente -->
+            @if (branch.managerName) {
+              <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <p class="text-xs text-gray-500 dark:text-gray-400">Gerente</p>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ branch.managerName }}</p>
+                @if (branch.managerPhone) {
+                  <a
+                    href="tel:{{ branch.managerPhone }}"
+                    class="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                    {{ branch.managerPhone }}
+                  </a>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Acciones -->
+          <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700
+                      flex items-center justify-end gap-2">
+            <button
+              (click)="viewBranch(branch.id)"
+              class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20
+                     rounded-lg transition-colors"
+              title="Ver detalles">
+              <ng-icon name="matVisibilityOutline" size="20"></ng-icon>
+            </button>
+
+            <button
+              (click)="editBranch(branch.id)"
+              class="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20
+                     rounded-lg transition-colors"
+              title="Editar">
+              <ng-icon name="matEditOutline" size="20"></ng-icon>
+            </button>
+
+            <button
+              (click)="deleteBranch(branch.id, branch.branchName)"
+              class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20
+                     rounded-lg transition-colors"
+              title="Eliminar">
+              <ng-icon name="matDeleteOutline" size="20"></ng-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading && filteredBranches.length === 0) {
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+      <ng-icon name="matStoreOutline" size="64" class="text-gray-400 mx-auto mb-4"></ng-icon>
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        No se encontraron sucursales
+      </h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        @if (searchTerm || statusFilter !== 'all') {
+          Intenta ajustar los filtros de búsqueda
+        } @else {
+          Comienza agregando tu primera sucursal
+        }
+      </p>
+      @if (!searchTerm && statusFilter === 'all') {
+        <button
+          (click)="addBranch()"
+          class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
+                 inline-flex items-center gap-2 font-medium transition-colors">
+          <ng-icon name="matAddOutline" size="20"></ng-icon>
+          Agregar Primera Sucursal
+        </button>
+      }
+    </div>
+  }
+</div>

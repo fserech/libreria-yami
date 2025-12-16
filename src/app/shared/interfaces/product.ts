@@ -8,7 +8,7 @@ export interface Product {
   costPrice?: number;   // precio de compra
   // Relaciones
   categoryId?: number;
-  brandRef?: number[];
+  brandRef?: number;
   supplierId?: number[];
   // Reglas de stock (solo límites)
   minStock?: number;

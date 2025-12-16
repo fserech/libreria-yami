@@ -91,16 +91,17 @@
 </app-select>
 
 
-<app-checkbox
+ <app-select
   [form]="form"
   name="brandRef"
   label="Marca"
-  placeholder="Selecciona marcas"
-   helpMessage="Sólo se aceptan números enteros o decimales"
+  placeholder="Selecciona una marca"
+  helpMessage="Sólo se aceptan números enteros o decimales"
     errorMessage="Error message."
-  [labels]="brandLabels"
-  [load]="load">
-</app-checkbox>
+  [required]="true"
+  [load]="load"
+  [options]="brandOptions">
+</app-select>
 
 <app-checkbox
   [form]="form"

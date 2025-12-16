@@ -15,8 +15,8 @@ export interface Inventory {
   // Relaciones
   categoryId?: number;
   categoryName?: string; // Nombre de la categoría para mostrar
-  brandRef?: number[];
-  brandNames?: string[]; // Nombres de las marcas para mostrar
+  brandRef?: number;
+  brandNames?: string; // Nombres de las marcas para mostrar
   supplierId?: number[];
   supplierNames?: string[]; // Nombres de los proveedores para mostrar
   // Stock actual (calculado desde minStock si no existe)

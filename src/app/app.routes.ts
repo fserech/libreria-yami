@@ -301,8 +301,7 @@ export const routes: Routes =
       title: 'Stock por Sucursal',
       canMatch: [authGuard],
       loadComponent: () =>
-        import('./dashboard/pages/branches/branch-stock/branch-stock.component')
-      .then(m => m.BranchStockComponent),
+        import('./dashboard/pages/branches/branch-stock/branch-stock.component'),
     }
   ]
 },

@@ -98,16 +98,11 @@ export default class InventoryComponent implements OnInit {
       this.categories = categoriesData;
       this.brands = brandsData;
       this.suppliers = suppliersData;
-
       // Mapear productos a inventario
       this.products = productsData.map(p => this.mapProductToInventory(p));
-
-      console.log('Productos cargados:', this.products); // Debug
-
       this.calculateKPIs();
       this.applyFilters();
     } catch (error) {
-      console.error('Error al cargar inventario:', error);
       this.toast.error('Error al cargar inventario');
     } finally {
       this.load = false;
@@ -128,10 +123,9 @@ export default class InventoryComponent implements OnInit {
     const category = this.categories.find(c => c.id === product.categoryId);
 
     // Obtener nombres de marcas
-    const brandNames = product.brandRef?.map(brandId => {
-      const brand = this.brands.find(b => b.id === brandId);
-      return brand?.brandName || 'N/A';
-    }) || [];
+    const brandName = product.brandRef
+    ? (this.brands.find(b => b.id === product.brandRef)?.brandName || 'Sin marca')
+    : 'Sin marca';
 
     // Obtener nombres de proveedores
     const supplierNames = product.supplierId?.map(suppId => {
@@ -151,7 +145,7 @@ export default class InventoryComponent implements OnInit {
       categoryId: product.categoryId,
       categoryName: category?.categoryName || 'Sin categoría',
       brandRef: product.brandRef,
-      brandNames: brandNames,
+      brandNames: brandName,
       supplierId: product.supplierId,
       supplierNames: supplierNames,
       stock: currentStock, // Stock simulado
