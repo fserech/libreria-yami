@@ -105,7 +105,6 @@
   </div>
 
   <!-- TABLE -->
-  <!-- <div class="relative overflow-x-auto shadow-md sm:rounded-lg"> -->
   <div class="rounded-lg">
     <table class="table-grid mt-4 w-full">
       <thead>
@@ -134,6 +133,18 @@
             </button>
           </th>
 
+          <th class="content-desktop-custom hidden sm:table-cell">
+            <button (click)="changeSortOrderBy('brandRef')">
+              <p>Marca</p>
+              @if(sortConfig.sortBy === 'brandRef' && sortConfig.sortOrder === 'asc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'brandRef' && sortConfig.sortOrder === 'desc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
           <th class="content-desktop-custom">
             <button (click)="changeSortOrderBy('salePrice')">
               <p>Precio</p>
@@ -145,14 +156,6 @@
               }
             </button>
           </th>
-
-          <!-- <th class="content-desktop-custom">
-            <button>
-              <p>Estado</p>
-            </button>
-          </th> -->
-
-          <!-- <th class="content-desktop-custom">Acciones</th> -->
         </tr>
 
       </thead>
@@ -174,6 +177,10 @@
                 </h1>
               </td>
 
+              <td class="hidden sm:table-cell">
+                <p class="text-sm">{{ getBrandNames(product.brandRef) || 'Sin marca' }}</p>
+              </td>
+
               <td class="content-sm">
                 <div class="w-full flex justify-between p-1">
                   <h1>
@@ -187,6 +194,7 @@
                         {{ product.productName }}
                        </p>
                        <p class="text-xs text-wrap">{{ product.productDesc }}</p>
+                       <p class="text-xs text-wrap">{{ getBrandNames(product.brandRef) }}</p>
                     </h1>
 
                     <p><b class="bg-gray-100 dark:bg-slate-800 dark:text-gray-300 ml-0  p-1 m-2 w-auto rounded">Q {{ product.salePrice.toFixed(2) }}</b></p>
@@ -215,6 +223,15 @@
           } @loading {
             <tr [ngClass]="{' bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
               <td class="content-desktop">
+                <div class="rounded pt-2 pb-2 p-1">
+                  <div class="animate-pulse flex space-x-4">
+                    <div class="flex-1 space-y-6 py-1">
+                      <div class="h-2 bg-gray-400 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
                 <div class="rounded pt-2 pb-2 p-1">
                   <div class="animate-pulse flex space-x-4">
                     <div class="flex-1 space-y-6 py-1">

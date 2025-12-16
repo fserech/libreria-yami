@@ -18,9 +18,10 @@ import { Dialog, DialogModule } from '@angular/cdk/dialog';
 import { ProductsFiltersDialogComponent } from '../products-filters-dialog/products-filters-dialog.component';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { firstValueFrom } from 'rxjs';
-
+import { environment } from '../../../../../environments/environment';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { ACTIONS_GRID_MAIN_ADMIN } from '../../../../shared/constants/actions-menu';
+
 @Component({
   selector: 'app-products-grid-main',
   standalone: true,
@@ -37,6 +38,7 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
 
   form: FormGroup;
   actionsGrid:  OptionsChatBubble[] = ACTIONS_GRID_MAIN_ADMIN;
+  brandMap: Map<number, string> = new Map();
 
   constructor(
       private crud: CrudService,
@@ -58,7 +60,31 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
   }
 
   ngOnInit(): void {
+    this.loadBrands();
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize);
+  }
+
+  async loadBrands() {
+    try {
+      const brands = await firstValueFrom(
+        this.crud.http.get<any[]>(`${environment.apiUrl}/api/v1/categories/brands`)
+      );
+      brands.forEach(brand => {
+        this.brandMap.set(brand.id, brand.brandName);
+      });
+    } catch (error) {
+      console.error('Error cargando marcas:', error);
+    }
+  }
+
+  getBrandNames(brandIds: number[] | number): string {
+    if (!brandIds) return '';
+
+    const ids = Array.isArray(brandIds) ? brandIds : [brandIds];
+    return ids
+      .map(id => this.brandMap.get(id) || '')
+      .filter(name => name !== '')
+      .join(', ');
   }
 
   async openDialog() {
@@ -85,7 +111,6 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
       })
       .catch((error: any) => {
         this.toast.error(error.message);
-        // console.log('err', error);
       });
   }
 
@@ -116,11 +141,9 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     if(name && name !== ''){
       this.filter(name);
     }
-
   }
 
   filter(name?: string, id?: number, initPrice?: number, endPrice?: number, active?: boolean){
-
     let filter = '';
     if(id){
       filter = filter.concat(`&id=${id}`)
@@ -138,7 +161,6 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
 
-
   changeSortOrderBy(field: string){
     if(field === this.sortConfig.sortBy){
       if(this.sortConfig.sortOrder === 'asc'){
@@ -154,3 +176,4 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, this.filters);
   }
 }
+
