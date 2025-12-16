@@ -1,116 +1,207 @@
-
-
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="kpi-card dark:bg-slate-800">
-    <lucide-icon [img]="Package"></lucide-icon>
-    <p>Valor Inventario</p>
-    <h3>Q {{ totalValue | number }}</h3>
-  </div>
+  <!-- KPIs -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+    <div class="kpi-card dark:bg-slate-800">
+      <lucide-icon [img]="Package" class="text-blue-500"></lucide-icon>
+      <p>Valor Inventario</p>
+      <h3>Q {{ totalValue | number:'1.2-2' }}</h3>
+    </div>
 
-  <div class="kpi-card dark:bg-slate-800">
-    <lucide-icon [img]="TrendingUp"></lucide-icon>
-    <p>Ganancia Potencial</p>
-    <h3>Q {{ potentialProfit | number }}</h3>
-  </div>
+    <div class="kpi-card dark:bg-slate-800">
+      <lucide-icon [img]="TrendingUp" class="text-green-500"></lucide-icon>
+      <p>Ganancia Potencial</p>
+      <h3>Q {{ potentialProfit | number:'1.2-2' }}</h3>
+    </div>
 
-  <div class="kpi-card dark:bg-slate-800">
-    <lucide-icon [img]="BarChart3"></lucide-icon>
-    <p>Items Totales</p>
-    <h3>{{ totalItems }}</h3>
-  </div>
+    <div class="kpi-card dark:bg-slate-800">
+      <lucide-icon [img]="BarChart3" class="text-purple-500"></lucide-icon>
+      <p>Margen Promedio</p>
+      <h3>{{ averageMargin | number:'1.1-1' }}%</h3>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        {{ lowMarginCount }} con margen &lt;20%
+      </p>
+    </div>
 
-  <div class="kpi-card dark:bg-slate-800">
-    <lucide-icon [img]="AlertTriangle"></lucide-icon>
-    <p>Alertas Stock</p>
-    <h3>{{ lowStockCount }}</h3>
-  </div>
-</div>
-<div class="flex flex-col lg:flex-row gap-4 mb-6 bg-white dark:bg-slate-900 border-b dark:border-slate-700 p-2 rounded">
-  <input
-    type="text"
-    [(ngModel)]="searchTerm"
-    (input)="applyFilters()"
-    placeholder="Buscar producto..."
-    class="input dark:bg-slate-800 dark:text-white dark:border-slate-700"
-  />
+    <div class="kpi-card dark:bg-slate-800">
+      <lucide-icon [img]="Package" class="text-cyan-500"></lucide-icon>
+      <p>Items Totales</p>
+      <h3>{{ totalItems | number }}</h3>
+    </div>
 
-  <select
-    [(ngModel)]="selectedCategory"
-    (change)="applyFilters()"
-    class="input dark:bg-slate-800 dark:text-white dark:border-slate-700"
-  >
-    <option value="all">Todas</option>
-    @for (cat of categories; track cat) {
-      <option [value]="cat">{{ cat }}</option>
-    }
-  </select>
-
-  <button (click)="addProduct()" class="btn-primary h-10">
-    <lucide-icon [img]="Plus"></lucide-icon>
-    Agregar
-  </button>
-</div>
-
-<div class="rounded-lg overflow-x-auto">
-  <table class="table-grid w-full">
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th>Categoría</th>
-        <th>Proveedor</th>
-        <th>Stock</th>
-        <th>Margen</th>
-        <th>Rotación</th>
-        <th>Nivel</th>
-       </tr>
-    </thead>
-
-    <tbody>
-      @for (product of filteredProducts; track product.id) {
-        <tr
-          class="border-b dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800"
-          [ngClass]="{'bg-gray-100 dark:bg-slate-950': $odd}"
-        >
-          <td class="font-bold">
-            {{ product.productName }}
-          </td>
-
-          <td>
-            {{ product.categoryId || 'N/A' }}
-          </td>
-
-          <td>
-            {{ product.supplierId || 'N/A' }}
-          </td>
-
-          <td>
-            {{ product.stock }} / {{ product.maxStock }}
-          </td>
-
-          <td>
-            {{ getMargin(product) }}%
-          </td>
-
-          <td>
-            {{ getRotationRate(product) }}
-          </td>
-
-          <td class="w-40">
-            <div class="w-full bg-gray-200 dark:bg-slate-700 h-2 rounded">
-              <div
-                class="h-2 rounded"
-                [class]="getStockBarColor(getStockStatus(product))"
-                [style.width.%]="(product.stock / product.maxStock) * 100"
-              ></div>
-            </div>
-          </td>
-       </tr>
+    <!-- KPI de Alertas - CLICKEABLE -->
+    <div
+      class="kpi-card dark:bg-slate-800 cursor-pointer hover:shadow-lg transition-shadow"
+      [ngClass]="{'border-2 border-red-500': lowStockCount > 0}"
+      (click)="viewLowStockProducts()">
+      <lucide-icon
+        [img]="AlertTriangle"
+        [class]="lowStockCount > 0 ? 'text-red-500 animate-pulse' : 'text-gray-400'">
+      </lucide-icon>
+      <p>Alertas Stock</p>
+      <h3 [ngClass]="{'text-red-600 dark:text-red-400': lowStockCount > 0}">
+        {{ lowStockCount }}
+      </h3>
+      @if (lowStockCount > 0) {
+        <p class="text-xs text-red-500 dark:text-red-400 mt-1 font-semibold">
+          ⚠️ Requiere atención
+        </p>
+      } @else {
+        <p class="text-xs text-green-500 dark:text-green-400 mt-1">
+          ✓ Todo en orden
+        </p>
       }
-    </tbody>
-  </table>
-</div>
+    </div>
+  </div>
 
-<router-outlet></router-outlet>
-</div>
+  <!-- Filtros -->
+  <div class="flex flex-col lg:flex-row gap-4 mb-6 bg-white dark:bg-slate-900 border-b dark:border-slate-700 p-2 rounded">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      (input)="applyFilters()"
+      placeholder="Buscar producto..."
+      class="input dark:bg-slate-800 dark:text-white dark:border-slate-700"
+    />
+    <select
+      [(ngModel)]="selectedCategory"
+      (change)="applyFilters()"
+      class="input dark:bg-slate-800 dark:text-white dark:border-slate-700"
+    >
+      <option value="all">Todas las categorías</option>
+      @for (cat of categories; track cat.id) {
+        <option [value]="cat.id">{{ cat.categoryName }}</option>
+      }
+    </select>
+    <button (click)="addProduct()" class="btn-primary h-10">
+      <lucide-icon [img]="Plus"></lucide-icon>
+      Agregar
+    </button>
+    @if (lowStockCount > 0) {
+      <button
+        (click)="viewLowStockProducts()"
+        class="h-10 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2">
+        <lucide-icon [img]="AlertTriangle" [size]="18"></lucide-icon>
+        Ver Alertas ({{ lowStockCount }})
+      </button>
+    }
+  </div>
 
+  @if (load) {
+    <div class="flex justify-center items-center p-8">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+    </div>
+  } @else {
+    <!-- Tabla -->
+    <div class="rounded-lg overflow-x-auto">
+      <table class="table-grid w-full">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>Marcas</th>
+            <th>Proveedores</th>
+            <th>Stock</th>
+            <th>Margen</th>
+            <th>Rotación</th>
+            <th>Nivel</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (product of filteredProducts; track product.id) {
+            <tr
+              class="border-b dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800"
+              [ngClass]="{
+                'bg-gray-50 dark:bg-slate-950': $odd,
+                'bg-red-50 dark:bg-red-900/20': getStockStatus(product) === 'critical'
+              }">
+              <td class="font-bold">
+                {{ product.productName }}
+                @if (product.productDesc) {
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ product.productDesc }}</p>
+                }
+              </td>
+              <td>
+                {{ product.categoryName || 'N/A' }}
+              </td>
+              <td>
+                @if (product.brandNames && product.brandNames.length > 0) {
+                  {{ product.brandNames.join(', ') }}
+                } @else {
+                  <span class="text-gray-400">N/A</span>
+                }
+              </td>
+              <td>
+                @if (product.supplierNames && product.supplierNames.length > 0) {
+                  {{ product.supplierNames.join(', ') }}
+                } @else {
+                  <span class="text-gray-400">N/A</span>
+                }
+              </td>
+              <td>
+                <div class="flex items-center gap-2">
+                  @if (getStockStatus(product) === 'critical') {
+                    <lucide-icon [img]="AlertTriangle" [size]="16" class="text-red-500"></lucide-icon>
+                  }
+                  <span [ngClass]="{
+                    'text-red-600 dark:text-red-400 font-bold': getStockStatus(product) === 'critical',
+                    'text-orange-600 dark:text-orange-400': getStockStatus(product) === 'warning'
+                  }">
+                    {{ product.stock }} / {{ product.maxStock }}
+                  </span>
+                </div>
+                @if (getStockStatus(product) === 'critical') {
+                  <p class="text-xs text-red-500">Min: {{ product.minStock }}</p>
+                }
+              </td>
+              <td [class]="getMarginClass(product)">
+                <div class="flex flex-col">
+                  <span class="font-semibold">{{ getMargin(product) }}%</span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    +Q{{ getProfit(product) | number:'1.2-2' }}
+                  </span>
+                </div>
+              </td>
+              <td [class]="getRotationClass(product)">
+                {{ getRotationRate(product) }}
+              </td>
+              <td class="w-40">
+                <div class="w-full bg-gray-200 dark:bg-slate-700 h-2 rounded">
+                  <div
+                    class="h-2 rounded transition-all"
+                    [class]="getStockBarColor(getStockStatus(product))"
+                    [style.width.%]="(product.stock / product.maxStock) * 100"
+                  ></div>
+                </div>
+              </td>
+              <td>
+                <div class="flex gap-2">
+                  <button
+                    (click)="edit(product.id)"
+                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                    title="Editar">
+                    <lucide-icon [img]="Edit2" [size]="18"></lucide-icon>
+                  </button>
+                  <button
+                    (click)="deleteProduct(product.id)"
+                    class="text-red-600 hover:text-red-800 dark:text-red-400"
+                    title="Eliminar">
+                    <lucide-icon [img]="Trash2" [size]="18"></lucide-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="text-center p-8 text-gray-500 dark:text-gray-400">
+                No se encontraron productos
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <router-outlet></router-outlet>
+</div>
