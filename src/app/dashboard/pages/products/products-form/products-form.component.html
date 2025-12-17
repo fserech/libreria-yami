@@ -25,10 +25,10 @@
       [form]="form"
       name="name"
       icon="matDriveFileRenameOutlineOutline"
-      label="Nombre de producto"
-      placeholder="Nombre de producto"
-      helpMessage="Sólo se aceptan caracteres alfabeticos"
-      errorMessage="Error message."
+      label="Nombre base del producto"
+      placeholder="Ej: ACUARELA, LÁPIZ, CUADERNO"
+      helpMessage="Nombre genérico del producto (sin incluir la marca)"
+      errorMessage="El nombre es requerido"
       [minlength]="1"
       [maxlength]="80"
       [counter]="true"
@@ -102,6 +102,7 @@
   [load]="load"
   [options]="brandOptions">
 </app-select>
+
 
 <app-checkbox
   [form]="form"

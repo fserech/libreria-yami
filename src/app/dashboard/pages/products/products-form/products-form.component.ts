@@ -82,7 +82,11 @@ export default class ProductsFormComponent extends BaseForm implements OnInit{
       this.load = true;
       try {
         const product: Product = await firstValueFrom(this.crud.getId(this.id));
-        this.form.controls['name'].setValue(product.productName);
+          const baseName = this.extractBaseName(product.productName);
+        this.form.controls['name'].setValue(baseName);
+
+
+       // this.form.controls['name'].setValue(product.productName);
         this.form.controls['productDesc'].setValue(product.productDesc);
         this.form.controls['costPrice'].setValue(Number(product.costPrice).toFixed(2));
         this.form.controls['salePrice'].setValue(Number(product.salePrice).toFixed(2));
@@ -149,6 +153,25 @@ export default class ProductsFormComponent extends BaseForm implements OnInit{
     this.toast.error('Error al cargar las opciones');
   }
 }
+ // ✅ Método para obtener el nombre completo (Base + Marca)
+  getProductFullName(): string {
+    const baseName = this.form.controls['name'].value;
+    const brandId = this.form.controls['brandRef'].value;
+
+    if (!baseName || !brandId) return '';
+
+    const brand = this.brandOptions.find(b => b.value === brandId);
+    return brand ? `${baseName} - ${brand.label}` : baseName;
+  }
+
+  // ✅ Método para extraer nombre base de un nombre completo
+  // Ejemplo: "ACUARELA - Tucan" → "ACUARELA"
+  extractBaseName(fullName: string): string {
+    if (!fullName) return '';
+    const separatorIndex = fullName.indexOf(' - ');
+    return separatorIndex !== -1 ? fullName.substring(0, separatorIndex).trim() : fullName;
+  }
+
 
   isDirty(): boolean {
     return this.form.dirty;
@@ -172,10 +195,16 @@ export default class ProductsFormComponent extends BaseForm implements OnInit{
     const selectedSuppliers = this.supplierOptions
       .filter((_, index) => supplierFormArray.at(index).value)
       .map(option => Number(option.value));
+      // ✅ Construir nombre completo
+    const baseName = this.form.controls['name'].value.trim();
+    const selectedBrandId = Number(this.form.controls['brandRef'].value);
+    const selectedBrand = this.brandOptions.find(b => b.value === selectedBrandId.toString());
+    const brandName = selectedBrand?.label || '';
+    const fullProductName = `${baseName} - ${brandName}`;
 
     const product: Product = {
       id: (this.id) ? this.id : null,
-      productName: this.form.controls['name'].value,
+      productName: fullProductName,
       productDesc: this.form.controls['productDesc'].value,
       costPrice: this.form.controls['costPrice'].value,
       salePrice: this.form.controls['salePrice'].value,
