@@ -2,13 +2,17 @@
 <app-header headerTitle="Productos" headerDescription="Gestión de módulo de productos, crear, editar, activar, desactivar y eliminar productos."></app-header>
 
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
-  <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between">
-    @if (mode==='new') {
-      <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo Producto</p>
-    }
-    @if (mode === 'edit'|| mode === 'view') {
-      <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID producto: </b>{{ id }}</p>
-    }
+
+  <!-- HEADER CON BOTÓN REGRESAR -->
+  <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between items-center">
+    <div>
+      @if (mode === 'new') {
+        <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo Producto</p>
+      }
+      @if (mode === 'edit' || mode === 'view') {
+        <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID producto: </b>{{ id }}</p>
+      }
+    </div>
 
     <button (click)="back()" class="btn-back">
       <ng-icon class="btn-back-icon" size="20" name="matArrowBackOutline"></ng-icon>
@@ -16,145 +20,533 @@
     </button>
   </div>
 
-  <div class="w-full text-lg dark:border-slate-700 mb-4 pb-2">
-    <p class="text-gray-500 dark:text-gray-300 text-base">Información General</p>
+  <!-- TABS DE NAVEGACIÓN -->
+  <div class="border-b border-gray-200 dark:border-slate-700 mb-6">
+    <nav class="flex space-x-4" aria-label="Tabs">
+      <button
+        (click)="switchTab('general')"
+        [class]="activeTab === 'general'
+          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+        class="py-2 px-4 border-b-2 font-medium text-sm transition-colors">
+        <ng-icon name="matInfoOutline" size="18" class="inline mr-2"></ng-icon>
+        Información General
+      </button>
+
+      <button
+        (click)="switchTab('variants')"
+        [class]="activeTab === 'variants'
+          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+        class="py-2 px-4 border-b-2 font-medium text-sm transition-colors"
+        [disabled]="!productForm.get('categoryId')?.value">
+        <ng-icon name="matInventory2Outline" size="18" class="inline mr-2"></ng-icon>
+        Stock y Precios
+        @if (productType === 'variant' && variants.length > 0) {
+          <span class="ml-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">{{ variants.length }}</span>
+        }
+      </button>
+    </nav>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <app-input
-      [form]="form"
-      name="name"
-      icon="matDriveFileRenameOutlineOutline"
-      label="Nombre base del producto"
-      placeholder="Ej: ACUARELA, LÁPIZ, CUADERNO"
-      helpMessage="Nombre genérico del producto (sin incluir la marca)"
-      errorMessage="El nombre es requerido"
-      [minlength]="1"
-      [maxlength]="80"
-      [counter]="true"
-      [load]="load">
-    </app-input>
+  <!-- TAB 1: INFORMACIÓN GENERAL -->
+  @if (activeTab === 'general') {
+    <div class="animate-fadeIn">
 
-    <app-input
-      [form]="form"
-      name="productDesc"
-      icon="matDriveFileRenameOutlineOutline"
-      label="Descripción de producto"
-      placeholder="Descripción de producto"
-      helpMessage="Sólo se aceptan alfanumericos"
-      errorMessage="Error message."
-      [minlength]="1"
-      [maxlength]="100"
-      [counter]="true"
-      [load]="load">
-    </app-input>
+      <!-- TIPO DE PRODUCTO -->
+      <div class="mb-6 p-4 bg-blue-50 dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-slate-700">
+        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <ng-icon name="matHelpOutline" size="18" class="inline mr-1"></ng-icon>
+          Tipo de Producto
+        </p>
 
-   <app-input
-    [form]="form"
-    name="costPrice"
-    icon="matAttachMoneyOutline"
-    label="Precio de compra"
-    placeholder="Precio de compra"
-    helpMessage="Sólo se aceptan números enteros o decimales"
-    errorMessage="Error message."
-    [minlength]="1"
-    [maxlength]="10"
-    [counter]="true"
-    [load]="load">
-  </app-input>
+        <div class="flex gap-4">
+          <label class="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="productType"
+              value="simple"
+              [checked]="productType === 'simple'"
+              (change)="changeProductType('simple')"
+              class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <strong>Producto Simple</strong> - Sin variantes (ej: Lápiz HB)
+            </span>
+          </label>
 
+          <label class="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="productType"
+              value="variant"
+              [checked]="productType === 'variant'"
+              (change)="changeProductType('variant')"
+              class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <strong>Producto con Variantes</strong> - Múltiples opciones (ej: Cuadernos)
+            </span>
+          </label>
+        </div>
+      </div>
 
-    <app-input
-    [form]="form"
-    name="salePrice"
-    icon="matAttachMoneyOutline"
-    label="Precio de venta"
-    placeholder="Precio de venta"
-    helpMessage="Sólo se aceptan números enteros o decimales"
-    errorMessage="Error message."
-    [minlength]="1"
-    [maxlength]="10"
-    [counter]="true"
-    [load]="load">
-  </app-input>
+      <!-- FORMULARIO DE INFORMACIÓN GENERAL -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
- <app-select
-  [form]="form"
-  name="categoryId"
-  label="Categoría"
-  placeholder="Selecciona una categoría"
-  helpMessage="Sólo se aceptan números enteros o decimales"
-    errorMessage="Error message."
-  [required]="true"
-  [load]="load"
-  [options]="categoryOptions">
-</app-select>
+        <app-input
+          [form]="productForm"
+          name="productName"
+          icon="matDriveFileRenameOutlineOutline"
+          label="Nombre del producto"
+          placeholder="Ej: ACUARELA, CUADERNO UNIVERSITARIO"
+          helpMessage="Nombre del producto (puede incluir o no la marca)"
+          errorMessage="El nombre es requerido"
+          [minlength]="1"
+          [maxlength]="100"
+          [counter]="true"
+          [load]="load">
+        </app-input>
 
+        <app-select
+          [form]="productForm"
+          name="brandRef"
+          label="Marca"
+          placeholder="Selecciona una marca"
+          helpMessage="Marca del producto"
+          errorMessage="La marca es requerida"
+          [required]="true"
+          [load]="load"
+          [options]="brandOptions">
+        </app-select>
 
- <app-select
-  [form]="form"
-  name="brandRef"
-  label="Marca"
-  placeholder="Selecciona una marca"
-  helpMessage="Sólo se aceptan números enteros o decimales"
-    errorMessage="Error message."
-  [required]="true"
-  [load]="load"
-  [options]="brandOptions">
-</app-select>
+        <app-select
+          [form]="productForm"
+          name="categoryId"
+          label="Categoría"
+          placeholder="Selecciona una categoría"
+          helpMessage="Categoría del producto"
+          errorMessage="La categoría es requerida"
+          [required]="true"
+          [load]="load"
+          [options]="categoryOptions"
+          (changes)="onCategoryChange()">
+        </app-select>
 
+        <app-input
+          [form]="productForm"
+          name="productDesc"
+          icon="matDescriptionOutline"
+          label="Descripción"
+          placeholder="Descripción detallada del producto"
+          helpMessage="Descripción opcional del producto"
+          errorMessage="La descripción es requerida"
+          [minlength]="1"
+          [maxlength]="255"
+          [counter]="true"
+          [load]="load">
+        </app-input>
 
-<app-checkbox
-  [form]="form"
-  name="supplierId"
-  label="Proveedor"
-  placeholder="Selecciona proveedores"
-  i helpMessage="Sólo se aceptan números enteros o decimales"
-    errorMessage="Error message."
-  [labels]="supplierLabels"
-  [load]="load">
-</app-checkbox>
+        <app-toggle
+          class="col-span-1 sm:col-span-2"
+          label="Producto Activo"
+          [form]="productForm"
+          name="active"
+          [load]="load">
+        </app-toggle>
 
- <app-input
-  [form]="form"
-  name="minStock"
-  label="Stock mínimo"
-  placeholder="Stock mínimo"
-  helpMessage="Sólo se aceptan números enteros o decimales"
-    errorMessage="Error message."
-  [required]="true"
-  [load]="load"
-  (changes)="validateStockMinMax()">
-</app-input>
+      </div>
 
-<app-input
-  [form]="form"
-  name="maxStock"
-  label="Stock máximo"
-  placeholder="Stock máximo"
-  helpMessage="Sólo se aceptan números enteros o decimales"
-    errorMessage="Error message."
-  [required]="true"
-  [load]="load"
-  (changes)="validateStockMinMax()">
-</app-input>
+      <!-- BOTÓN CONTINUAR -->
+      <div class="mt-6 flex justify-end">
+        <button
+          (click)="switchTab('variants')"
+          [disabled]="productForm.invalid"
+          class="btn-primary h-10 px-6 font-bold">
+          Continuar a Stock y Precios
+          <ng-icon name="matArrowForwardOutline" size="18" class="inline ml-2"></ng-icon>
+        </button>
+      </div>
+    </div>
+  }
 
+  <!-- TAB 2: STOCK Y PRECIOS -->
+  @if (activeTab === 'variants') {
+    <div class="animate-fadeIn">
 
-  <app-toggle
-    class="ml-4"
-    label="Producto Activo"
-    [form]="form"
-    name="active"
-    (changes)="changeProductActive($event)"
-    [load]="load">
-  </app-toggle>
-  </div>
-  <div class="w-full border-b dark:border-slate-700 pb-3 pt-3 flex justify-center sm:justify-end mb-2">
-    @if(!load){
-    <button (click)="submit()" [disabled]="form.invalid" class="btn-primary h-10 w-36 font-bold">Guardar</button>
-    } @else if(load){
-      <button class="btn-primary h-10 w-36 font-bold animate-pulse"></button>
+      <!-- PRODUCTO SIMPLE -->
+      @if (productType === 'simple') {
+        <div class="mb-4">
+          <p class="text-gray-600 dark:text-gray-300 font-semibold mb-4">
+            <ng-icon name="matInventoryOutline" size="20" class="inline mr-2"></ng-icon>
+            Información de Stock y Precios
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- SKU con generador -->
+            <div class="relative">
+              <app-input
+                [form]="stockForm"
+                name="sku"
+                icon="matQrCodeOutline"
+                label="SKU (Código único)"
+                placeholder="Ej: FAB-LAP-123456"
+                helpMessage="Código único del producto"
+                errorMessage="El SKU es requerido"
+                [minlength]="1"
+                [maxlength]="50"
+                [load]="load">
+              </app-input>
+              <button
+                type="button"
+                (click)="generateSKU()"
+                class="absolute right-2 top-9 text-blue-600 hover:text-blue-800 text-xs font-semibold">
+                Generar
+              </button>
+            </div>
+
+            <app-input
+              [form]="stockForm"
+              name="costPrice"
+              icon="matAttachMoneyOutline"
+              label="Precio de compra"
+              placeholder="0.00"
+              helpMessage="Precio al que compras el producto"
+              errorMessage="El precio de compra es requerido"
+              [minlength]="1"
+              [maxlength]="10"
+              [load]="load">
+            </app-input>
+
+            <app-input
+              [form]="stockForm"
+              name="salePrice"
+              icon="matSellOutline"
+              label="Precio de venta"
+              placeholder="0.00"
+              helpMessage="Precio al que vendes el producto"
+              errorMessage="El precio de venta es requerido"
+              [minlength]="1"
+              [maxlength]="10"
+              [load]="load">
+            </app-input>
+
+            <app-input
+              [form]="stockForm"
+              name="currentStock"
+              icon="matInventory2Outline"
+              label="Stock inicial"
+              placeholder="0"
+              helpMessage="Cantidad inicial en inventario"
+              errorMessage="El stock inicial es requerido"
+              [load]="load">
+            </app-input>
+
+            <app-input
+              [form]="stockForm"
+              name="minStock"
+              label="Stock mínimo"
+              placeholder="0"
+              helpMessage="Alerta cuando llegue a este nivel"
+              errorMessage="El stock mínimo es requerido"
+              [load]="load"
+              (changes)="validateStockMinMax()">
+            </app-input>
+
+            <app-input
+              [form]="stockForm"
+              name="maxStock"
+              label="Stock máximo"
+              placeholder="100"
+              helpMessage="Capacidad máxima de almacenamiento"
+              errorMessage="El stock máximo es requerido"
+              [load]="load"
+              (changes)="validateStockMinMax()">
+            </app-input>
+
+            <!-- PROVEEDORES -->
+            <div class="col-span-1 sm:col-span-2">
+              <app-checkbox
+                [form]="stockForm"
+                name="supplierId"
+                label="Proveedores"
+                placeholder="Selecciona proveedores"
+                helpMessage="Selecciona uno o más proveedores"
+                errorMessage="Debes seleccionar al menos un proveedor"
+                [labels]="supplierLabels"
+                [load]="load">
+              </app-checkbox>
+            </div>
+
+          </div>
+        </div>
       }
+
+      <!-- PRODUCTO CON VARIANTES -->
+      @if (productType === 'variant') {
+        <div>
+
+          <!-- ATRIBUTOS DINÁMICOS -->
+          @if (availableAttributes.length > 0) {
+            <div class="mb-6 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                <ng-icon name="matTuneOutline" size="18" class="inline mr-1"></ng-icon>
+                Atributos Disponibles para esta Categoría
+              </p>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                @for (attr of availableAttributes; track attr.id) {
+                  <div class="bg-white dark:bg-slate-700 p-2 rounded border border-gray-200 dark:border-slate-600">
+                    <strong>{{ attr.attributeName }}:</strong>
+                    <div class="text-gray-600 dark:text-gray-400 mt-1">
+                      {{ attr.attributeValues.join(', ') }}
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- FORMULARIO DE VARIANTE -->
+          <div class="mb-6 p-4 border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-lg">
+            <p class="text-gray-600 dark:text-gray-300 font-semibold mb-4">
+              @if (editingVariantIndex >= 0) {
+                <ng-icon name="matEditOutline" size="20" class="inline mr-2"></ng-icon>
+                Editando Variante #{{ editingVariantIndex + 1 }}
+              } @else {
+                <ng-icon name="matAddCircleOutline" size="20" class="inline mr-2"></ng-icon>
+                Agregar Nueva Variante
+              }
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+              <!-- SKU -->
+              <div class="relative">
+                <app-input
+                  [form]="variantForm"
+                  name="sku"
+                  icon="matQrCodeOutline"
+                  label="SKU de la variante"
+                  placeholder="Ej: NORM-CU-100-AZ"
+                  helpMessage="Código único de esta variante"
+                  errorMessage="El SKU es requerido"
+                  [minlength]="1"
+                  [maxlength]="50"
+                  [load]="load">
+                </app-input>
+                <button
+                  type="button"
+                  (click)="generateVariantSKU()"
+                  class="absolute right-2 top-9 text-blue-600 hover:text-blue-800 text-xs font-semibold">
+                  Generar
+                </button>
+              </div>
+
+              <!-- ATRIBUTOS DINÁMICOS -->
+             @for (attr of availableAttributes; track attr.id) {
+                <app-select
+                  [form]="variantAttributesForm"
+                  [name]="attr.attributeName"
+                  [label]="attr.attributeName"
+                  [placeholder]="'Selecciona ' + attr.attributeName.toLowerCase()"
+
+                  errorMessage="Este campo es requerido"
+                  [required]="attr.required"
+                  [load]="load"
+                  [options]="getAttributeOptions(attr)">
+                </app-select>
+              }
+
+
+              <app-input
+                [form]="variantForm"
+                name="costPrice"
+                icon="matAttachMoneyOutline"
+                label="Precio de compra"
+                placeholder="0.00"
+                helpMessage="Precio de compra"
+                errorMessage="Requerido"
+                [load]="load">
+              </app-input>
+
+              <app-input
+                [form]="variantForm"
+                name="salePrice"
+                icon="matSellOutline"
+                label="Precio de venta"
+                placeholder="0.00"
+                helpMessage="Precio de venta"
+                errorMessage="Requerido"
+                [load]="load">
+              </app-input>
+
+              <app-input
+                [form]="variantForm"
+                name="currentStock"
+                icon="matInventory2Outline"
+                label="Stock inicial"
+                placeholder="0"
+                helpMessage="Stock inicial"
+                errorMessage="Requerido"
+                [load]="load">
+              </app-input>
+
+              <app-input
+                [form]="variantForm"
+                name="minStock"
+                label="Stock mínimo"
+                placeholder="0"
+                helpMessage="Stock mínimo"
+                errorMessage="Requerido"
+                [load]="load">
+              </app-input>
+
+              <app-input
+                [form]="variantForm"
+                name="maxStock"
+                label="Stock máximo"
+                placeholder="100"
+                helpMessage="Stock máximo"
+                errorMessage="Requerido"
+                [load]="load">
+              </app-input>
+
+              <!-- PROVEEDORES -->
+              <div class="col-span-1 sm:col-span-2">
+                <app-checkbox
+                  [form]="variantForm"
+                  name="supplierId"
+                  label="Proveedores"
+                  placeholder="Selecciona proveedores"
+                  helpMessage="Selecciona proveedores"
+                  errorMessage="Requerido"
+                  [labels]="supplierLabels"
+                  [load]="load">
+                </app-checkbox>
+              </div>
+
+              <app-toggle
+                class="col-span-1 sm:col-span-2"
+                label="Variante Activa"
+                [form]="variantForm"
+                name="active"
+                [load]="load">
+              </app-toggle>
+
+            </div>
+
+            <!-- BOTONES DE VARIANTE -->
+            <div class="mt-4 flex gap-2 justify-end">
+              @if (editingVariantIndex >= 0) {
+                <button
+                  type="button"
+                  (click)="cancelEditVariant()"
+                  class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">
+                  Cancelar
+                </button>
+              }
+              <button
+                type="button"
+                (click)="addOrUpdateVariant()"
+                [disabled]="variantForm.invalid"
+                class="btn-primary px-6 py-2 text-sm font-bold">
+                @if (editingVariantIndex >= 0) {
+                  Actualizar Variante
+                } @else {
+                  Agregar Variante
+                }
+              </button>
+            </div>
+          </div>
+
+          <!-- LISTA DE VARIANTES -->
+          @if (variants.length > 0) {
+            <div class="mt-6">
+              <p class="text-gray-600 dark:text-gray-300 font-semibold mb-3">
+                Variantes Creadas ({{ variants.length }})
+              </p>
+
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                  <thead class="bg-gray-50 dark:bg-slate-800">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Variante</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Precio Compra</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Precio Venta</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Stock</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Estado</th>
+                      <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
+                    @for (variant of variants; track variant.sku; let i = $index) {
+                      <tr class="hover:bg-gray-50 dark:hover:bg-slate-800">
+                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-300 font-mono">{{ variant.sku }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">{{ variant.variantName }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">Q {{ variant.costPrice }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">Q {{ variant.salePrice }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">{{ variant.currentStock }}</td>
+                        <td class="px-4 py-3 text-sm">
+                          @if (variant.active) {
+                            <span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">Activa</span>
+                          } @else {
+                            <span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">Inactiva</span>
+                          }
+                        </td>
+                        <td class="px-4 py-3 text-sm text-center">
+                          <button
+                            (click)="editVariant(i)"
+                            class="text-blue-600 hover:text-blue-800 mr-3">
+                            <ng-icon name="matEditOutline" size="18"></ng-icon>
+                          </button>
+                          <button
+                            (click)="deleteVariant(i)"
+                            class="text-red-600 hover:text-red-800">
+                            <ng-icon name="matDeleteOutline" size="18"></ng-icon>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          } @else {
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+              <ng-icon name="matInventoryOutline" size="48" class="mx-auto mb-2 opacity-50"></ng-icon>
+              <p>No hay variantes agregadas</p>
+              <p class="text-sm">Completa el formulario arriba para agregar tu primera variante</p>
+            </div>
+          }
+
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- BOTÓN GUARDAR FINAL -->
+  <div class="w-full border-t dark:border-slate-700 pt-4 mt-6 flex justify-end gap-3">
+    <button
+      (click)="back()"
+      class="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">
+      Cancelar
+    </button>
+
+    @if (!load) {
+      <button
+        (click)="submit()"
+        [disabled]="!canSubmit()"
+        class="btn-primary h-10 px-8 font-bold">
+        <ng-icon name="matSaveOutline" size="18" class="inline mr-2"></ng-icon>
+        Guardar Producto
+      </button>
+    } @else {
+      <button class="btn-primary h-10 px-8 font-bold animate-pulse">
+        Guardando...
+      </button>
+    }
   </div>
 
 </div>
