@@ -320,15 +320,30 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-              <!-- SKU -->
+              <!-- NOMBRE DE LA VARIANTE -->
+              <app-input
+                [form]="variantForm"
+                name="variantName"
+                icon="matDriveFileRenameOutlineOutline"
+                label="Nombre de la Variante"
+                placeholder="Ej: Cuaderno 100 hojas rayado azul"
+                helpMessage="Nombre descriptivo de esta variante"
+                errorMessage="El nombre de la variante es requerido"
+                [minlength]="1"
+                [maxlength]="100"
+                [counter]="true"
+                [load]="load">
+              </app-input>
+
+              <!-- SKU con generador -->
               <div class="relative">
                 <app-input
                   [form]="variantForm"
                   name="sku"
                   icon="matQrCodeOutline"
-                  label="SKU de la variante"
-                  placeholder="Ej: NORM-CU-100-AZ"
-                  helpMessage="Código único de esta variante"
+                  label="SKU (Código único)"
+                  placeholder="Ej: BIC-VAR-123456"
+                  helpMessage="Código único de la variante"
                   errorMessage="El SKU es requerido"
                   [minlength]="1"
                   [maxlength]="50"
@@ -342,21 +357,29 @@
                 </button>
               </div>
 
-              <!-- ATRIBUTOS DINÁMICOS -->
-             @for (attr of availableAttributes; track attr.id) {
-                <app-select
-                  [form]="variantAttributesForm"
-                  [name]="attr.attributeName"
-                  [label]="attr.attributeName"
-                  [placeholder]="'Selecciona ' + attr.attributeName.toLowerCase()"
-
-                  errorMessage="Este campo es requerido"
-                  [required]="attr.required"
-                  [load]="load"
-                  [options]="getAttributeOptions(attr)">
-                </app-select>
+              <!-- ATRIBUTOS DINÁMICOS - SOLO SI EXISTEN -->
+              @if (availableAttributes && availableAttributes.length > 0) {
+                @for (attr of availableAttributes; track attr.id) {
+                  <app-select
+                    [form]="variantAttributesForm"
+                    [name]="attr.attributeName"
+                    [label]="attr.attributeName"
+                    [placeholder]="'Selecciona ' + attr.attributeName.toLowerCase()"
+                    errorMessage="Este campo es requerido"
+                    [required]="attr.required"
+                    [load]="load"
+                    [options]="getAttributeOptions(attr)">
+                  </app-select>
+                }
+              } @else {
+                <!-- Mensaje informativo si no hay atributos configurados -->
+                <div class="col-span-1 sm:col-span-2 p-3 bg-blue-50 dark:bg-slate-800 rounded border border-blue-200 dark:border-slate-700">
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <ng-icon name="matInfoOutline" size="16" class="inline mr-1"></ng-icon>
+                    Esta categoría no tiene atributos configurados. Las variantes se diferenciarán solo por nombre.
+                  </p>
+                </div>
               }
-
 
               <app-input
                 [form]="variantForm"
@@ -448,7 +471,7 @@
               <button
                 type="button"
                 (click)="addOrUpdateVariant()"
-                [disabled]="variantForm.invalid"
+                [disabled]="variantForm.get('sku')?.invalid || variantForm.get('variantName')?.invalid"
                 class="btn-primary px-6 py-2 text-sm font-bold">
                 @if (editingVariantIndex >= 0) {
                   Actualizar Variante

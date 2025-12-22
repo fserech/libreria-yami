@@ -71,15 +71,6 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
   actionsGrid: OptionsChatBubble[] = ACTIONS_GRID_MAIN_ADMIN;
   brandMap: Map<number, string> = new Map();
 
-  // Filtros actuales
-  currentFilters?: {
-    id?: number;
-    productName?: string;
-    initPrice?: number;
-    endPrice?: number;
-    active?: boolean;
-  };
-
   constructor(
     private crud: CrudService,
     private toast: ToastService,
@@ -92,8 +83,8 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     this.sortConfig.sortBy = 'productName';
     this.sortConfig.sortOrder = 'asc';
 
-    // Configurar baseUrl para operaciones CRUD (getId, updateId, deleteId)
-    this.crud.baseUrl = `${environment.apiUrl}/api/v1/products`;
+    // Configurar baseUrl igual que categorías
+    this.crud.baseUrl = URL_PRODUCTS;
 
     this.form = new FormGroup({
       id: new FormControl(),
@@ -105,7 +96,8 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
 
   async ngOnInit(): Promise<void> {
     await this.loadBrands();
-    this.loadProducts();
+    // Usar el método genérico getPageItems igual que categorías
+    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize);
   }
 
   // ==================== CARGA DE DATOS ====================
@@ -125,42 +117,6 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
       console.error('Error cargando marcas:', error);
       this.toast.error('Error al cargar las marcas');
     }
-  }
-
-  /**
-   * Carga los productos con paginación
-   */
-  async loadProducts() {
-    this.load = true;
-    try {
-      const data = await this.crud.getProductsPage(
-        this.sortConfig.sortOrder,
-        this.sortConfig.sortBy,
-        this.pageSize,
-        this.page,
-        this.currentFilters
-      );
-
-      this.ItemsList = data.content || [];
-      this.page = data.number + 1; // Spring usa índice base 0
-      this.pageSize = data.size;
-      this.totalPages = data.totalPages;
-      this.totalItems = data.totalElements;
-      this.startIndex = (this.page - 1) * this.pageSize + 1;
-      this.endIndex = Math.min(this.page * this.pageSize, this.totalItems);
-    } catch (error: any) {
-      this.toast.error(error.message || 'Error al cargar productos');
-      console.error('Error:', error);
-    } finally {
-      this.load = false;
-    }
-  }
-
-  /**
-   * Sobrescribir refreshPage para usar el método de productos
-   */
-  protected refreshPage() {
-    this.loadProducts();
   }
 
   // ==================== UTILIDADES ====================
@@ -198,33 +154,25 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
       },
     });
 
-    try {
-      const result = await firstValueFrom(dialogRef.closed) as {
-        name: string;
-        id: number;
-        initPrice: number;
-        endPrice: number;
-        active: boolean;
-      };
-
-      if (result) {
-        if (result.name || result.id || result.initPrice || result.endPrice || result.active !== undefined) {
-          this.filter(result.name, result.id, result.initPrice, result.endPrice, result.active);
+    await firstValueFrom(dialogRef.closed)
+      .then((result: { name: string; id: number; initPrice: number; endPrice: number; active: boolean }) => {
+        if (result) {
+          if (result.name || result.id || result.initPrice || result.endPrice || result.active !== undefined) {
+            this.filter(result.name, result.id, result.initPrice, result.endPrice, result.active);
+          }
         }
-      }
-    } catch (error: any) {
-      this.toast.error(error.message);
-    }
+      })
+      .catch((error: any) => {
+        this.toast.error(error.message);
+      });
   }
 
   /**
-   * Reinicia la página y filtros
+   * Reinicia la página y filtros - igual que categorías
    */
   initPage() {
-    this.currentFilters = undefined;
-    this.page = 1;
+    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, 1, 10);
     this.form.reset();
-    this.loadProducts();
   }
 
   /**
@@ -238,45 +186,46 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
   }
 
   /**
-   * Aplica filtros de búsqueda
+   * Aplica filtros de búsqueda - igual que categorías
    */
   filter(name?: string, id?: number, initPrice?: number, endPrice?: number, active?: boolean) {
-    this.currentFilters = {};
+    let filter = '';
 
     if (id) {
-      this.currentFilters.id = id;
+      filter = filter.concat(`&id=${id}`);
     }
     if (name) {
-      this.currentFilters.productName = name;
+      filter = filter.concat(`&productName=${name}`);
     }
     if (initPrice !== undefined && endPrice !== undefined) {
-      this.currentFilters.initPrice = initPrice;
-      this.currentFilters.endPrice = endPrice;
+      filter = filter.concat(`&initPrice=${initPrice}&endPrice=${endPrice}`);
     }
     if (active !== undefined) {
-      this.currentFilters.active = active;
+      filter = filter.concat(`&active=${active}`);
     }
 
-    this.page = 1; // Reiniciar a la primera página
-    this.loadProducts();
+    this.filters = filter;
+    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
 
   // ==================== ORDENAMIENTO ====================
 
   /**
-   * Cambia el orden de la tabla
+   * Cambia el orden de la tabla - igual que categorías
    */
   changeSortOrderBy(field: string) {
     if (field === this.sortConfig.sortBy) {
-      // Cambiar orden si es el mismo campo
-      this.sortConfig.sortOrder = this.sortConfig.sortOrder === 'asc' ? 'desc' : 'asc';
-    } else {
-      // Nuevo campo, orden ascendente por defecto
+      if (this.sortConfig.sortOrder === 'asc') {
+        this.sortConfig.sortOrder = 'desc';
+      } else if (this.sortConfig.sortOrder === 'desc') {
+        this.sortConfig.sortOrder = 'asc';
+      }
+    }
+    if (field !== this.sortConfig.sortBy) {
       this.sortConfig.sortBy = field;
       this.sortConfig.sortOrder = 'asc';
     }
-
-    this.loadProducts();
+    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, this.filters);
   }
 
   // ==================== ACCIONES ====================

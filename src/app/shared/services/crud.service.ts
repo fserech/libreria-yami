@@ -27,40 +27,6 @@ export class CrudService {
     this.http.get<any[]>(`${this.baseUrl}${endpoint}`)
     );
   }
-  async getProductsPage(
-    sortOrder: 'asc' | 'desc',
-    sortBy: string,
-    pageSize: number,
-    page: number,
-    filters?: {
-      id?: number;
-      productName?: string;
-      initPrice?: number;
-      endPrice?: number;
-      active?: boolean;
-    }
-  ): Promise<any> {
-    let params = new HttpParams()
-      .set('page', (page - 1).toString())
-      .set('size', pageSize.toString())
-      .set('sortBy', sortBy)
-      .set('sortDir', sortOrder.toUpperCase());
-
-    if (filters) {
-      if (filters.id !== undefined) params = params.set('id', filters.id.toString());
-      if (filters.productName) params = params.set('productName', filters.productName);
-      if (filters.initPrice !== undefined) params = params.set('initPrice', filters.initPrice.toString());
-      if (filters.endPrice !== undefined) params = params.set('endPrice', filters.endPrice.toString());
-      if (filters.active !== undefined) params = params.set('active', filters.active.toString());
-    }
-
-    return await firstValueFrom(
-      this.http.get<any>(
-        `${environment.apiUrl}/api/v1/products/search`,
-        { params }
-      )
-    );
-  }
 
   async getUsers(id_users?: number, name?: string, email?: string,): Promise<any> {
     let params = new HttpParams();
