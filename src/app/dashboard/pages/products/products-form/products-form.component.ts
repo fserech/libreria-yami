@@ -52,6 +52,11 @@ interface VariantAttribute {
   required: boolean;
 }
 
+interface ManualAttribute {
+  key: string;
+  value: string;
+}
+
 @Component({
   selector: 'app-products-form',
   standalone: true,
@@ -87,7 +92,7 @@ interface VariantAttribute {
     matArrowForwardOutline
   })]
 })
-export default class ProductsFormComponent extends BaseForm implements OnInit,FormComponent  {
+export default class ProductsFormComponent extends BaseForm implements OnInit, FormComponent {
 
   // ==================== FORMS ====================
   productForm: FormGroup;
@@ -97,17 +102,27 @@ export default class ProductsFormComponent extends BaseForm implements OnInit,Fo
   // ==================== DATA ====================
   product: Product;
   variants: ProductVariant[] = [];
+  manualAttributes: ManualAttribute[] = [];
 
   // ==================== OPTIONS ====================
   categoryOptions: InputOptionsSelect[] = [];
   brandOptions: InputOptionsSelect[] = [];
   supplierOptions: InputOptionsSelect[] = [];
   availableAttributes: VariantAttribute[] = [];
+  selectedAttributeValues: string[] = [];
 
   // ==================== UI STATE ====================
   activeTab: 'general' | 'variants' = 'general';
   productType: 'simple' | 'variant' = 'simple';
   editingVariantIndex: number = -1;
+  showCustomAttrInput: boolean = false;
+  showCustomValueInput: boolean = false;
+
+  // ==================== FORM CONTROLS ====================
+  attrKeyControl = new FormControl('');
+  attrValueControl = new FormControl('');
+  customAttrKeyControl = new FormControl('');
+  customAttrValueControl = new FormControl('');
 
   get supplierLabels(): string[] {
     return this.supplierOptions.map(opt => opt.label);
@@ -159,9 +174,11 @@ export default class ProductsFormComponent extends BaseForm implements OnInit,Fo
       currentStock: [0, [Validators.required, Validators.min(0)]],
       minStock: [0, [Validators.required, Validators.min(0)]],
       maxStock: [100, [Validators.required, Validators.min(1)]],
-      attributes: this.fb.group({}),
       supplierId: this.fb.array([]),
-      active: [true]
+      active: [true],
+      // Campos para agregar atributos manualmente
+      attrKey: [''],
+      attrValue: ['']
     });
   }
 
@@ -175,45 +192,44 @@ export default class ProductsFormComponent extends BaseForm implements OnInit,Fo
 
   // ==================== DATA LOADING ====================
 
-async loadSelectOptions(): Promise<void> {
-  try {
-    const [categories, brands, suppliersResponse] = await Promise.all([
-      firstValueFrom(this.crud.http.get<any[]>(`${environment.apiUrl}/api/v1/categories`)),
-      firstValueFrom(this.crud.http.get<any[]>(`${environment.apiUrl}/api/v1/categories/brands`)),
-      firstValueFrom(this.crud.http.get<any>(`${environment.apiUrl}/api/v1/suppliers`))
-    ]);
+  async loadSelectOptions(): Promise<void> {
+    try {
+      const [categories, brands, suppliersResponse] = await Promise.all([
+        firstValueFrom(this.crud.http.get<any[]>(`${environment.apiUrl}/api/v1/categories`)),
+        firstValueFrom(this.crud.http.get<any[]>(`${environment.apiUrl}/api/v1/categories/brands`)),
+        firstValueFrom(this.crud.http.get<any>(`${environment.apiUrl}/api/v1/suppliers`))
+      ]);
 
-    this.categoryOptions = categories.map(cat => ({
-      value: cat.id.toString(),
-      label: cat.categoryName
-    }));
+      this.categoryOptions = categories.map(cat => ({
+        value: cat.id.toString(),
+        label: cat.categoryName
+      }));
 
-    this.brandOptions = brands.map(brand => ({
-      value: brand.id.toString(),
-      label: brand.brandName
-    }));
+      this.brandOptions = brands.map(brand => ({
+        value: brand.id.toString(),
+        label: brand.brandName
+      }));
 
-    const suppliersList = Array.isArray(suppliersResponse)
-      ? suppliersResponse
-      : (suppliersResponse.content || []);
+      const suppliersList = Array.isArray(suppliersResponse)
+        ? suppliersResponse
+        : (suppliersResponse.content || []);
 
-    this.supplierOptions = suppliersList.map(supplier => ({
-      value: supplier.id.toString(),
-      label: supplier.supplierName
-    }));
+      this.supplierOptions = suppliersList.map(supplier => ({
+        value: supplier.id.toString(),
+        label: supplier.supplierName
+      }));
 
-    this.initSupplierFormArrays(suppliersList.length);
+      this.initSupplierFormArrays(suppliersList.length);
 
-    // ✅ AGREGAR AQUÍ
-    this.productForm.markAsPristine();
-    this.stockForm.markAsPristine();
-    this.variantForm.markAsPristine();
+      this.productForm.markAsPristine();
+      this.stockForm.markAsPristine();
+      this.variantForm.markAsPristine();
 
-  } catch (error) {
-    console.error('Error cargando opciones:', error);
-    this.toast.error('Error al cargar las opciones');
+    } catch (error) {
+      console.error('Error cargando opciones:', error);
+      this.toast.error('Error al cargar las opciones');
+    }
   }
-}
 
   initSupplierFormArrays(count: number) {
     const stockSuppliers = this.stockForm.get('supplierId') as FormArray;
@@ -228,54 +244,53 @@ async loadSelectOptions(): Promise<void> {
     }
   }
 
-async loadProduct(): Promise<void> {
-  this.load = true;
-  try {
-    const product: Product = await firstValueFrom(this.crud.getId(this.id));
+  async loadProduct(): Promise<void> {
+    this.load = true;
+    try {
+      const product: Product = await firstValueFrom(this.crud.getId(this.id));
 
-    this.productForm.patchValue({
-      productName: product.productName,
-      productDesc: product.productDesc,
-      categoryId: product.categoryId?.toString(),
-      brandRef: product.brandRef?.toString(),
-      active: product.active
-    });
-
-    this.productType = product.hasVariants ? 'variant' : 'simple';
-
-    if (this.productType === 'simple') {
-      this.stockForm.patchValue({
-        sku: product.sku,
-        costPrice: Number(product.costPrice).toFixed(2),
-        salePrice: Number(product.salePrice).toFixed(2),
-        currentStock: product.currentStock,
-        minStock: product.minStock,
-        maxStock: product.maxStock
+      this.productForm.patchValue({
+        productName: product.productName,
+        productDesc: product.productDesc,
+        categoryId: product.categoryId?.toString(),
+        brandRef: product.brandRef?.toString(),
+        active: product.active
       });
 
-      if (product.supplierId) {
-        this.setSuppliers(this.stockForm, product.supplierId);
-      }
-    } else {
-      if (product.variants && product.variants.length > 0) {
-        this.variants = product.variants;
+      this.productType = product.hasVariants ? 'variant' : 'simple';
+
+      if (this.productType === 'simple') {
+        this.stockForm.patchValue({
+          sku: product.sku,
+          costPrice: Number(product.costPrice).toFixed(2),
+          salePrice: Number(product.salePrice).toFixed(2),
+          currentStock: product.currentStock,
+          minStock: product.minStock,
+          maxStock: product.maxStock
+        });
+
+        if (product.supplierId) {
+          this.setSuppliers(this.stockForm, product.supplierId);
+        }
+      } else {
+        if (product.variants && product.variants.length > 0) {
+          this.variants = product.variants;
+        }
+
+        await this.loadCategoryAttributes(product.categoryId);
       }
 
-      await this.loadCategoryAttributes(product.categoryId);
+      this.productForm.markAsPristine();
+      this.stockForm.markAsPristine();
+      this.variantForm.markAsPristine();
+
+    } catch (error) {
+      console.error('Error al cargar producto:', error);
+      this.toast.error('Error al cargar el producto');
+    } finally {
+      this.load = false;
     }
-
-    // ✅ AGREGAR AQUÍ
-    this.productForm.markAsPristine();
-    this.stockForm.markAsPristine();
-    this.variantForm.markAsPristine();
-
-  } catch (error) {
-    console.error('Error al cargar producto:', error);
-    this.toast.error('Error al cargar el producto');
-  } finally {
-    this.load = false;
   }
-}
 
   async loadCategoryAttributes(categoryId: number): Promise<void> {
     try {
@@ -287,30 +302,8 @@ async loadProduct(): Promise<void> {
 
       this.availableAttributes = attributes || [];
 
-      const attributesGroup = this.variantForm.get('attributes') as FormGroup;
-
-      // Limpiar controles existentes
-      Object.keys(attributesGroup.controls).forEach(key => {
-        attributesGroup.removeControl(key);
-      });
-
-      // Agregar nuevos controles SOLO si hay atributos
-      if (attributes && attributes.length > 0) {
-        attributes.forEach(attr => {
-          const validators = attr.required ? [Validators.required] : [];
-          attributesGroup.addControl(
-            attr.attributeName,
-            new FormControl('', validators)
-          );
-        });
-        console.log('Atributos cargados:', attributes);
-      } else {
-        console.log('No hay atributos para esta categoría - esto es válido');
-      }
-
     } catch (error) {
-      console.error('Error cargando atributos:', error);
-      this.availableAttributes = [];
+            this.availableAttributes = [];
     }
   }
 
@@ -339,6 +332,102 @@ async loadProduct(): Promise<void> {
     }
   }
 
+  // ==================== MANUAL ATTRIBUTES ====================
+
+  onAttributeKeyChange(event: any) {
+    const value = event.target.value;
+
+    if (value === '__custom__') {
+      this.showCustomAttrInput = true;
+      this.showCustomValueInput = false;
+      this.selectedAttributeValues = [];
+      this.attrValueControl.setValue('');
+      this.customAttrKeyControl.setValue('');
+    } else if (value) {
+      this.showCustomAttrInput = false;
+      this.showCustomValueInput = false;
+      this.customAttrValueControl.setValue('');
+
+      // Buscar los valores disponibles para este atributo
+      const attribute = this.availableAttributes.find(attr => attr.attributeName === value);
+      if (attribute) {
+        this.selectedAttributeValues = attribute.attributeValues;
+      } else {
+        this.selectedAttributeValues = [];
+      }
+
+      this.attrValueControl.setValue('');
+    } else {
+      this.showCustomAttrInput = false;
+      this.showCustomValueInput = false;
+      this.selectedAttributeValues = [];
+    }
+  }
+
+  onAttributeValueChange(event: any) {
+    const value = event.target.value;
+
+    if (value === '__custom__') {
+      this.showCustomValueInput = true;
+      this.customAttrValueControl.setValue('');
+    } else {
+      this.showCustomValueInput = false;
+    }
+  }
+
+  addManualAttribute() {
+    let key = '';
+    let value = '';
+
+    // Determinar el key
+    if (this.showCustomAttrInput) {
+      key = this.customAttrKeyControl.value?.trim() || '';
+    } else if (this.availableAttributes.length > 0) {
+      key = this.attrKeyControl.value?.trim() || '';
+    } else {
+      key = this.variantForm.get('attrKey')?.value?.trim() || '';
+    }
+
+    // Determinar el value
+    if (this.showCustomValueInput) {
+      value = this.customAttrValueControl.value?.trim() || '';
+    } else if (this.selectedAttributeValues.length > 0) {
+      const selectedValue = this.attrValueControl.value;
+      value = selectedValue && selectedValue !== '__custom__' ? selectedValue.trim() : '';
+    } else {
+      value = this.variantForm.get('attrValue')?.value?.trim() || '';
+    }
+
+    if (!key || !value) {
+      this.toast.error('Ingresa tanto el nombre como el valor del atributo');
+      return;
+    }
+
+    const exists = this.manualAttributes.some(attr => attr.key.toLowerCase() === key.toLowerCase());
+    if (exists) {
+      this.toast.error('Ya existe un atributo con ese nombre');
+      return;
+    }
+
+    this.manualAttributes.push({ key, value });
+
+    // Resetear controles
+    this.attrKeyControl.setValue('');
+    this.attrValueControl.setValue('');
+    this.customAttrKeyControl.setValue('');
+    this.customAttrValueControl.setValue('');
+    this.variantForm.patchValue({ attrKey: '', attrValue: '' });
+    this.selectedAttributeValues = [];
+    this.showCustomAttrInput = false;
+    this.showCustomValueInput = false;
+
+    this.toast.success('Atributo agregado');
+  }
+
+  removeManualAttribute(index: number) {
+    this.manualAttributes.splice(index, 1);
+  }
+
   // ==================== SKU GENERATION ====================
 
   generateSKU() {
@@ -354,10 +443,8 @@ async loadProduct(): Promise<void> {
     const brand = this.brandOptions.find(b => b.value === this.productForm.value.brandRef)?.label || 'UNK';
     const timestamp = Date.now().toString().slice(-6);
 
-    const attributesGroup = this.variantForm.get('attributes') as FormGroup;
-    const attrValues = Object.values(attributesGroup.value)
-      .filter(v => v)
-      .map((v: any) => v.substring(0, 3).toUpperCase())
+    const attrValues = this.manualAttributes
+      .map(attr => attr.value.substring(0, 3).toUpperCase())
       .join('-');
 
     const sku = `${brand.substring(0, 3).toUpperCase()}-${attrValues || 'VAR'}-${timestamp}`;
@@ -367,7 +454,6 @@ async loadProduct(): Promise<void> {
   // ==================== VARIANT MANAGEMENT ====================
 
   addOrUpdateVariant() {
-    // Validar campos base
     const baseFieldsValid =
       this.variantForm.get('sku')?.valid &&
       this.variantForm.get('variantName')?.valid &&
@@ -382,21 +468,6 @@ async loadProduct(): Promise<void> {
       return;
     }
 
-    // Validar atributos SOLO si existen y son requeridos
-    const attributesGroup = this.variantForm.get('attributes') as FormGroup;
-    if (attributesGroup) {
-      const requiredAttributes = this.availableAttributes.filter(attr => attr.required);
-      const missingRequired = requiredAttributes.some(attr => {
-        const control = attributesGroup.get(attr.attributeName);
-        return !control || !control.value || control.value.trim() === '';
-      });
-
-      if (missingRequired) {
-        this.toast.error('Por favor completa todos los atributos requeridos');
-        return;
-      }
-    }
-
     const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
     const selectedSuppliers = this.supplierOptions
       .filter((_, index) => supplierFormArray.at(index).value)
@@ -407,16 +478,11 @@ async loadProduct(): Promise<void> {
       return;
     }
 
-    // Construir objeto de atributos (puede estar vacío)
+    // Construir objeto de atributos desde manualAttributes
     const attributes: { [key: string]: string } = {};
-    if (attributesGroup && Object.keys(attributesGroup.controls).length > 0) {
-      Object.keys(attributesGroup.controls).forEach(key => {
-        const value = attributesGroup.get(key)?.value;
-        if (value && value.trim() !== '') {
-          attributes[key] = value.trim();
-        }
-      });
-    }
+    this.manualAttributes.forEach(attr => {
+      attributes[attr.key] = attr.value;
+    });
 
     const variant: ProductVariant = {
       id: this.editingVariantIndex >= 0 ? this.variants[this.editingVariantIndex].id : null,
@@ -434,7 +500,6 @@ async loadProduct(): Promise<void> {
 
     console.log('Variante a agregar:', variant);
 
-    // Validar SKU único
     const isDuplicate = this.variants.some((v, idx) =>
       v.sku === variant.sku && idx !== this.editingVariantIndex
     );
@@ -471,13 +536,14 @@ async loadProduct(): Promise<void> {
       active: variant.active
     });
 
-    // Setear atributos (si existen)
-    const attributesGroup = this.variantForm.get('attributes') as FormGroup;
+    // Cargar atributos manuales
+    this.manualAttributes = [];
     if (variant.attributes) {
       Object.keys(variant.attributes).forEach(key => {
-        if (attributesGroup.contains(key)) {
-          attributesGroup.get(key)?.setValue(variant.attributes[key]);
-        }
+        this.manualAttributes.push({
+          key: key,
+          value: variant.attributes[key]
+        });
       });
     }
 
@@ -505,26 +571,27 @@ async loadProduct(): Promise<void> {
       currentStock: 0,
       minStock: 0,
       maxStock: 100,
-      active: true
+      active: true,
+      attrKey: '',
+      attrValue: ''
     });
 
-    // Resetear atributos SOLO si existen
-    const attributesGroup = this.variantForm.get('attributes') as FormGroup;
-    if (attributesGroup && Object.keys(attributesGroup.controls).length > 0) {
-      Object.keys(attributesGroup.controls).forEach(key => {
-        attributesGroup.get(key)?.setValue('');
-      });
-    }
+    this.manualAttributes = [];
+
+    // Resetear controles de atributos
+    this.attrKeyControl.setValue('');
+    this.attrValueControl.setValue('');
+    this.customAttrKeyControl.setValue('');
+    this.customAttrValueControl.setValue('');
+    this.selectedAttributeValues = [];
+    this.showCustomAttrInput = false;
+    this.showCustomValueInput = false;
 
     const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
     supplierFormArray.controls.forEach(control => control.setValue(false));
   }
 
   // ==================== HELPERS ====================
-
-  get variantAttributesForm(): FormGroup {
-    return this.variantForm.get('attributes') as FormGroup;
-  }
 
   setSuppliers(form: FormGroup, supplierId: number[]) {
     const supplierFormArray = form.get('supplierId') as FormArray;
@@ -580,129 +647,109 @@ async loadProduct(): Promise<void> {
     }
   }
 
- async submit() {
-  if (!this.canSubmit()) {
-    this.toast.error('Por favor completa todos los campos requeridos');
-    return;
-  }
+  async submit() {
+    if (!this.canSubmit()) {
+      this.toast.error('Por favor completa todos los campos requeridos');
+      return;
+    }
 
-  this.load = true;
-  this.isSaving = true;
+    this.load = true;
+    this.isSaving = true;
 
-  try {
-    let product: Product;
+    try {
+      let product: Product;
 
-    if (this.productType === 'simple') {
-      const supplierFormArray = this.stockForm.get('supplierId') as FormArray;
-      const selectedSuppliers = this.supplierOptions
-        .filter((_, index) => supplierFormArray.at(index).value)
-        .map(option => Number(option.value));
+      if (this.productType === 'simple') {
+        const supplierFormArray = this.stockForm.get('supplierId') as FormArray;
+        const selectedSuppliers = this.supplierOptions
+          .filter((_, index) => supplierFormArray.at(index).value)
+          .map(option => Number(option.value));
 
-      product = {
-        id: this.id || null,
-        productName: this.productForm.value.productName.trim(),
-        productDesc: this.productForm.value.productDesc.trim(),
-        categoryId: Number(this.productForm.value.categoryId),
-        brandRef: Number(this.productForm.value.brandRef),
-        hasVariants: false,
-        sku: this.stockForm.value.sku.trim(),
-        costPrice: Number(this.stockForm.value.costPrice),
-        salePrice: Number(this.stockForm.value.salePrice),
-        currentStock: Number(this.stockForm.value.currentStock),
-        minStock: Number(this.stockForm.value.minStock),
-        maxStock: Number(this.stockForm.value.maxStock),
-        supplierId: selectedSuppliers,
-        active: this.productForm.value.active
-      };
-    } else {
-      if (!this.variants || this.variants.length === 0) {
-        this.toast.error('Debes agregar al menos una variante');
-        this.load = false;
-        this.isSaving = false;
-        return;
+        product = {
+          id: this.id || null,
+          productName: this.productForm.value.productName.trim(),
+          productDesc: this.productForm.value.productDesc.trim(),
+          categoryId: Number(this.productForm.value.categoryId),
+          brandRef: Number(this.productForm.value.brandRef),
+          hasVariants: false,
+          sku: this.stockForm.value.sku.trim(),
+          costPrice: Number(this.stockForm.value.costPrice),
+          salePrice: Number(this.stockForm.value.salePrice),
+          currentStock: Number(this.stockForm.value.currentStock),
+          minStock: Number(this.stockForm.value.minStock),
+          maxStock: Number(this.stockForm.value.maxStock),
+          supplierId: selectedSuppliers,
+          active: this.productForm.value.active
+        };
+      } else {
+        if (!this.variants || this.variants.length === 0) {
+          this.toast.error('Debes agregar al menos una variante');
+          this.load = false;
+          this.isSaving = false;
+          return;
+        }
+
+        const validatedVariants = this.variants.map(variant => ({
+          id: variant.id || null,
+          sku: variant.sku.trim(),
+          variantName: variant.variantName.trim(),
+          costPrice: Number(variant.costPrice),
+          salePrice: Number(variant.salePrice),
+          currentStock: Number(variant.currentStock),
+          minStock: Number(variant.minStock),
+          maxStock: Number(variant.maxStock),
+          attributes: variant.attributes || {},
+          supplierId: variant.supplierId || [],
+          active: variant.active !== undefined ? variant.active : true
+        }));
+
+        product = {
+          id: this.id || null,
+          productName: this.productForm.value.productName.trim(),
+          productDesc: this.productForm.value.productDesc.trim(),
+          categoryId: Number(this.productForm.value.categoryId),
+          brandRef: Number(this.productForm.value.brandRef),
+          hasVariants: true,
+          active: this.productForm.value.active,
+          variants: validatedVariants
+        };
       }
 
-      const invalidVariants = this.variants.filter(v =>
-        !v.sku || !v.variantName || !v.costPrice || !v.salePrice ||
-        v.currentStock === undefined || !v.supplierId || v.supplierId.length === 0
-      );
+      console.log('Producto a enviar:', JSON.stringify(product, null, 2));
 
-      if (invalidVariants.length > 0) {
-        this.toast.error('Algunas variantes tienen datos incompletos');
-        this.load = false;
-        this.isSaving = false;
-        return;
+      if (this.mode === 'edit') {
+        const response: any = await firstValueFrom(this.crud.updateId(this.id, product));
+        this.toast.success(response.message || 'Producto actualizado correctamente');
+      } else {
+        const response: any = await firstValueFrom(this.crud.save(product));
+        this.toast.success(response.message || 'Producto creado correctamente');
       }
 
-      const validatedVariants = this.variants.map(variant => ({
-        id: variant.id || null,
-        sku: variant.sku.trim(),
-        variantName: variant.variantName.trim(),
-        costPrice: Number(variant.costPrice),
-        salePrice: Number(variant.salePrice),
-        currentStock: Number(variant.currentStock),
-        minStock: Number(variant.minStock),
-        maxStock: Number(variant.maxStock),
-        attributes: variant.attributes || {},
-        supplierId: variant.supplierId || [],
-        active: variant.active !== undefined ? variant.active : true
-      }));
+      this.productForm.markAsPristine();
+      this.stockForm.markAsPristine();
+      this.variantForm.markAsPristine();
 
-      product = {
-        id: this.id || null,
-        productName: this.productForm.value.productName.trim(),
-        productDesc: this.productForm.value.productDesc.trim(),
-        categoryId: Number(this.productForm.value.categoryId),
-        brandRef: Number(this.productForm.value.brandRef),
-        hasVariants: true,
-        active: this.productForm.value.active,
-        variants: validatedVariants
-      };
+      this.router.navigate(['dashboard/products']);
+
+    } catch (error: any) {
+      console.error('Error completo:', error);
+
+      let errorMessage = 'Error al guardar el producto';
+
+      if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.error?.error) {
+        errorMessage = error.error.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      this.toast.error(errorMessage);
+    } finally {
+      this.load = false;
+      this.isSaving = false;
     }
-
-    console.log('Producto a enviar:', JSON.stringify(product, null, 2));
-
-    if (this.mode === 'edit') {
-      const response: any = await firstValueFrom(this.crud.updateId(this.id, product));
-      this.toast.success(response.message || 'Producto actualizado correctamente');
-    } else {
-      const response: any = await firstValueFrom(this.crud.save(product));
-      this.toast.success(response.message || 'Producto creado correctamente');
-    }
-
-    // ✅ AGREGAR ESTAS 3 LÍNEAS AQUÍ - Antes de navegar
-    this.productForm.markAsPristine();
-    this.stockForm.markAsPristine();
-    this.variantForm.markAsPristine();
-
-    this.router.navigate(['dashboard/products']);
-
-  } catch (error: any) {
-    console.error('Error completo:', error);
-    console.error('Error response:', error.error);
-    console.error('Error status:', error.status);
-
-    let errorMessage = 'Error al guardar el producto';
-
-    if (error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error.error?.error) {
-      errorMessage = error.error.error;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-
-    if (error.error?.errors) {
-      console.error('Errores de validación:', error.error.errors);
-      errorMessage += ' - Revisa los datos ingresados';
-    }
-
-    this.toast.error(errorMessage);
-  } finally {
-    this.load = false;
-    this.isSaving = false;
   }
-}
 
   // ==================== NAVIGATION ====================
 
@@ -718,10 +765,10 @@ async loadProduct(): Promise<void> {
     this.router.navigate(['dashboard/products']);
   }
 
-isDirty(): boolean {
-  const formsAreDirty = this.productForm.dirty || this.stockForm.dirty || this.variantForm.dirty;
-  const hasUnsavedVariants = this.productType === 'variant' && this.editingVariantIndex >= 0;
+  isDirty(): boolean {
+    const formsAreDirty = this.productForm.dirty || this.stockForm.dirty || this.variantForm.dirty;
+    const hasUnsavedVariants = this.productType === 'variant' && this.editingVariantIndex >= 0;
 
-  return formsAreDirty || hasUnsavedVariants;
-}
+    return formsAreDirty || hasUnsavedVariants;
+  }
 }
