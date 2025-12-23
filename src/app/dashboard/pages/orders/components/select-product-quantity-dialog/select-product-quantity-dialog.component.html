@@ -1,17 +1,14 @@
 <p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
-
 <div class="w-full p-3 border-b">
 <div class="w-full grid grid-cols-1 sm:grid-cols-1">
-
   @if (product) {
     <h1 class="text-center">
       <p>
-        <b>Q {{ product.salePrice.toFixed(2) }}</b>
+        <b>Q {{ product?.salePrice?.toFixed(2) ?? '0.00' }}</b>
       </p>
     </h1>
     <br>
   }
-
   <app-input
     [form]="form"
     name="quantity"
@@ -25,8 +22,6 @@
     [maxlength]="5">
   </app-input>
 </div>
-
-
   <div class="flex justify-center align-middle">
     <button (click)="close()" [disabled]="load" class="btn-danger h-12 w-48 font-bold">
       Cancelar
@@ -35,6 +30,4 @@
       Continuar
     </button>
   </div>
-
-
 </div>

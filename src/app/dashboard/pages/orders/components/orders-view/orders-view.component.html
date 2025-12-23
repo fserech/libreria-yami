@@ -61,16 +61,12 @@
           <h3 class="text-sm text-gray-500 dark:text-gray-400 text-center">
             @if (order?.status === 'PENDING') {
               <p class="text-blue-500">Pendiente</p>
-              <!-- <ng-icon class="btn-back-icon text-blue-500 text-center" size="20" name="bootstrapClockFill"></ng-icon> -->
             }
             @if (order?.status === 'FINALIZED') {
               <p class="text-emerald-500">Finalizado</p>
-              <!-- <ng-icon class="btn-back-icon text-emerald-500 text-center" size="20" name="bootstrapCheckCircleFill"></ng-icon> -->
             }
             @if (order?.status === 'CANCEL') {
               <p class="text-red-500">Anulado</p>
-
-              <!-- <ng-icon class="btn-back-icon text-red-500 text-center" size="20" name="matCancelOutline"></ng-icon> -->
             }
           </h3>
         </div>
@@ -97,43 +93,33 @@
   </div>
 
   <div class="bg-gray-100 dark:bg-slate-800"
-    class="w-full m-0 grid grid-cols-1 sm:grid-cols-1 p-0 rounded-lg h-80 overflow-y-scroll scrollbar-thumb-rounded scrollbar-track-rounded">
-
+    class="w-full m-0 grid grid-cols-1 sm:grid-cols-1 p-0 rounded-lg h-80 overflow-y-scroll scrollbar-thumb-rounded scrollbar-track-rounded"></div>
     <ul class="p-1 w-full text-gray-500 dark:text-gray-500">
-      @for(item of products; track $index) {
-        <li [ngClass]="{'bg-gray-100 dark:bg-slate-950 text-gray-500': $odd }"
-            class="flex py-4 rounded-lg justify-between p-4 mt-1">
-          <div class="overflow-hidden float-start">
-            <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark'}"
-              class="text-md font-bold">{{item.product.productName}}</p>
+  @for(item of products; track $index) {
+    <li [ngClass]="{'bg-gray-100 dark:bg-slate-950 text-gray-500': $odd }"
+        class="flex py-4 rounded-lg justify-between p-4 mt-1">
+      <div class="overflow-hidden float-start">
+        <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark'}"
+          class="text-md font-bold">{{item?.product?.productName}}</p>
 
-            <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
-              class="text-sm truncate">
-              <b>Q </b><b class="text-sm font-bold text-blue-500">{{ formatCurrency(item.product.costPrice) }}</b> x <b class="text-blue-500">{{ item.quantity }}</b><b> Unidades</b>
-            </p>
+        <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
+          class="text-sm truncate">
+          <b>Q </b><b class="text-sm font-bold text-blue-500">{{ formatCurrency(item?.product?.costPrice) }}</b> x <b class="text-blue-500">{{ item?.quantity }}</b><b> Unidades</b>
+        </p>
 
-            <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
-              class="text-sm truncate">
-              <b class="text-sm font-bold text-emerald-500">Subtotal: Q {{ formatCurrency(item.subtotal)  }}</b>
-            </p>
+        <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
+          class="text-sm truncate">
+          <b class="text-sm font-bold text-emerald-500">Subtotal: Q {{ formatCurrency(item?.subtotal) }}</b>
+        </p>
 
-          </div>
+      </div>
+    </li>
+  }@empty {
+    <li class="flex py-4 first:pt-0 last:pb-0">
+      <div class="ml-3 overflow-hidden">
+        <p>No hay productos seleccionados</p>
+      </div>
+    </li>
 
-          <!-- <div class="float-end flex justify-between align-middle m-2">
-            <h1>
-              <p class="font-bold text-xs">Q {{ formatCurrency(item.subtotal) }}</p>
-            </h1>
-          </div> -->
-        </li>
-      }@empty {
-        <li class="flex py-4 first:pt-0 last:pb-0">
-          <div class="ml-3 overflow-hidden">
-            <p>No hay productos seleccionados</p>
-          </div>
-        </li>
-
-        }
-    </ul>
-  </div>
-
-</div>
+    }
+</ul>

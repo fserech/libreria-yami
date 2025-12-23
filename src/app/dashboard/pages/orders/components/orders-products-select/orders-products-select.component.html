@@ -88,11 +88,11 @@
               <td class="pb-2 pt-2">
                 <h1 class="w-[100rem]">
                   <p class="font-normal">
-                    <b class="text-gray-600 dark:text-gray-400">{{ product.productName }}</b>
+                    <b class="text-gray-600 dark:text-gray-400">{{ product?.productName }}</b>
                   </p>
-                  <p class="text-xs text-wrap"><b class="text-sm font-normal text-wrap">{{ product.productDesc }}</b></p>
-                  <p class="font-normal"><b>Q {{ product.salePrice.toFixed(2) }}</b></p>
-                  <p class="font-normal text-sm"><b>ID:</b> {{ product.id }}</p>
+                  <p class="text-xs text-wrap"><b class="text-sm font-normal text-wrap">{{ product?.productDesc }}</b></p>
+                  <p class="font-normal"><b>Q {{ product?.salePrice?.toFixed(2) ?? '0.00' }}</b></p>
+                  <p class="font-normal text-sm"><b>ID:</b> {{ product?.id }}</p>
                 </h1>
               </td>
 
