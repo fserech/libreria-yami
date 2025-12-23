@@ -190,18 +190,17 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
   introSearch() {
     const name: any = this.form.controls['name'].value;
     if (name && name !== '') {
+        this.page = 1;
       this.filter(name);
     }
   }
-
-  filter(name?: string, id?: number, initPrice?: number, endPrice?: number, active?: boolean, hasVariants?: boolean) {
+filter(name?: string, id?: number, initPrice?: number, endPrice?: number, active?: boolean, hasVariants?: boolean) {
   let filter = '';
 
   if (id) {
     filter = filter.concat(`&id=${id}`);
   }
   if (name) {
-    // ⭐ CAMBIO IMPORTANTE: usar 'search' en lugar de 'productName'
     filter = filter.concat(`&search=${encodeURIComponent(name)}`);
   }
   if (initPrice !== undefined && initPrice !== null && endPrice !== undefined && endPrice !== null) {
@@ -210,11 +209,11 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
   if (active !== undefined && active !== null) {
     filter = filter.concat(`&active=${active}`);
   }
-  // ⭐ AGREGAR: filtro de hasVariants
   if (hasVariants !== undefined && hasVariants !== null) {
     filter = filter.concat(`&hasVariants=${hasVariants}`);
   }
 
+  this.page = 1;
   this.filters = filter;
   this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
 }
