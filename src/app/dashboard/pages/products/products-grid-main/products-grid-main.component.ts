@@ -12,7 +12,9 @@ import {
   matArrowDownwardOutline,
   matArrowUpwardOutline,
   matDeleteOutline,
-  matEditOutline
+  matEditOutline,
+  matKeyboardArrowDownOutline,
+  matKeyboardArrowUpOutline
 } from '@ng-icons/material-icons/outline';
 import { SearchInputTextComponent } from '../../../../shared/components/search-input-text/search-input-text.component';
 import {
@@ -58,6 +60,8 @@ import { ACTIONS_GRID_MAIN_ADMIN } from '../../../../shared/constants/actions-me
       matArrowUpwardOutline,
       matDeleteOutline,
       matEditOutline,
+      matKeyboardArrowDownOutline,
+      matKeyboardArrowUpOutline,
       bootstrapChevronLeft,
       bootstrapChevronRight,
       bootstrapChevronBarLeft,
@@ -71,6 +75,9 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
   actionsGrid: OptionsChatBubble[] = ACTIONS_GRID_MAIN_ADMIN;
   brandMap: Map<number, string> = new Map();
 
+  // Nuevo: Map para controlar qué productos están expandidos
+  expandedProducts: Set<number> = new Set();
+
   constructor(
     private crud: CrudService,
     private toast: ToastService,
@@ -83,7 +90,6 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     this.sortConfig.sortBy = 'productName';
     this.sortConfig.sortOrder = 'asc';
 
-    // Configurar baseUrl igual que categorías
     this.crud.baseUrl = URL_PRODUCTS;
 
     this.form = new FormGroup({
@@ -96,15 +102,11 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
 
   async ngOnInit(): Promise<void> {
     await this.loadBrands();
-    // Usar el método genérico getPageItems igual que categorías
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize);
   }
 
   // ==================== CARGA DE DATOS ====================
 
-  /**
-   * Carga las marcas para mostrar en la tabla
-   */
   async loadBrands() {
     try {
       const brands = await firstValueFrom(
@@ -121,9 +123,6 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
 
   // ==================== UTILIDADES ====================
 
-  /**
-   * Obtiene el nombre de la marca por ID
-   */
   getBrandNames(brandId: number | number[]): string {
     if (!brandId) return 'Sin marca';
 
@@ -135,11 +134,26 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     return names.length > 0 ? names.join(', ') : 'Sin marca';
   }
 
-  // ==================== FILTROS Y BÚSQUEDA ====================
+  /**
+   * NUEVO: Toggle para expandir/colapsar variantes
+   */
+  toggleProductExpansion(productId: number) {
+    if (this.expandedProducts.has(productId)) {
+      this.expandedProducts.delete(productId);
+    } else {
+      this.expandedProducts.add(productId);
+    }
+  }
 
   /**
-   * Abre el diálogo de filtros avanzados
+   * NUEVO: Verifica si un producto está expandido
    */
+  isProductExpanded(productId: number): boolean {
+    return this.expandedProducts.has(productId);
+  }
+
+  // ==================== FILTROS Y BÚSQUEDA ====================
+
   async openDialog() {
     const darkmode = localStorage.getItem('theme');
     const dialogRef = this.dialog.open(ProductsFiltersDialogComponent, {
@@ -155,10 +169,10 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     });
 
     await firstValueFrom(dialogRef.closed)
-      .then((result: { name: string; id: number; initPrice: number; endPrice: number; active: boolean }) => {
+      .then((result: { name: string; id: number; initPrice: number; endPrice: number; active: boolean; hasVariants: boolean }) => {
         if (result) {
-          if (result.name || result.id || result.initPrice || result.endPrice || result.active !== undefined) {
-            this.filter(result.name, result.id, result.initPrice, result.endPrice, result.active);
+          if (result.name || result.id || result.initPrice || result.endPrice || result.active !== undefined || result.hasVariants !== undefined) {
+            this.filter(result.name, result.id, result.initPrice, result.endPrice, result.active, result.hasVariants);
           }
         }
       })
@@ -167,17 +181,12 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
       });
   }
 
-  /**
-   * Reinicia la página y filtros - igual que categorías
-   */
   initPage() {
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, 1, 10);
     this.form.reset();
+    this.expandedProducts.clear(); // Limpiar expansiones
   }
 
-  /**
-   * Búsqueda al presionar Enter
-   */
   introSearch() {
     const name: any = this.form.controls['name'].value;
     if (name && name !== '') {
@@ -185,34 +194,33 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     }
   }
 
-  /**
-   * Aplica filtros de búsqueda - igual que categorías
-   */
-  filter(name?: string, id?: number, initPrice?: number, endPrice?: number, active?: boolean) {
-    let filter = '';
+  filter(name?: string, id?: number, initPrice?: number, endPrice?: number, active?: boolean, hasVariants?: boolean) {
+  let filter = '';
 
-    if (id) {
-      filter = filter.concat(`&id=${id}`);
-    }
-    if (name) {
-      filter = filter.concat(`&productName=${name}`);
-    }
-    if (initPrice !== undefined && endPrice !== undefined) {
-      filter = filter.concat(`&initPrice=${initPrice}&endPrice=${endPrice}`);
-    }
-    if (active !== undefined) {
-      filter = filter.concat(`&active=${active}`);
-    }
-
-    this.filters = filter;
-    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
+  if (id) {
+    filter = filter.concat(`&id=${id}`);
   }
+  if (name) {
+    // ⭐ CAMBIO IMPORTANTE: usar 'search' en lugar de 'productName'
+    filter = filter.concat(`&search=${encodeURIComponent(name)}`);
+  }
+  if (initPrice !== undefined && initPrice !== null && endPrice !== undefined && endPrice !== null) {
+    filter = filter.concat(`&initPrice=${initPrice}&endPrice=${endPrice}`);
+  }
+  if (active !== undefined && active !== null) {
+    filter = filter.concat(`&active=${active}`);
+  }
+  // ⭐ AGREGAR: filtro de hasVariants
+  if (hasVariants !== undefined && hasVariants !== null) {
+    filter = filter.concat(`&hasVariants=${hasVariants}`);
+  }
+
+  this.filters = filter;
+  this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
+}
 
   // ==================== ORDENAMIENTO ====================
 
-  /**
-   * Cambia el orden de la tabla - igual que categorías
-   */
   changeSortOrderBy(field: string) {
     if (field === this.sortConfig.sortBy) {
       if (this.sortConfig.sortOrder === 'asc') {
@@ -230,9 +238,6 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
 
   // ==================== ACCIONES ====================
 
-  /**
-   * Selecciona una opción del menú de acciones
-   */
   selectOption(option: OptionsChatBubble) {
     if (option.action === 'delete') {
       this.deleteId(option.id);
@@ -242,23 +247,14 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     }
   }
 
-  /**
-   * Navega a la página de edición
-   */
   edit(id: number) {
     this.router.navigate([`/dashboard/products/detail/edit/${id}`]);
   }
 
-  /**
-   * Navega a la página de creación
-   */
   add() {
     this.router.navigate([`/dashboard/products/detail/new`]);
   }
 
-  /**
-   * Obtiene los precios mínimo y máximo de las variantes
-   */
   getMinMaxPrices(variants: any[]): { min: number; max: number } {
     if (!variants || variants.length === 0) {
       return { min: 0, max: 0 };

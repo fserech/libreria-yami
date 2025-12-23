@@ -159,11 +159,12 @@
         </tr>
 
       </thead>
-<!-- ACTUALIZACIÓN DEL TBODY - Reemplaza el tbody existente -->
 
+<!-- TBODY CON VARIANTES EXPANDIBLES - MANTENIENDO ESTILOS ORIGINALES -->
 <tbody>
   @for (product of ItemsList; track $index) {
     @defer {
+      <!-- FILA PRINCIPAL DEL PRODUCTO -->
       <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
 
         <!-- COLUMNA ID (Desktop) -->
@@ -185,11 +186,18 @@
               {{ product.productDesc }}
             </p>
 
-            <!-- Mostrar tipo de producto -->
+            <!-- Mostrar tipo de producto con botón de expansión -->
             @if (product.hasVariants) {
-              <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+              <button
+                (click)="toggleProductExpansion(product.id)"
+                class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors cursor-pointer">
+                @if (isProductExpanded(product.id)) {
+                  <ng-icon size="14" name="matKeyboardArrowUpOutline" class="mr-1"></ng-icon>
+                } @else {
+                  <ng-icon size="14" name="matKeyboardArrowDownOutline" class="mr-1"></ng-icon>
+                }
                 Con variantes ({{ product.variants?.length || 0 }})
-              </span>
+              </button>
             } @else {
               <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                 Producto simple
@@ -206,10 +214,8 @@
         <!-- COLUMNA PRECIO (Desktop) -->
         <td class="hidden sm:table-cell">
           @if (!product.hasVariants) {
-            <!-- Producto simple: mostrar precio directo -->
             <p class="font-semibold">Q {{ product.salePrice?.toFixed(2) || '0.00' }}</p>
           } @else {
-            <!-- Producto con variantes: mostrar rango de precios -->
             @if (product.variants && product.variants.length > 0) {
               @if (getMinMaxPrices(product.variants).min === getMinMaxPrices(product.variants).max) {
                 <p class="font-semibold">Q {{ getMinMaxPrices(product.variants).min.toFixed(2) }}</p>
@@ -230,7 +236,6 @@
         <td class="content-sm">
           <div class="w-full flex justify-between p-1">
             <div>
-              <!-- Estado e ID -->
               <p class="font-bold text-gray-400 mb-1">
                 @if (product.active) {
                   <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-400"></span>
@@ -241,27 +246,30 @@
                 <b class="ml-2 font-semibold text-xs text-gray-400">ID: {{ product.id }}</b>
               </p>
 
-              <!-- Nombre -->
               <p class="font-bold text-gray-800 dark:text-gray-200">
                 {{ product.productName }}
               </p>
 
-              <!-- Descripción -->
               <p class="text-xs text-wrap text-gray-600 dark:text-gray-400">
                 {{ product.productDesc }}
               </p>
 
-              <!-- Marca -->
               <p class="text-xs text-wrap text-gray-500 dark:text-gray-400">
                 {{ getBrandNames(product.brandRef) }}
               </p>
 
-              <!-- Tipo de producto y precio -->
               <div class="mt-2">
                 @if (product.hasVariants) {
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 mr-2">
+                  <button
+                    (click)="toggleProductExpansion(product.id)"
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 mr-2">
+                    @if (isProductExpanded(product.id)) {
+                      <ng-icon size="14" name="matKeyboardArrowUpOutline" class="mr-1"></ng-icon>
+                    } @else {
+                      <ng-icon size="14" name="matKeyboardArrowDownOutline" class="mr-1"></ng-icon>
+                    }
                     {{ product.variants?.length || 0 }} variantes
-                  </span>
+                  </button>
                   @if (product.variants && product.variants.length > 0) {
                     <b class="bg-gray-100 dark:bg-slate-800 dark:text-gray-300 p-1 rounded">
                       Q {{ getMinMaxPrices(product.variants).min.toFixed(2) }} - Q {{ getMinMaxPrices(product.variants).max.toFixed(2) }}
@@ -275,7 +283,6 @@
               </div>
             </div>
 
-            <!-- Menú de acciones (Mobile) -->
             @if (user.role === 'ROLE_ADMIN') {
               <app-chat-bubble
                 [id]="product.id"
@@ -300,8 +307,109 @@
           </td>
         }
       </tr>
+
+      <!-- FILAS DE VARIANTES EXPANDIDAS - MISMO ESTILO QUE PRODUCTO PRINCIPAL -->
+      @if (product.hasVariants && isProductExpanded(product.id) && product.variants?.length > 0) {
+        @for (variant of product.variants; track variant.id) {
+          <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
+
+            <!-- COLUMNA ID (Desktop) -->
+            <td class="hidden sm:table-cell pl-8">
+              <span class="relative inline-flex rounded-full h-2 w-2 mr-2 bg-purple-400"></span>
+              {{ variant.id }}
+            </td>
+
+            <!-- COLUMNA NOMBRE Y DESCRIPCIÓN (Desktop) -->
+            <td class="hidden sm:table-cell pl-8">
+              <div>
+                <p class="font-bold text-sm">↳ {{ variant.variantName || 'Variante sin nombre' }}</p>
+                @if (variant.variantDesc) {
+                  <p class="text-xs text-wrap text-gray-500 dark:text-gray-400">
+                    {{ variant.variantDesc }}
+                  </p>
+                }
+                <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                  Variante de: {{ product.productName }}
+                </span>
+              </div>
+            </td>
+
+            <!-- COLUMNA MARCA (Desktop) - Heredada del producto padre -->
+            <td class="hidden sm:table-cell">
+              <p class="text-sm text-gray-500">{{ getBrandNames(product.brandRef) }}</p>
+            </td>
+
+            <!-- COLUMNA PRECIO (Desktop) -->
+            <td class="hidden sm:table-cell">
+              <p class="font-semibold">Q {{ variant.salePrice?.toFixed(2) || '0.00' }}</p>
+              @if (variant.stock !== undefined) {
+                <p class="text-xs text-gray-500">Stock: {{ variant.stock }}</p>
+              }
+            </td>
+
+            <!-- VERSIÓN MOBILE -->
+            <td class="content-sm">
+              <div class="w-full flex justify-between p-1">
+                <div class="pl-4">
+                  <p class="font-bold text-gray-400 mb-1">
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-purple-400"></span>
+                    <b class="ml-2 font-semibold text-xs text-gray-400">ID: {{ variant.id }}</b>
+                  </p>
+
+                  <p class="font-bold text-gray-800 dark:text-gray-200">
+                    ↳ {{ variant.variantName || 'Variante sin nombre' }}
+                  </p>
+
+                  @if (variant.variantDesc) {
+                    <p class="text-xs text-wrap text-gray-600 dark:text-gray-400">
+                      {{ variant.variantDesc }}
+                    </p>
+                  }
+
+                  <!-- Marca heredada (Mobile) -->
+                  <p class="text-xs text-wrap text-gray-500 dark:text-gray-400">
+                    Marca: {{ getBrandNames(product.brandRef) }}
+                  </p>
+
+                  <p class="text-xs text-wrap text-gray-500 dark:text-gray-400">
+                    Variante de: {{ product.productName }}
+                  </p>
+
+                  <div class="mt-2">
+                    <b class="bg-gray-100 dark:bg-slate-800 dark:text-gray-300 p-1 rounded">
+                      Q {{ variant.salePrice?.toFixed(2) || '0.00' }}
+                    </b>
+                    @if (variant.stock !== undefined) {
+                      <span class="text-xs text-gray-500 ml-2">Stock: {{ variant.stock }}</span>
+                    }
+                  </div>
+                </div>
+
+                @if (user.role === 'ROLE_ADMIN') {
+                  <app-chat-bubble
+                    [id]="product.id"
+                    [options]="actionsGrid"
+                    (selectOption)="selectOption($event)">
+                  </app-chat-bubble>
+                }
+              </div>
+            </td>
+
+            <!-- ACCIONES (Desktop) -->
+            @if (user.role === 'ROLE_ADMIN') {
+              <td class="hidden sm:table-cell">
+                <div class="w-full c-actions">
+                  <button (click)="edit(product.id)" class="btn-action content-desktop">
+                    <ng-icon class="text-blue-500 font-bold float-end" size="20" name="matEditOutline"></ng-icon>
+                  </button>
+                </div>
+              </td>
+            }
+          </tr>
+        }
+      }
+
     } @loading {
-      <!-- Skeleton loader existente -->
       <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
         <td class="content-desktop">
           <div class="rounded pt-2 pb-2 p-1">
