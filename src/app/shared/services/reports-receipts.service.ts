@@ -6,13 +6,11 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class ReportsReceiptsService {
-  baseUrl: string = `${environment.apiUrl}/api/v1/`;
+  baseUrl: string = `${environment.apiUrl}/api/v1/reports/orders-day`;
 
   constructor(private http: HttpClient) { }
 
-
   getReceipt(typeReport: string, id_user: number, date: Date){
-
     const startDate = new Date(date);
     const endDate = new Date(date);
     const headers = new HttpHeaders({
@@ -23,7 +21,27 @@ export class ReportsReceiptsService {
     const startDateFormat = this.formatDateToISOString(startDate);
     const endDateFormat = this.formatDateToISOString(endDate);
 
+    // ✅ NOTA: Cambia .get` por .get(
     return this.http.get(`${this.baseUrl}?id_user=${id_user}&fecha_inicio=${startDateFormat}&fecha_fin=${endDateFormat}&typeReport=${typeReport}`, {
+      headers: headers,
+      responseType: 'blob'
+    });
+  }
+
+  getReportAllUsers(typeReport: string, date: Date){
+    const startDate = new Date(date);
+    const endDate = new Date(date);
+    const headers = new HttpHeaders({
+      'Accept': 'application/pdf'
+    });
+
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+    const startDateFormat = this.formatDateToISOString(startDate);
+    const endDateFormat = this.formatDateToISOString(endDate);
+
+    // ✅ NOTA: Cambia .get` por .get(
+    return this.http.get(`${this.baseUrl}?fecha_inicio=${startDateFormat}&fecha_fin=${endDateFormat}&typeReport=${typeReport}`, {
       headers: headers,
       responseType: 'blob'
     });
@@ -40,6 +58,8 @@ export class ReportsReceiptsService {
     endDate.setHours(23, 59, 59, 999);
     const startDateFormat = this.formatDateToISOString(startDate);
     const endDateFormat = this.formatDateToISOString(endDate);
+
+    // ✅ NOTA: Cambia .get` por .get(
     return this.http.get(`${this.baseUrl}?fecha_Inicio=${startDateFormat}&fecha_Fin=${endDateFormat}&panel=${panel}&typeReport=${typeReport}`, {
       headers: headers,
       responseType: 'blob'

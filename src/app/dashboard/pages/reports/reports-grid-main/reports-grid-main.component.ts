@@ -9,8 +9,9 @@ import { AuthService } from '../../../../shared/services/auth.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { matArrowBackOutline } from '@ng-icons/material-icons/outline';
 import { ReportsReceiptsService } from '../../../../shared/services/reports-receipts.service';
+import { CrudService } from '../../../../shared/services/crud.service';
 import { saveAs } from 'file-saver';
-import { URL_RECEIPTS } from '../../../../shared/constants/endpoints';
+import { URL_RECEIPTS, URL_USERS } from '../../../../shared/constants/endpoints';
 
 @Component({
   selector: 'app-reports-grid-main',
@@ -27,27 +28,41 @@ export default class ReportsGridMainComponent {
   form: FormGroup;
   minDate: Date = new Date(2024, 3, 1);
   maxDate: Date = new Date();
-  // users: { label: string, value: number }[] = [
-  //   { value: -1, label: 'Todos los usuarios'}
-  // ];
-  panel: { label: string, value: string }[] = [
-    // { label: 'Todos los transportes', value: '-1' },
-    { label: 'Panel 1', value: 'P1'},
-    { label: 'Panel 2', value: 'P2'}
+
+  users: { label: string, value: number }[] = [
+    { value: -1, label: 'Todos los usuarios'}
   ];
 
   constructor(private toast: ToastService, private router: Router,
               private route: ActivatedRoute, private auth: AuthService,
-              private service: ReportsReceiptsService){
+              private service: ReportsReceiptsService,
+              private crudService: CrudService){
                 this.service.baseUrl = URL_RECEIPTS;
+                this.crudService.baseUrl = URL_USERS;
                 this.form = new FormGroup({
                   date: new FormControl({ value: '', disabled: false }, [Validators.required]),
-                  panel: new FormControl('', [Validators.required]),
-                  // user: new FormControl('', [Validators.required])
+                  user: new FormControl('', [Validators.required])
                 });
               }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.loadUsers();
+  }
+
+  loadUsers(): void {
+    this.crudService.getUsers().then((response: any) => {
+      this.users = [
+        { value: -1, label: 'Todos los usuarios' },
+        ...response.map((user: any) => ({
+          value: user.id_users,
+          label: user.name
+        }))
+      ];
+    }).catch((error: any) => {
+      console.error('Error al cargar usuarios:', error);
+      this.toast.error('Error al cargar usuarios');
+    });
+  }
 
   isDirty(): boolean {
     return this.form.dirty;
@@ -60,9 +75,15 @@ export default class ReportsGridMainComponent {
   submit(){
     this.load = true;
     this.isSaving = true;
-    const panel: string = this.form.controls['panel'].value;
+    const userId: number = this.form.controls['user'].value;
     const date: Date = this.form.controls['date'].value;
-    this.service.getReportPanel('CHARGE_PRODUCTS', date, panel).subscribe({
+
+    // Si userId es -1 (Todos los usuarios), usar método sin id_user
+    const request$ = userId === -1
+      ? this.service.getReportAllUsers('CHARGE_PRODUCTS', date)
+      : this.service.getReceipt('CHARGE_PRODUCTS', userId, date);
+
+    request$.subscribe({
       next: (response: Blob)=> {
         if(response){
           saveAs(response, this.generateDynamicFileName());
@@ -70,12 +91,13 @@ export default class ReportsGridMainComponent {
         }
       },
       error: (error: any) => {
+        console.error('Error al generar reporte:', error);
         this.toast.error('Error al Generar Reporte!')
         this.load = false;
         this.isSaving = false;
       },
       complete: () => {
-        this.toast.success('Reporte Generados!')
+        this.toast.success('Reporte Generado!')
         this.load = false;
         this.form.reset();
         this.isSaving = false;
@@ -91,14 +113,13 @@ export default class ReportsGridMainComponent {
     const monthIndex = currentDate.getMonth();
     const month = months[monthIndex];
     const year = currentDate.getFullYear();
-    const hours = ('0' + currentDate.getHours()).slice(-2);
-    const minutes = ('0' + currentDate.getMinutes()).slice(-2);
-    const seconds = ('0' + currentDate.getSeconds()).slice(-2);
     const timestamp = date.getTime();
-    const panel: string = this.form.controls['panel'].value;
+    const userId: number = this.form.controls['user'].value;
 
-    return `Reporte_Carga_Productos_${(panel === 'P1')?'Panel_1':'Panel_2'}_${day}${month}${year}_${timestamp}`;
-    // return `Reporte_${(panel === 'P1')?'Panel_1':'Panel_2'}_${day}${month}${year}_${hours}:${minutes}:${seconds}_${timestamp}`;
+    const userLabel = this.users.find(u => u.value === userId)?.label || 'Usuario';
+    const userFileName = userId === -1 ? 'Todos_Usuarios' : userLabel.replace(/\s+/g, '_');
+
+    return `Reporte_Carga_Productos_${userFileName}_${day}${month}${year}_${timestamp}`;
   }
 
 }
