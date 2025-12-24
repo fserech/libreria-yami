@@ -95,7 +95,7 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
       filter = filter.concat(`&name=${name}`);
     }
 
-    filter = filter.concat(`&offerDay=${this.getToday()}&idUser=${this.getUserId()}`);
+    //filter = filter.concat(`&offerDay=${this.getToday()}&idUser=${this.getUserId()}`);
     this.filters = filter;
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
