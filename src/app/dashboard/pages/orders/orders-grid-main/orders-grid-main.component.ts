@@ -30,6 +30,7 @@ import { DatePickerComponent } from '../../../../shared/components/date-picker/d
 import { DatePickerSearchComponent } from '../../../../shared/components/date-picker-search/date-picker-search.component';
 import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 import { MIN_DATE, MAX_DATE } from '../../../../shared/constants/date-min-max';
+
 @Component({
   selector: 'app-orders-grid-main',
   standalone: true,
@@ -52,12 +53,16 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
   minDate: Date = MIN_DATE;
   maxDate: Date = MAX_DATE;
 
+  // Nueva propiedad para controlar el tab activo
+  activeTimeTab: 'day' | 'week' | 'month' = 'month';
+
   constructor(
     private crud: CrudService,
     private toast: ToastService,
     private router: Router,
     public dialog: Dialog,
-    private bpo: BreakpointObserver, private auth: AuthService,){
+    private bpo: BreakpointObserver,
+    private auth: AuthService,){
       super(crud, toast, auth, bpo);
       moment.locale('es');
       this.sortConfig.sortBy = 'dateCreated';
@@ -75,19 +80,55 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
   }
 
   ngOnInit(): void {
+    this.loadOrdersByTimeRange(this.activeTimeTab);
+  }
+
+  // Método para cambiar el tab activo
+  setActiveTimeTab(tab: 'day' | 'week' | 'month') {
+    this.activeTimeTab = tab;
+    this.loadOrdersByTimeRange(tab);
+  }
+
+  // Método para cargar órdenes según el rango de tiempo
+  loadOrdersByTimeRange(timeRange: 'day' | 'week' | 'month') {
     let filter = '';
     const dateInit: Date = new Date();
     const dateEnd: Date = new Date();
-    dateInit.setHours(0, 0, 0, 0);
-    dateEnd.setHours(23, 59, 59, 999);
+
+    switch (timeRange) {
+      case 'day':
+        // Día actual
+        dateInit.setHours(0, 0, 0, 0);
+        dateEnd.setHours(23, 59, 59, 999);
+        break;
+
+      case 'week':
+        // Semana actual (lunes a domingo)
+        const dayOfWeek = dateInit.getDay();
+        const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+        dateInit.setDate(dateInit.getDate() + diffToMonday);
+        dateInit.setHours(0, 0, 0, 0);
+        dateEnd.setDate(dateInit.getDate() + 6);
+        dateEnd.setHours(23, 59, 59, 999);
+        break;
+
+      case 'month':
+        // Mes actual
+        dateInit.setDate(1);
+        dateInit.setHours(0, 0, 0, 0);
+        dateEnd.setMonth(dateEnd.getMonth() + 1);
+        dateEnd.setDate(0);
+        dateEnd.setHours(23, 59, 59, 999);
+        break;
+    }
+
     filter = filter.concat(`&dateCreatedInit=${dateInit.toISOString()}&dateCreatedEnd=${dateEnd.toISOString()}`);
 
     if(this.auth.getUserData().role === 'ROLE_USER'){
       filter = filter.concat(`&userId=${this.auth.getUserData().id}`);
-      this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
-    }else{
-      this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
     }
+
+    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
 
   async openDialog() {
@@ -102,52 +143,36 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
       data: {
         title: 'Filtros de ventas'
       },
-      });
+    });
 
-      await firstValueFrom(dialogRef.closed)
-      .then((result: {
-        id: number,
-        userId: number,
-        clientId: number,
-        status: string,
-        transportDelivery: string,
-        dateCreatedInit: Date,
-        dateCreatedEnd: Date,
-        dateDeliverInit: Date,
-        dateDeliverEnd: Date,
-      }) => {
-        if(result){
-          if(result.id  || result.userId || result.clientId || result.status || result.transportDelivery ||
-            result.dateCreatedInit || result.dateCreatedEnd || result.dateDeliverInit || result.dateDeliverEnd){
-            this.filter(result.id, result.userId, result.clientId, result.status, result.transportDelivery,
-                        result.dateCreatedInit, result.dateCreatedEnd, result.dateDeliverInit, result.dateDeliverEnd);
-          }
+    await firstValueFrom(dialogRef.closed)
+    .then((result: {
+      id: number,
+      userId: number,
+      clientId: number,
+      status: string,
+      transportDelivery: string,
+      dateCreatedInit: Date,
+      dateCreatedEnd: Date,
+      dateDeliverInit: Date,
+      dateDeliverEnd: Date,
+    }) => {
+      if(result){
+        if(result.id  || result.userId || result.clientId || result.status || result.transportDelivery ||
+          result.dateCreatedInit || result.dateCreatedEnd || result.dateDeliverInit || result.dateDeliverEnd){
+          this.filter(result.id, result.userId, result.clientId, result.status, result.transportDelivery,
+                      result.dateCreatedInit, result.dateCreatedEnd, result.dateDeliverInit, result.dateDeliverEnd);
         }
-      })
-      .catch((error: any) => {
-        console.log('err', error);
-      });
+      }
+    })
+    .catch((error: any) => {
+      console.log('err', error);
+    });
   }
 
-  initPage(){
-    let filter = '';
-    const dateInit: Date = new Date();
-    const dateEnd: Date = new Date();
-    dateInit.setHours(0, 0, 0, 0);
-    dateEnd.setHours(23, 59, 59, 999);
-    filter = filter.concat(`&dateCreatedInit=${dateInit.toISOString()}&dateCreatedEnd=${dateEnd.toISOString()}`);
 
-    if(this.auth.getUserData().role === 'ROLE_USER'){
-      filter = filter.concat(`&userId=${this.auth.getUserData().id}`);
-      this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, 1, 10, filter);
-    }else{
-      this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, 1, 10, filter);
-    }
-    this.form.reset();
-  }
 
   selectOption(option: OptionsChatBubble){
-
     if(option.action === 'VIEW_ORDER'){
       this.view(option.id);
     }
@@ -170,58 +195,63 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
   }
 
   filter(id?: number, userId?: number, clientId?: number, status?: string, transportDelivery?: string,
-         dateCreatedInit?: Date, dateCreatedEnd?: Date, dateDeliverInit?: Date, dateDeliverEnd?: Date){
+       dateCreatedInit?: Date, dateCreatedEnd?: Date, dateDeliverInit?: Date, dateDeliverEnd?: Date){
 
-    this.crud.baseUrl = URL_ORDERS;
-    let filter = '';
+  this.crud.baseUrl = URL_ORDERS;
+  let filter = '';
 
-    if(id){
-      filter = filter.concat(`&id=${id}`)
-    }
-
-    if(userId && this.auth.getUserData().role === 'ROLE_ADMIN'){
-      filter = filter.concat(`&userId=${userId}`);
-    }else if(!userId && this.auth.getUserData().role === 'ROLE_USER'){
-      filter = filter.concat(`&userId=${this.auth.getUserData().id}`);
-    }
-
-    if(clientId){
-      filter = filter.concat(`&clientId=${clientId}`)
-    }
-
-    if(status){
-      filter = filter.concat(`&status=${status}`)
-    }
-
-    if(transportDelivery){
-      filter = filter.concat(`&transportDelivery=${transportDelivery}`)
-    }
-
-    if(dateCreatedInit && dateCreatedEnd){
-      const init: Date = new Date(dateCreatedInit);
-      const end: Date = new Date(dateCreatedEnd);
-      init.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
-      filter = filter.concat(`&dateCreatedInit=${init.toISOString()}&dateCreatedEnd=${end.toISOString()}`);
-    }else{
-      const dateInit: Date = new Date();
-      const dateEnd: Date = new Date();
-      dateInit.setHours(0, 0, 0, 0);
-      dateEnd.setHours(23, 59, 59, 999);
-      filter = filter.concat(`&dateCreatedInit=${dateInit.toISOString()}&dateCreatedEnd=${dateEnd.toISOString()}`);
-    }
-
-    if(dateDeliverInit && dateDeliverEnd){
-      const initD: Date = new Date(dateDeliverInit);
-      const endD: Date = new Date(dateDeliverEnd);
-      initD.setHours(0, 0, 0, 0);
-      endD.setHours(23, 59, 59, 999);
-      filter = filter.concat(`&dateDeliverInit=${initD.toISOString()}&dateDeliverEnd=${endD.toISOString()}`);
-    }
-
-    this.filters = filter;
-    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
+  if(id){
+    filter = filter.concat(`&id=${id}`)
   }
+
+  if(userId && this.auth.getUserData().role === 'ROLE_ADMIN'){
+    filter = filter.concat(`&userId=${userId}`);
+  }else if(!userId && this.auth.getUserData().role === 'ROLE_USER'){
+    filter = filter.concat(`&userId=${this.auth.getUserData().id}`);
+  }
+
+  if(clientId){
+    filter = filter.concat(`&clientId=${clientId}`)
+  }
+
+  if(status){
+    filter = filter.concat(`&status=${status}`)
+  }
+
+  if(transportDelivery){
+    filter = filter.concat(`&transportDelivery=${transportDelivery}`)
+  }
+
+  // Si hay filtros de fecha de creación, los usamos
+  if(dateCreatedInit && dateCreatedEnd){
+    const init: Date = new Date(dateCreatedInit);
+    const end: Date = new Date(dateCreatedEnd);
+    init.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    filter = filter.concat(`&dateCreatedInit=${init.toISOString()}&dateCreatedEnd=${end.toISOString()}`);
+  } else if(!id && !clientId && !status && !transportDelivery && !dateDeliverInit && !dateDeliverEnd) {
+    // Solo si NO hay otros filtros, usar el rango del tab activo
+    this.loadOrdersByTimeRange(this.activeTimeTab);
+    return;
+  }
+
+  if(dateDeliverInit && dateDeliverEnd){
+    const initD: Date = new Date(dateDeliverInit);
+    const endD: Date = new Date(dateDeliverEnd);
+    initD.setHours(0, 0, 0, 0);
+    endD.setHours(23, 59, 59, 999);
+    filter = filter.concat(`&dateDeliverInit=${initD.toISOString()}&dateDeliverEnd=${endD.toISOString()}`);
+  }
+
+  this.filters = filter;
+  this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
+}
+
+initPage(){
+  this.form.reset();
+  this.filters = ''; // Limpiar filtros guardados
+  this.loadOrdersByTimeRange(this.activeTimeTab);
+}
 
   changeSortOrderBy(field: string){
     if(field === this.sortConfig.sortBy){
@@ -269,7 +299,7 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
           this.load = false;
         })
         .finally(() => {
-          this.ngOnInit();
+          this.loadOrdersByTimeRange(this.activeTimeTab);
           this.load = false;
         });
       }
@@ -278,7 +308,6 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
   }
 
   async cancelOrder(id: number){
-
     this.load = true;
     this.toast.confirm('¿Seguro que desea anular la venta?', null, null, 'El registro se anulará de forma permanente.', 'question')
     .then(async (result) => {
@@ -293,13 +322,12 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
           this.load = false;
         })
         .finally(() => {
-          this.ngOnInit();
+          this.loadOrdersByTimeRange(this.activeTimeTab);
           this.load = false;
         });
       }
       this.load = false;
     });
-
   }
 
   formatDateToISOString(date: Date): string {
@@ -318,6 +346,5 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
 
   printReceipt(id: number){}
 
-  changeDateCreated(ev:MatDatepickerInputEvent<Date>){
-  }
+  changeDateCreated(ev:MatDatepickerInputEvent<Date>){}
 }
