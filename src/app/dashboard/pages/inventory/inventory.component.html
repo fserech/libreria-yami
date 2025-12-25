@@ -5,12 +5,18 @@
       <lucide-icon [img]="Package" class="text-blue-500"></lucide-icon>
       <p>Valor Inventario</p>
       <h3>Q {{ totalValue | number:'1.2-2' }}</h3>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        {{ inventoryItems.length }} items
+      </p>
     </div>
 
     <div class="kpi-card dark:bg-slate-800">
       <lucide-icon [img]="TrendingUp" class="text-green-500"></lucide-icon>
       <p>Ganancia Potencial</p>
       <h3>Q {{ potentialProfit | number:'1.2-2' }}</h3>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        Si se vende todo
+      </p>
     </div>
 
     <div class="kpi-card dark:bg-slate-800">
@@ -26,19 +32,22 @@
       <lucide-icon [img]="Package" class="text-cyan-500"></lucide-icon>
       <p>Items Totales</p>
       <h3>{{ totalItems | number }}</h3>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        En stock
+      </p>
     </div>
 
     <!-- KPI de Alertas - CLICKEABLE -->
     <div
-      class="kpi-card dark:bg-slate-800 cursor-pointer hover:shadow-lg transition-shadow"
-      [ngClass]="{'border-2 border-red-500': lowStockCount > 0}"
+      class="kpi-card dark:bg-slate-800 cursor-pointer hover:shadow-lg transition-all"
+      [ngClass]="{'border-2 border-red-500 animate-pulse': lowStockCount > 0}"
       (click)="viewLowStockProducts()">
       <lucide-icon
         [img]="AlertTriangle"
-        [class]="lowStockCount > 0 ? 'text-red-500 animate-pulse' : 'text-gray-400'">
+        [class]="lowStockCount > 0 ? 'text-red-500' : 'text-gray-400'">
       </lucide-icon>
       <p>Alertas Stock</p>
-      <h3 [ngClass]="{'text-red-600 dark:text-red-400': lowStockCount > 0}">
+      <h3 [ngClass]="{'text-red-600 dark:text-red-400 font-bold': lowStockCount > 0}">
         {{ lowStockCount }}
       </h3>
       @if (lowStockCount > 0) {
@@ -53,150 +62,364 @@
     </div>
   </div>
 
-  <!-- Filtros -->
-  <div class="flex flex-col lg:flex-row gap-4 mb-6 bg-white dark:bg-slate-900 border-b dark:border-slate-700 p-2 rounded">
-    <input
-      type="text"
-      [(ngModel)]="searchTerm"
-      (input)="applyFilters()"
-      placeholder="Buscar producto..."
-      class="input dark:bg-slate-800 dark:text-white dark:border-slate-700"
-    />
-    <select
-      [(ngModel)]="selectedCategory"
-      (change)="applyFilters()"
-      class="input dark:bg-slate-800 dark:text-white dark:border-slate-700"
-    >
-      <option value="all">Todas las categorías</option>
-      @for (cat of categories; track cat.id) {
-        <option [value]="cat.id">{{ cat.categoryName }}</option>
-      }
-    </select>
-    <button (click)="addProduct()" class="btn-primary h-10">
-      <lucide-icon [img]="Plus"></lucide-icon>
-      Agregar
-    </button>
-    @if (lowStockCount > 0) {
-      <button
-        (click)="viewLowStockProducts()"
-        class="h-10 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2">
-        <lucide-icon [img]="AlertTriangle" [size]="18"></lucide-icon>
-        Ver Alertas ({{ lowStockCount }})
+  <!-- Filtros y acciones -->
+  <div class="bg-gray-50 dark:bg-slate-800 border dark:border-slate-700 p-4 rounded-lg mb-6">
+    <div class="flex flex-col lg:flex-row gap-4 mb-4">
+      <!-- Búsqueda -->
+      <div class="flex-1">
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="applyFilters()"
+          placeholder="Buscar por nombre, SKU, descripción..."
+          class="w-full px-4 py-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <!-- Filtro de categoría -->
+      <select
+        [(ngModel)]="selectedCategory"
+        (change)="applyFilters()"
+        class="px-4 py-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="all">Todas las categorías</option>
+        @for (cat of categories; track cat.id) {
+          <option [value]="cat.id">{{ cat.categoryName }}</option>
+        }
+      </select>
+
+      <!-- Filtro de estado de stock -->
+      <select
+        [(ngModel)]="selectedStatus"
+        (change)="applyFilters()"
+        class="px-4 py-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="all">Todos los estados</option>
+        <option value="critical">Crítico (bajo mínimo)</option>
+        <option value="warning">Advertencia (&lt;40%)</option>
+        <option value="normal">Normal</option>
+        <option value="high">Alto (&gt;80%)</option>
+      </select>
+
+      <!-- Filtro de tipo -->
+      <select
+        [(ngModel)]="selectedType"
+        (change)="applyFilters()"
+        class="px-4 py-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="all">Todos los tipos</option>
+        <option value="simple">Productos simples</option>
+        <option value="variant">Variantes</option>
+      </select>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="flex flex-wrap gap-2">
+      <button (click)="addProduct()" class="btn-primary">
+        <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
+        Nuevo Producto
       </button>
-    }
+
+      @if (lowStockCount > 0) {
+        <button
+          (click)="viewLowStockProducts()"
+          class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2 transition">
+          <lucide-icon [img]="AlertTriangle" [size]="18"></lucide-icon>
+          Ver Alertas ({{ lowStockCount }})
+        </button>
+      }
+
+      <button
+        (click)="resetFilters()"
+        class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2 transition">
+        <lucide-icon [img]="Filter" [size]="18"></lucide-icon>
+        Limpiar Filtros
+      </button>
+
+      <button
+        (click)="exportInventory()"
+        class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-2 transition">
+        <lucide-icon [img]="Download" [size]="18"></lucide-icon>
+        Exportar
+      </button>
+
+      <!-- Toggle vista -->
+      <button
+        (click)="toggleViewMode()"
+        class="px-4 py-2 border dark:border-slate-600 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 transition">
+        <lucide-icon [img]="viewMode === 'table' ? Grid : List" [size]="18"></lucide-icon>
+        {{ viewMode === 'table' ? 'Vista Grid' : 'Vista Tabla' }}
+      </button>
+    </div>
   </div>
 
   @if (load) {
-    <div class="flex justify-center items-center p-8">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+    <div class="flex justify-center items-center p-12">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
+        <p class="text-gray-600 dark:text-gray-400">Cargando inventario...</p>
+      </div>
     </div>
   } @else {
-    <!-- Tabla -->
-    <div class="rounded-lg overflow-x-auto">
-      <table class="table-grid w-full">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Categoría</th>
-            <th>Marcas</th>
-            <th>Proveedores</th>
-            <th>Stock</th>
-            <th>Margen</th>
-            <th>Rotación</th>
-            <th>Nivel</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (product of filteredProducts; track product.id) {
-            <tr
-              class="border-b dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800"
-              [ngClass]="{
-                'bg-gray-50 dark:bg-slate-950': $odd,
-                'bg-red-50 dark:bg-red-900/20': getStockStatus(product) === 'critical'
-              }">
-              <td class="font-bold">
-                {{ product.productName }}
-                @if (product.productDesc) {
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ product.productDesc }}</p>
-                }
-              </td>
-              <td>
-                {{ product.categoryName || 'N/A' }}
-              </td>
-              <td>
-               {{ product.brandNames || 'Sin marca' }}
-              </td>
-              <td>
-                @if (product.supplierNames && product.supplierNames.length > 0) {
-                  {{ product.supplierNames.join(', ') }}
-                } @else {
-                  <span class="text-gray-400">N/A</span>
-                }
-              </td>
-              <td>
-                <div class="flex items-center gap-2">
-                  @if (getStockStatus(product) === 'critical') {
-                    <lucide-icon [img]="AlertTriangle" [size]="16" class="text-red-500"></lucide-icon>
-                  }
-                  <span [ngClass]="{
-                    'text-red-600 dark:text-red-400 font-bold': getStockStatus(product) === 'critical',
-                    'text-orange-600 dark:text-orange-400': getStockStatus(product) === 'warning'
-                  }">
-                    {{ product.stock }} / {{ product.maxStock }}
-                  </span>
-                </div>
-                @if (getStockStatus(product) === 'critical') {
-                  <p class="text-xs text-red-500">Min: {{ product.minStock }}</p>
-                }
-              </td>
-              <td [class]="getMarginClass(product)">
-                <div class="flex flex-col">
-                  <span class="font-semibold">{{ getMargin(product) }}%</span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400">
-                    +Q{{ getProfit(product) | number:'1.2-2' }}
-                  </span>
-                </div>
-              </td>
-              <td [class]="getRotationClass(product)">
-                {{ getRotationRate(product) }}
-              </td>
-              <td class="w-40">
-                <div class="w-full bg-gray-200 dark:bg-slate-700 h-2 rounded">
-                  <div
-                    class="h-2 rounded transition-all"
-                    [class]="getStockBarColor(getStockStatus(product))"
-                    [style.width.%]="(product.stock / product.maxStock) * 100"
-                  ></div>
-                </div>
-              </td>
-              <td>
-                <div class="flex gap-2">
-                  <button
-                    (click)="edit(product.id)"
-                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400"
-                    title="Editar">
-                    <lucide-icon [img]="Edit2" [size]="18"></lucide-icon>
-                  </button>
-                  <button
-                    (click)="deleteProduct(product.id)"
-                    class="text-red-600 hover:text-red-800 dark:text-red-400"
-                    title="Eliminar">
-                    <lucide-icon [img]="Trash2" [size]="18"></lucide-icon>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          } @empty {
+    @if (viewMode === 'table') {
+      <!-- Vista de Tabla -->
+      <div class="rounded-lg overflow-x-auto border dark:border-slate-700">
+        <table class="w-full">
+          <thead class="bg-gray-100 dark:bg-slate-800">
             <tr>
-              <td colspan="9" class="text-center p-8 text-gray-500 dark:text-gray-400">
-                No se encontraron productos
-              </td>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Producto / SKU</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Tipo</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Categoría / Marca</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Stock</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Precios</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Margen</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Nivel</th>
+              <th class="px-4 py-3 text-center text-sm font-semibold">Acciones</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            @for (item of filteredItems; track item.id) {
+              <tr
+                class="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+                [ngClass]="{
+                  'bg-red-50 dark:bg-red-900/20': item.stockStatus === 'critical',
+                  'bg-orange-50 dark:bg-orange-900/10': item.stockStatus === 'warning'
+                }">
+                <!-- Producto / SKU -->
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-gray-900 dark:text-white">
+                    {{ item.name }}
+                  </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    SKU: {{ item.sku }}
+                  </div>
+                  @if (item.variantInfo) {
+                    <div class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      {{ item.variantInfo }}
+                    </div>
+                  }
+                </td>
+
+                <!-- Tipo -->
+                <td class="px-4 py-3">
+                  <span
+                    class="px-2 py-1 text-xs rounded-full"
+                    [ngClass]="{
+                      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300': item.type === 'simple',
+                      'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300': item.type === 'variant'
+                    }">
+                    {{ item.type === 'simple' ? 'Simple' : 'Variante' }}
+                  </span>
+                </td>
+
+                <!-- Categoría / Marca -->
+                <td class="px-4 py-3">
+                  <div class="text-sm">{{ item.categoryName }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ item.brandName }}</div>
+                </td>
+
+                <!-- Stock -->
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    @if (item.stockStatus === 'critical') {
+                      <lucide-icon [img]="AlertTriangle" [size]="16" class="text-red-500"></lucide-icon>
+                    }
+                    <div>
+                      <div
+                        class="font-semibold"
+                        [ngClass]="{
+                          'text-red-600 dark:text-red-400': item.stockStatus === 'critical',
+                          'text-orange-600 dark:text-orange-400': item.stockStatus === 'warning',
+                          'text-green-600 dark:text-green-400': item.stockStatus === 'normal' || item.stockStatus === 'high'
+                        }">
+                        {{ item.currentStock }}
+                      </div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                        Min: {{ item.minStock }} / Max: {{ item.maxStock }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Precios -->
+                <td class="px-4 py-3">
+                  <div class="text-sm">
+                    <div class="text-gray-600 dark:text-gray-400">
+                      Costo: Q{{ item.costPrice | number:'1.2-2' }}
+                    </div>
+                    <div class="font-semibold text-gray-900 dark:text-white">
+                      Venta: Q{{ item.salePrice | number:'1.2-2' }}
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Margen -->
+                <td class="px-4 py-3" [class]="getMarginClass(item.margin)">
+                  <div class="font-bold text-lg">{{ item.margin | number:'1.1-1' }}%</div>
+                  <div class="text-xs">
+                    +Q{{ item.profit | number:'1.2-2' }}
+                  </div>
+                </td>
+
+                <!-- Barra de nivel -->
+                <td class="px-4 py-3">
+                  <div class="w-32">
+                    <div class="w-full bg-gray-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden">
+                      <div
+                        class="h-3 rounded-full transition-all"
+                        [class]="getStockBarColor(item.stockStatus)"
+                        [style.width.%]="(item.currentStock / item.maxStock) * 100"
+                      ></div>
+                    </div>
+                    <div class="text-xs text-center mt-1 text-gray-500 dark:text-gray-400">
+                      {{ ((item.currentStock / item.maxStock) * 100) | number:'1.0-0' }}%
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Acciones -->
+                <td class="px-4 py-3">
+                  <div class="flex gap-2 justify-center">
+                    <button
+                      (click)="editItem(item)"
+                      class="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded transition"
+                      title="Editar producto">
+                      <lucide-icon [img]="Edit2" [size]="18"></lucide-icon>
+                    </button>
+                    <button
+                      (click)="deleteItem(item)"
+                      class="p-2 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30 rounded transition"
+                      title="Eliminar">
+                      <lucide-icon [img]="Trash2" [size]="18"></lucide-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="text-center p-12">
+                  <lucide-icon [img]="Package" [size]="48" class="mx-auto text-gray-400 mb-4"></lucide-icon>
+                  <p class="text-gray-500 dark:text-gray-400 text-lg">
+                    No se encontraron productos
+                  </p>
+                  <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">
+                    Intenta ajustar los filtros o agregar nuevos productos
+                  </p>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <!-- Vista de Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        @for (item of filteredItems; track item.id) {
+          <div
+            class="border dark:border-slate-700 rounded-lg p-4 hover:shadow-lg transition"
+            [ngClass]="{
+              'border-red-500 bg-red-50 dark:bg-red-900/20': item.stockStatus === 'critical',
+              'border-orange-500 bg-orange-50 dark:bg-orange-900/10': item.stockStatus === 'warning'
+            }">
+            <!-- Header de la card -->
+            <div class="flex justify-between items-start mb-3">
+              <span
+                class="px-2 py-1 text-xs rounded-full"
+                [ngClass]="{
+                  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300': item.type === 'simple',
+                  'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300': item.type === 'variant'
+                }">
+                {{ item.type === 'simple' ? 'Simple' : 'Variante' }}
+              </span>
+              @if (item.stockStatus === 'critical') {
+                <lucide-icon [img]="AlertTriangle" [size]="20" class="text-red-500"></lucide-icon>
+              }
+            </div>
+
+            <!-- Nombre del producto -->
+            <h4 class="font-bold text-gray-900 dark:text-white mb-1 line-clamp-2">
+              {{ item.name }}
+            </h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">SKU: {{ item.sku }}</p>
+
+            @if (item.variantInfo) {
+              <p class="text-xs text-blue-600 dark:text-blue-400 mb-2">
+                {{ item.variantInfo }}
+              </p>
+            }
+
+            <!-- Categoría y marca -->
+            <div class="text-xs text-gray-600 dark:text-gray-400 mb-3">
+              <div>{{ item.categoryName }}</div>
+              <div>{{ item.brandName }}</div>
+            </div>
+
+            <!-- Stock -->
+            <div class="mb-3">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-sm font-semibold">Stock:</span>
+                <span
+                  class="font-bold"
+                  [ngClass]="{
+                    'text-red-600 dark:text-red-400': item.stockStatus === 'critical',
+                    'text-orange-600 dark:text-orange-400': item.stockStatus === 'warning',
+                    'text-green-600 dark:text-green-400': item.stockStatus === 'normal' || item.stockStatus === 'high'
+                  }">
+                  {{ item.currentStock }} / {{ item.maxStock }}
+                </span>
+              </div>
+              <div class="w-full bg-gray-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                <div
+                  class="h-2 rounded-full transition-all"
+                  [class]="getStockBarColor(item.stockStatus)"
+                  [style.width.%]="(item.currentStock / item.maxStock) * 100"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Precios y margen -->
+            <div class="bg-gray-50 dark:bg-slate-800 rounded p-2 mb-3">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-600 dark:text-gray-400">Costo:</span>
+                <span class="font-semibold">Q{{ item.costPrice | number:'1.2-2' }}</span>
+              </div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-600 dark:text-gray-400">Venta:</span>
+                <span class="font-semibold">Q{{ item.salePrice | number:'1.2-2' }}</span>
+              </div>
+              <div class="flex justify-between text-xs pt-1 border-t dark:border-slate-700">
+                <span class="text-gray-600 dark:text-gray-400">Margen:</span>
+                <span [class]="getMarginClass(item.margin)" class="font-bold">
+                  {{ item.margin | number:'1.1-1' }}%
+                </span>
+              </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="flex gap-2">
+              <button
+                (click)="editItem(item)"
+                class="flex-1 px-3 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded transition">
+                <lucide-icon [img]="Edit2" [size]="16" class="inline mr-1"></lucide-icon>
+                Editar
+              </button>
+              <button
+                (click)="deleteItem(item)"
+                class="px-3 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded transition">
+                <lucide-icon [img]="Trash2" [size]="16"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <div class="col-span-full text-center p-12">
+            <lucide-icon [img]="Package" [size]="48" class="mx-auto text-gray-400 mb-4"></lucide-icon>
+            <p class="text-gray-500 dark:text-gray-400 text-lg">
+              No se encontraron productos
+            </p>
+          </div>
+        }
+      </div>
+    }
   }
 
   <router-outlet></router-outlet>

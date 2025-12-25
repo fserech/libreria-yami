@@ -14,18 +14,43 @@ import {
   Filter,
   TrendingUp,
   BarChart3,
-  Download
+  Download,
+  Grid,
+  List
 } from 'lucide-angular';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { URL_PRODUCTS } from '../../../shared/constants/endpoints';
-import { Inventory, InventoryStatus } from '../../../shared/interfaces/inventory';
-import { Product } from '../../../shared/interfaces/product';
+import { ProductResponse } from '../../../shared/interfaces/product';
 import { firstValueFrom } from 'rxjs';
 import { provideIcons } from '@ng-icons/core';
 import { matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline, matDeleteOutline, matEditOutline, matFilterAltOutline, matSearchOutline } from '@ng-icons/material-icons/outline';
 import { bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarLeft, bootstrapChevronBarRight } from '@ng-icons/bootstrap-icons';
 import { environment } from '../../../../environments/environment';
+
+// Interfaz unificada para el inventario
+interface InventoryItem {
+  id: string; // productId-variantId o solo productId
+  productId: number;
+  variantId?: number;
+  sku: string;
+  name: string;
+  description: string;
+  categoryName: string;
+  brandName: string;
+  supplierNames: string[];
+  costPrice: number;
+  salePrice: number;
+  currentStock: number;
+  minStock: number;
+  maxStock: number;
+  stockStatus: 'critical' | 'warning' | 'normal' | 'high';
+  margin: number;
+  profit: number;
+  active: boolean;
+  type: 'simple' | 'variant';
+  variantInfo?: string; // Info de atributos para variantes
+}
 
 @Component({
   selector: 'app-inventory',
@@ -33,9 +58,12 @@ import { environment } from '../../../../environments/environment';
   imports: [CommonModule, FormsModule, LucideAngularModule, HeaderComponent, RouterOutlet],
   templateUrl: './inventory.component.html',
   styleUrl: './inventory.component.scss',
-   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-   viewProviders: [ provideIcons({ matSearchOutline, matFilterAltOutline, matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline,
-       matDeleteOutline, matEditOutline, bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarLeft, bootstrapChevronBarRight }) ]
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  viewProviders: [provideIcons({
+    matSearchOutline, matFilterAltOutline, matAddOutline, matArrowDownwardOutline,
+    matArrowUpwardOutline, matDeleteOutline, matEditOutline, bootstrapChevronLeft,
+    bootstrapChevronRight, bootstrapChevronBarLeft, bootstrapChevronBarRight
+  })]
 })
 export default class InventoryComponent implements OnInit {
 
@@ -49,9 +77,11 @@ export default class InventoryComponent implements OnInit {
   readonly TrendingUp = TrendingUp;
   readonly BarChart3 = BarChart3;
   readonly Download = Download;
+  readonly Grid = Grid;
+  readonly List = List;
 
-  products: Inventory[] = [];
-  filteredProducts: Inventory[] = [];
+  inventoryItems: InventoryItem[] = [];
+  filteredItems: InventoryItem[] = [];
 
   categories: any[] = [];
   brands: any[] = [];
@@ -59,8 +89,11 @@ export default class InventoryComponent implements OnInit {
 
   searchTerm = '';
   selectedCategory: number | 'all' = 'all';
+  selectedStatus: string = 'all';
+  selectedType: string = 'all'; // all, simple, variant
 
   load = false;
+  viewMode: 'table' | 'grid' = 'table';
 
   // KPIs
   lowStockCount = 0;
@@ -72,7 +105,7 @@ export default class InventoryComponent implements OnInit {
   lowMarginCount = 0;
 
   // Productos críticos
-  criticalProducts: Inventory[] = [];
+  criticalItems: InventoryItem[] = [];
 
   constructor(
     private http: HttpClient,
@@ -81,15 +114,15 @@ export default class InventoryComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadProducts();
+    this.loadInventory();
   }
 
-  async loadProducts(): Promise<void> {
+  async loadInventory(): Promise<void> {
     this.load = true;
     try {
-      // Cargar productos, categorías, marcas y proveedores en paralelo
+      // Cargar datos en paralelo
       const [productsData, categoriesData, brandsData, suppliersData] = await Promise.all([
-        firstValueFrom(this.http.get<Product[]>(URL_PRODUCTS)),
+        firstValueFrom(this.http.get<ProductResponse[]>(URL_PRODUCTS)),
         firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/v1/categories`)),
         firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/v1/categories/brands`)),
         firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/v1/suppliers`))
@@ -98,148 +131,183 @@ export default class InventoryComponent implements OnInit {
       this.categories = categoriesData;
       this.brands = brandsData;
       this.suppliers = suppliersData;
-      // Mapear productos a inventario
-      this.products = productsData.map(p => this.mapProductToInventory(p));
+
+      // Procesar productos y convertir a items de inventario
+      this.inventoryItems = this.processProducts(productsData);
+
       this.calculateKPIs();
       this.applyFilters();
     } catch (error) {
+      console.error('Error al cargar inventario:', error);
       this.toast.error('Error al cargar inventario');
     } finally {
       this.load = false;
     }
   }
 
-  mapProductToInventory(product: Product): Inventory {
-    // OPCIÓN 1: Usar minStock como stock actual (temporal)
-    // const currentStock = product.minStock || 0;
+  processProducts(products: ProductResponse[]): InventoryItem[] {
+    const items: InventoryItem[] = [];
 
-    // OPCIÓN 2: Usar un valor aleatorio para simular (MEJOR PARA VER ALERTAS)
-    const maxStock = product.maxStock || 100;
-    const minStock = product.minStock || 10;
-    // Generar stock aleatorio entre minStock y maxStock
-    const currentStock = Math.floor(Math.random() * (maxStock - minStock + 1)) + minStock;
+    products.forEach(product => {
+      if (product.hasVariants && product.variants && product.variants.length > 0) {
+        // Producto con variantes: crear un item por cada variante
+        product.variants.forEach(variant => {
+          items.push(this.mapVariantToInventoryItem(product, variant));
+        });
+      } else {
+        // Producto simple: crear un solo item
+        items.push(this.mapSimpleProductToInventoryItem(product));
+      }
+    });
 
-    // Obtener nombre de categoría
-    const category = this.categories.find(c => c.id === product.categoryId);
+    return items;
+  }
 
-    // Obtener nombres de marcas
-    const brandName = product.brandRef
-    ? (this.brands.find(b => b.id === product.brandRef)?.brandName || 'Sin marca')
-    : 'Sin marca';
-
-    // Obtener nombres de proveedores
-    const supplierNames = product.supplierId?.map(suppId => {
-      const supplier = this.suppliers.find(s => s.id === suppId);
-      return supplier?.supplierName || 'N/A';
-    }) || [];
-
-    // Simular ventas del último mes
-    const soldLastMonth = Math.floor(Math.random() * currentStock * 0.3); // 0-30% del stock
+  mapSimpleProductToInventoryItem(product: ProductResponse): InventoryItem {
+    const margin = this.calculateMargin(product.salePrice || 0, product.costPrice || 0);
+    const profit = (product.salePrice || 0) - (product.costPrice || 0);
 
     return {
-      id: product.id,
-      productName: product.productName,
-      productDesc: product.productDesc,
-      salePrice: product.salePrice,
+      id: `p-${product.id}`,
+      productId: product.id,
+      sku: product.sku || 'N/A',
+      name: product.productName,
+      description: product.productDesc,
+      categoryName: product.category?.categoryName || 'Sin categoría',
+      brandName: product.brand?.brandName || 'Sin marca',
+      supplierNames: product.suppliers?.map(s => s.supplierName) || [],
       costPrice: product.costPrice || 0,
-      categoryId: product.categoryId,
-      categoryName: category?.categoryName || 'Sin categoría',
-      brandRef: product.brandRef,
-      brandNames: brandName,
-      supplierId: product.supplierId,
-      supplierNames: supplierNames,
-      stock: currentStock, // Stock simulado
-      minStock: minStock,
-      maxStock: maxStock,
+      salePrice: product.salePrice || 0,
+      currentStock: product.currentStock || 0,
+      minStock: product.minStock || 0,
+      maxStock: product.maxStock || 100,
+      stockStatus: this.calculateStockStatus(
+        product.currentStock || 0,
+        product.minStock || 0,
+        product.maxStock || 100
+      ),
+      margin,
+      profit,
       active: product.active,
-      isSelected: product.isSelected,
-      soldLastMonth: soldLastMonth,
-      lastRestock: new Date().toISOString()
+      type: 'simple'
     };
   }
 
-  calculateKPIs(): void {
-    // Calcular productos con stock bajo
-    this.criticalProducts = this.products.filter(p => p.stock < p.minStock);
-    this.lowStockCount = this.criticalProducts.length;
+  mapVariantToInventoryItem(product: ProductResponse, variant: any): InventoryItem {
+    const margin = this.calculateMargin(variant.salePrice, variant.costPrice);
+    const profit = variant.salePrice - variant.costPrice;
 
-    console.log('Productos con stock bajo:', this.criticalProducts); // Debug
+    // Formatear atributos de la variante
+    const variantInfo = Object.entries(variant.attributes || {})
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(' • ');
 
-    // Calcular valores
-    this.totalValue = this.products.reduce((s, p) => s + p.stock * p.costPrice, 0);
-    this.totalItems = this.products.reduce((s, p) => s + p.stock, 0);
-    this.totalRevenue = this.products.reduce((s, p) => s + p.stock * p.salePrice, 0);
-    this.potentialProfit = this.totalRevenue - this.totalValue;
-
-    // Calcular margen promedio
-    if (this.products.length > 0) {
-      const totalMargin = this.products.reduce((sum, p) => {
-        if (p.salePrice > 0) {
-          return sum + ((p.salePrice - p.costPrice) / p.salePrice) * 100;
-        }
-        return sum;
-      }, 0);
-      this.averageMargin = totalMargin / this.products.length;
-    }
-
-    // Calcular productos con margen bajo
-    this.lowMarginCount = this.products.filter(p => {
-      const margin = ((p.salePrice - p.costPrice) / p.salePrice) * 100;
-      return margin < 20; // Margen menor al 20%
-    }).length;
+    return {
+      id: `p-${product.id}-v-${variant.id}`,
+      productId: product.id,
+      variantId: variant.id,
+      sku: variant.sku,
+      name: `${product.productName} - ${variant.variantName || 'Variante'}`,
+      description: product.productDesc,
+      categoryName: product.category?.categoryName || 'Sin categoría',
+      brandName: product.brand?.brandName || 'Sin marca',
+      supplierNames: variant.suppliers?.map((s: any) => s.supplierName) || [],
+      costPrice: variant.costPrice,
+      salePrice: variant.salePrice,
+      currentStock: variant.currentStock,
+      minStock: variant.minStock,
+      maxStock: variant.maxStock,
+      stockStatus: this.calculateStockStatus(
+        variant.currentStock,
+        variant.minStock,
+        variant.maxStock
+      ),
+      margin,
+      profit,
+      active: variant.active,
+      type: 'variant',
+      variantInfo
+    };
   }
 
-  applyFilters(): void {
-    const term = this.searchTerm.toLowerCase();
-
-    this.filteredProducts = this.products.filter(p => {
-      const matchText =
-        p.productName.toLowerCase().includes(term) ||
-        (p.productDesc?.toLowerCase().includes(term) ?? false);
-
-      const matchCategory =
-        this.selectedCategory === 'all'
-          ? true
-          : p.categoryId === this.selectedCategory;
-
-      return matchText && matchCategory;
-    });
-  }
-
-  getStockStatus(p: Inventory): InventoryStatus {
-    if (p.stock < p.minStock) return 'critical';
-    const percent = (p.stock / p.maxStock) * 100;
+  calculateStockStatus(current: number, min: number, max: number): 'critical' | 'warning' | 'normal' | 'high' {
+    if (current < min) return 'critical';
+    const percent = (current / max) * 100;
     if (percent < 40) return 'warning';
     if (percent > 80) return 'high';
     return 'normal';
   }
 
-  getRotationRate(p: Inventory): string {
-    if (!p.stock || p.stock === 0) return 'N/A';
-    const rotation = ((p.soldLastMonth || 0) / p.stock) * 100;
-    return rotation.toFixed(0) + '%';
+  calculateMargin(salePrice: number, costPrice: number): number {
+    if (salePrice === 0) return 0;
+    return ((salePrice - costPrice) / salePrice) * 100;
   }
 
-  getRotationClass(p: Inventory): string {
-    if (!p.stock) return '';
-    const rotation = ((p.soldLastMonth || 0) / p.stock) * 100;
+  calculateKPIs(): void {
+    // Productos con stock crítico
+    this.criticalItems = this.inventoryItems.filter(item => item.stockStatus === 'critical');
+    this.lowStockCount = this.criticalItems.length;
 
-    if (rotation >= 80) return 'text-green-600 dark:text-green-400 font-semibold';
-    if (rotation >= 50) return 'text-blue-600 dark:text-blue-400';
-    if (rotation >= 20) return 'text-orange-600 dark:text-orange-400';
-    return 'text-red-600 dark:text-red-400';
+    // Valores totales
+    this.totalValue = this.inventoryItems.reduce((sum, item) =>
+      sum + (item.currentStock * item.costPrice), 0
+    );
+
+    this.totalItems = this.inventoryItems.reduce((sum, item) =>
+      sum + item.currentStock, 0
+    );
+
+    this.totalRevenue = this.inventoryItems.reduce((sum, item) =>
+      sum + (item.currentStock * item.salePrice), 0
+    );
+
+    this.potentialProfit = this.totalRevenue - this.totalValue;
+
+    // Margen promedio
+    if (this.inventoryItems.length > 0) {
+      const totalMargin = this.inventoryItems.reduce((sum, item) => sum + item.margin, 0);
+      this.averageMargin = totalMargin / this.inventoryItems.length;
+    }
+
+    // Productos con margen bajo
+    this.lowMarginCount = this.inventoryItems.filter(item => item.margin < 20).length;
   }
 
-  getMargin(p: Inventory): string {
-    if (!p.salePrice || p.salePrice === 0) return '0';
-    const margin = ((p.salePrice - p.costPrice) / p.salePrice) * 100;
-    return margin.toFixed(1);
+  applyFilters(): void {
+    const term = this.searchTerm.toLowerCase();
+
+    this.filteredItems = this.inventoryItems.filter(item => {
+      // Filtro de texto
+      const matchText =
+        item.name.toLowerCase().includes(term) ||
+        item.sku.toLowerCase().includes(term) ||
+        item.description?.toLowerCase().includes(term) ||
+        (item.variantInfo?.toLowerCase().includes(term) ?? false);
+
+      // Filtro de categoría
+      const matchCategory = this.selectedCategory === 'all' ||
+        this.categories.find(c => c.categoryName === item.categoryName)?.id === this.selectedCategory;
+
+      // Filtro de estado
+      const matchStatus = this.selectedStatus === 'all' || item.stockStatus === this.selectedStatus;
+
+      // Filtro de tipo
+      const matchType = this.selectedType === 'all' || item.type === this.selectedType;
+
+      return matchText && matchCategory && matchStatus && matchType;
+    });
   }
 
-  getMarginClass(p: Inventory): string {
-    if (!p.salePrice) return '';
-    const margin = ((p.salePrice - p.costPrice) / p.salePrice) * 100;
+  getStockBarColor(status: string): string {
+    return {
+      critical: 'bg-red-600',
+      warning: 'bg-orange-600',
+      high: 'bg-blue-600',
+      normal: 'bg-green-600'
+    }[status] || 'bg-gray-600';
+  }
 
+  getMarginClass(margin: number): string {
     if (margin >= 50) return 'text-green-600 dark:text-green-400 font-bold';
     if (margin >= 30) return 'text-green-600 dark:text-green-400';
     if (margin >= 20) return 'text-blue-600 dark:text-blue-400';
@@ -248,54 +316,77 @@ export default class InventoryComponent implements OnInit {
     return 'text-red-700 dark:text-red-500 font-bold';
   }
 
-  getProfit(p: Inventory): number {
-    return p.salePrice - p.costPrice;
-  }
-
-  getStockBarColor(status: InventoryStatus): string {
-    return {
-      critical: 'bg-red-600',
-      warning: 'bg-orange-600',
-      high: 'bg-blue-600',
-      normal: 'bg-green-600'
-    }[status];
-  }
-
   addProduct(): void {
-    this.router.navigate(['dashboard/inventory/stock-entry-exit']);
+    this.router.navigate(['dashboard/products/detail/create']);
   }
 
-  edit(id: number){
-    this.router.navigate([`/dashboard/products/detail/edit/${id}`]);
+  editItem(item: InventoryItem): void {
+    // Navegar a la edición del producto (no de la variante individual)
+    this.router.navigate([`/dashboard/products/detail/edit/${item.productId}`]);
   }
 
-  async deleteProduct(id: number): Promise<void> {
-    if (!confirm('¿Eliminar producto?')) return;
-    await firstValueFrom(this.http.delete(`${URL_PRODUCTS}/${id}`));
-    this.toast.success('Producto eliminado');
-    this.loadProducts();
+  async deleteItem(item: InventoryItem): Promise<void> {
+    const message = item.type === 'variant'
+      ? '¿Eliminar esta variante? Esto afectará el producto principal.'
+      : '¿Eliminar este producto?';
+
+    if (!confirm(message)) return;
+
+    try {
+      // Solo se puede eliminar el producto completo
+      await firstValueFrom(this.http.delete(`${URL_PRODUCTS}/${item.productId}`));
+      this.toast.success('Producto eliminado');
+      this.loadInventory();
+    } catch (error) {
+      this.toast.error('Error al eliminar producto');
+    }
   }
 
-  exportInventory(): void {
-    const blob = new Blob(
-      [JSON.stringify(this.filteredProducts, null, 2)],
-      { type: 'application/json' }
-    );
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'inventario.json';
-    a.click();
-    this.toast.success('Inventario exportado');
-  }
-
-  // Método para ver detalles de alertas
   viewLowStockProducts(): void {
     if (this.lowStockCount === 0) {
       this.toast.info('No hay productos con stock bajo');
       return;
     }
-    console.log('Productos con stock crítico:', this.criticalProducts);
-    // Puedes filtrar la tabla para mostrar solo estos productos
-    this.filteredProducts = this.criticalProducts;
+    this.filteredItems = this.criticalItems;
+    this.selectedStatus = 'critical';
+  }
+
+  exportInventory(): void {
+    const data = this.filteredItems.map(item => ({
+      SKU: item.sku,
+      Producto: item.name,
+      Tipo: item.type === 'simple' ? 'Simple' : 'Variante',
+      Variante: item.variantInfo || '-',
+      Categoría: item.categoryName,
+      Marca: item.brandName,
+      'Stock Actual': item.currentStock,
+      'Stock Mínimo': item.minStock,
+      'Stock Máximo': item.maxStock,
+      'Estado': item.stockStatus,
+      'Costo': item.costPrice,
+      'Precio': item.salePrice,
+      'Margen %': item.margin.toFixed(2),
+      'Ganancia': item.profit.toFixed(2),
+      'Proveedores': item.supplierNames.join(', ')
+    }));
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `inventario-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    this.toast.success('Inventario exportado');
+  }
+
+  toggleViewMode(): void {
+    this.viewMode = this.viewMode === 'table' ? 'grid' : 'table';
+  }
+
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.selectedCategory = 'all';
+    this.selectedStatus = 'all';
+    this.selectedType = 'all';
+    this.applyFilters();
   }
 }
