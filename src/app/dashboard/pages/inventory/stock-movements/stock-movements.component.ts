@@ -3,6 +3,14 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 export interface Product {
+  hasVariants: any;
+  variants: any;
+  currentStock: number;
+  salePrice: number;
+  costPrice: number;
+  active: unknown;
+  productName: string;
+  categoryId: any;
   id: number;
   name: string;
   sku: string;
