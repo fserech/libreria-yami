@@ -1,0 +1,155 @@
+<!-- purchases-products-select.component.html -->
+<div class="animate-fadeIn">
+
+  <div class="mb-4 flex justify-between items-center">
+    <p class="text-gray-600 dark:text-gray-300 font-semibold">
+      <ng-icon name="matInventory2Outline" size="20" class="inline mr-2"></ng-icon>
+      Selecciona los Productos a Comprar
+    </p>
+
+    <div class="text-sm text-gray-500 dark:text-gray-400">
+      <span class="font-semibold">Productos seleccionados:</span> {{ selectedCount }}
+    </div>
+  </div>
+
+  <!-- BÚSQUEDA Y FILTROS -->
+  <div class="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <input
+      type="text"
+      [(ngModel)]="searchText"
+      (input)="filterProducts()"
+      placeholder="Buscar por nombre o SKU..."
+      class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+
+    <select
+      [(ngModel)]="selectedCategory"
+      (change)="filterProducts()"
+      class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+      <option value="">Todas las categorías</option>
+      @for (cat of categories; track cat.id) {
+        <option [value]="cat.id">{{ cat.categoryName }}</option>
+      }
+    </select>
+
+    <button
+      (click)="clearFilters()"
+      class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600 rounded-lg">
+      <ng-icon name="matFilterAltOffOutline" size="18" class="inline mr-1"></ng-icon>
+      Limpiar Filtros
+    </button>
+  </div>
+
+  <!-- TABLA DE PRODUCTOS -->
+  <div class="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-lg">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+      <thead class="bg-gray-50 dark:bg-slate-800">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-10">
+            <input
+              type="checkbox"
+              [checked]="allSelected"
+              (change)="toggleSelectAll()"
+              class="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded">
+          </th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Producto</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Categoría</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Stock Actual</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Precio Compra</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Cantidad</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
+        @if (filteredProducts.length === 0) {
+          <tr>
+            <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+              <ng-icon name="matSearchOffOutline" size="48" class="mx-auto mb-2 opacity-50"></ng-icon>
+              <p>No se encontraron productos</p>
+            </td>
+          </tr>
+        }
+
+        @for (product of filteredProducts; track product.sku) {
+          <tr class="hover:bg-gray-50 dark:hover:bg-slate-800">
+            <td class="px-4 py-3">
+              <input
+                type="checkbox"
+                [(ngModel)]="product.selected"
+                (change)="toggleProduct(product)"
+                class="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded">
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-300 font-mono">
+              {{ product.sku }}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">
+              <div>{{ product.productName }}</div>
+              @if (product.variantName) {
+                <div class="text-xs text-gray-500 dark:text-gray-500">{{ product.variantName }}</div>
+              }
+            </td>
+            <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-500">
+              {{ product.categoryName }}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">
+              <span [class]="product.currentStock < 10 ? 'text-red-600 font-semibold' : ''">
+                {{ product.currentStock }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">
+              Q {{ product.unitPrice | number:'1.2-2' }}
+            </td>
+            <td class="px-4 py-3">
+              @if (product.selected) {
+                <input
+                  type="number"
+                  [(ngModel)]="product.quantity"
+                  (input)="updateSubtotal(product)"
+                  min="1"
+                  class="w-20 px-2 py-1 border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 text-sm">
+              } @else {
+                <span class="text-gray-400">-</span>
+              }
+            </td>
+            <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-300">
+              @if (product.selected && product.quantity > 0) {
+                Q {{ product.subtotal | number:'1.2-2' }}
+              } @else {
+                <span class="text-gray-400">-</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+      <tfoot class="bg-gray-50 dark:bg-slate-800">
+        <tr>
+          <td colspan="7" class="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
+            TOTAL:
+          </td>
+          <td class="px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400">
+            Q {{ getTotal() | number:'1.2-2' }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- BOTONES DE NAVEGACIÓN -->
+  <div class="mt-6 flex justify-between">
+    <button
+      (click)="goBack()"
+      class="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600 rounded">
+      <ng-icon name="matArrowBackOutline" size="18" class="inline mr-2"></ng-icon>
+      Regresar
+    </button>
+
+    <button
+      (click)="confirmSelection()"
+      [disabled]="selectedCount === 0"
+      class="btn-primary h-10 px-8 font-bold">
+      Continuar a Confirmación ({{ selectedCount }})
+      <ng-icon name="matArrowForwardOutline" size="18" class="inline ml-2"></ng-icon>
+    </button>
+  </div>
+
+</div>

@@ -1,1 +1,225 @@
-<p>purchase-list works!</p>
+<!-- purchases-grid-main.component.html -->
+<app-header headerTitle="Compras" headerDescription="Gestión de compras y control de inventario"></app-header>
+
+<div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
+
+  <!-- BÚSQUEDA Y ACCIONES -->
+  <div class="mb-4 flex flex-col sm:flex-row gap-3">
+    <div class="flex-1">
+      <input
+        type="text"
+        [(ngModel)]="searchText"
+        (keyup.enter)="search()"
+        placeholder="Buscar por proveedor, fecha, monto..."
+        class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+    </div>
+    <button (click)="openFilterDialog()" type="button" class="btn-success h-10 sm:flex md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base">Filtros</p>
+          <ng-icon class="text-white font-bold m-1" size="15" name="matFilterAltOutline"></ng-icon>
+        </div>
+      </button>
+
+    <button (click)="add()" type="button" class="btn-primary h-10 float-right w-28">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base">Nuevo</p>
+          <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+        </div>
+      </button>
+  </div>
+
+  <!-- FILTROS ACTIVOS -->
+  @if (hasActiveFilters) {
+    <div class="mb-4 flex flex-wrap gap-2 items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+      <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Filtros activos:</span>
+
+      @if (currentFilters.supplierId) {
+        <span class="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full flex items-center">
+          Proveedor
+          <button (click)="removeFilter('supplierId')" class="ml-2 hover:text-blue-600">
+            <ng-icon name="matCloseOutline" size="14"></ng-icon>
+          </button>
+        </span>
+      }
+
+      @if (currentFilters.status) {
+        <span class="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full flex items-center">
+          Estado: {{ getStatusLabel(currentFilters.status) }}
+          <button (click)="removeFilter('status')" class="ml-2 hover:text-blue-600">
+            <ng-icon name="matCloseOutline" size="14"></ng-icon>
+          </button>
+        </span>
+      }
+
+      @if (currentFilters.startDate || currentFilters.endDate) {
+        <span class="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full flex items-center">
+          Rango de fechas
+          <button (click)="removeDateRange()" class="ml-2 hover:text-blue-600">
+            <ng-icon name="matCloseOutline" size="14"></ng-icon>
+          </button>
+        </span>
+      }
+
+      @if (currentFilters.minAmount || currentFilters.maxAmount) {
+        <span class="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full flex items-center">
+          Rango de montos
+          <button (click)="removeAmountRange()" class="ml-2 hover:text-blue-600">
+            <ng-icon name="matCloseOutline" size="14"></ng-icon>
+          </button>
+        </span>
+      }
+
+      <button
+        (click)="clearAllFilters()"
+        class="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold">
+        Limpiar todos
+      </button>
+    </div>
+  }
+
+  <!-- TABLA -->
+  <div class="overflow-x-auto">
+    @if (load && items.length === 0) {
+      <div class="text-center py-12">
+        <ng-icon name="matHourglassEmptyOutline" size="48" class="mx-auto mb-4 text-gray-400 animate-spin"></ng-icon>
+        <p class="text-gray-500 dark:text-gray-400">Cargando compras...</p>
+      </div>
+    } @else if (!load && items.length === 0) {
+      <div class="text-center py-12">
+        <ng-icon name="matShoppingBagOutline" size="48" class="mx-auto mb-4 text-gray-400 opacity-50"></ng-icon>
+        <p class="text-gray-500 dark:text-gray-400 mb-2">No hay compras registradas</p>
+          <button (click)="add()" type="button" class="btn-primary h-10 float-right w-28">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base">Nuevo</p>
+          <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+        </div>
+      </button>
+      </div>
+    } @else {
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+        <thead class="bg-gray-50 dark:bg-slate-800">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700" (click)="sort('id')">
+              ID
+              <ng-icon [name]="getSortIcon('id')" size="14" class="inline ml-1"></ng-icon>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700" (click)="sort('purchaseDate')">
+              Fecha
+              <ng-icon [name]="getSortIcon('purchaseDate')" size="14" class="inline ml-1"></ng-icon>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Proveedor</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Productos</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700" (click)="sort('totalAmount')">
+              Total
+              <ng-icon [name]="getSortIcon('totalAmount')" size="14" class="inline ml-1"></ng-icon>
+            </th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Estado</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
+          @for (purchase of items; track purchase.id) {
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-800">
+              <td class="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-300">
+                #{{ purchase.id }}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">
+                {{ purchase.purchaseDate | date:'dd/MM/yyyy' }}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">
+                {{ purchase.supplierName }}
+              </td>
+              <td class="px-4 py-3 text-sm text-center text-gray-700 dark:text-gray-400">
+                {{ purchase.items?.length || 0 }}
+              </td>
+              <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-300">
+                Q {{ purchase.totalAmount | number:'1.2-2' }}
+              </td>
+              <td class="px-4 py-3 text-center">
+                @switch (purchase.status) {
+                  @case ('COMPLETED') {
+                    <span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 dark:bg-green-900/30 dark:text-green-300 rounded-full">
+                      Completada
+                    </span>
+                  }
+                  @case ('PENDING') {
+                    <span class="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-full">
+                      Pendiente
+                    </span>
+                  }
+                  @case ('CANCELLED') {
+                    <span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 dark:bg-red-900/30 dark:text-red-300 rounded-full">
+                      Cancelada
+                    </span>
+                  }
+                }
+              </td>
+              <td class="px-4 py-3 text-center">
+                <div class="flex justify-center gap-2">
+                  <button
+                    (click)="view(purchase.id)"
+                    class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                    title="Ver detalle">
+                    <ng-icon name="matVisibilityOutline" size="18"></ng-icon>
+                  </button>
+
+                  @if (purchase.status === 'PENDING') {
+                    <button
+                      (click)="edit(purchase.id)"
+                      class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                      title="Editar">
+                      <ng-icon name="matEditOutline" size="18"></ng-icon>
+                    </button>
+                  }
+
+                  <button
+                    (click)="delete(purchase.id)"
+                    class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                    title="Eliminar">
+                    <ng-icon name="matDeleteOutline" size="18"></ng-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <!-- PAGINACIÓN -->
+      <div class="mt-4 flex justify-between items-center">
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          Mostrando {{ (page - 1) * pageSize + 1 }} - {{ Math.min(page * pageSize, totalItems) }} de {{ totalItems }} compras
+        </div>
+
+        <div class="flex gap-2">
+          <button
+            (click)="previousPage()"
+            [disabled]="page === 1"
+            class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+            Anterior
+          </button>
+
+          <div class="flex items-center gap-1">
+            @for (pageNum of getPageNumbers(); track pageNum) {
+              <button
+                (click)="goToPage(pageNum)"
+                [class]="pageNum === page
+                  ? 'px-3 py-2 text-sm font-bold text-white bg-blue-600 rounded'
+                  : 'px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600 rounded'">
+                {{ pageNum }}
+              </button>
+            }
+          </div>
+
+          <button
+            (click)="nextPage()"
+            [disabled]="page >= totalPages"
+            class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+            Siguiente
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+</div>

@@ -137,18 +137,24 @@ export const routes: Routes =
         ]
       },
 
+// Rutas corregidas para el módulo de purchases
 {
   path: 'purchases',
   title: 'Compras',
+  // loadComponent: () => import('./dashboard/pages/clients/clients.component'),
   canMatch: [authGuard],
   children: [
     {
       path: '',
-      title: 'Listado de Compras',
+      redirectTo: '',
+      pathMatch: 'full'
+    },
+    {
+      path: '',
+      title: 'Compras',
       canMatch: [authGuard],
       loadComponent: () =>
-        import('./dashboard/pages/purchases/purchase-grid-main/purchase-grid-main.component')
-      .then(m => m.PurchaseGridMainComponent),
+        import('./dashboard/pages/purchases/purchase-grid-main/purchase-grid-main.component'),
     },
     {
       path: 'detail/:mode',
@@ -156,25 +162,15 @@ export const routes: Routes =
       canMatch: [authGuard],
       canDeactivate: [pendingChangesGuard],
       loadComponent: () =>
-        import('./dashboard/pages/purchases/purchases-form/purchase-forms.component')
-      .then(m => m.PurchaseFormsComponent),
+        import('./dashboard/pages/purchases/purchases-form/purchase-forms.component'),
     },
     {
       path: 'detail/:mode/:id',
-      title: 'Editar Compra',
+      title: 'Detalle Compra',
       canMatch: [authGuard],
       canDeactivate: [pendingChangesGuard],
       loadComponent: () =>
-        import('./dashboard/pages/purchases/purchases-form/purchase-forms.component')
-      .then(m => m.PurchaseFormsComponent),
-    },
-    {
-      path: 'report',
-      title: 'Reporte de Compras',
-      canMatch: [authGuard],
-      loadComponent: () =>
-        import('./dashboard/pages/purchases/purchases-filter-dialog/purchases-filter-dialog.component')
-      .then(m => m.PurchasesFilterDialogComponent),
+        import('./dashboard/pages/purchases/purchases-form/purchase-forms.component'),
     }
   ]
 },
