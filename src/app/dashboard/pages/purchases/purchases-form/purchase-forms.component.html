@@ -27,10 +27,9 @@
       </ng-template>
 
       <div class="animate-fadeIn">
-        <p class="text-gray-600 dark:text-gray-300 font-semibold mb-4">
-          <ng-icon name="matStoreOutline" size="20" class="inline mr-2"></ng-icon>
-          Selecciona el Proveedor
-        </p>
+        <div class="w-full border-b dark:border-slate-700 pb-2 mb-4">
+          <p class="text-gray-500 dark:text-gray-300 text-base">Información del Proveedor</p>
+        </div>
 
         <div class="grid grid-cols-1 gap-4 mb-4">
           <app-select
@@ -72,14 +71,17 @@
         </div>
 
         @if (mode !== 'view') {
-          <div class="flex justify-end mt-6">
-            <button
-              (click)="goToNextStep()"
-              [disabled]="supplierForm.invalid"
-              class="btn-primary h-10 px-6 font-bold">
-              Continuar a Productos
-              <ng-icon name="matArrowForwardOutline" size="18" class="inline ml-2"></ng-icon>
-            </button>
+          <div class="w-full border-b dark:border-slate-700 pb-3 pt-3 flex justify-center sm:justify-end mb-2">
+            @if(!load){
+              <button
+                (click)="goToNextStep()"
+                [disabled]="supplierForm.invalid"
+                class="btn-primary h-10 w-36 font-bold">
+                Continuar
+              </button>
+            } @else {
+              <button class="btn-primary h-10 w-36 font-bold animate-pulse" disabled></button>
+            }
           </div>
         }
       </div>

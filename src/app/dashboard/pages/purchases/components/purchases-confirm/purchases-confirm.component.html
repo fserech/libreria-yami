@@ -1,13 +1,20 @@
+// ============================================
+// 3. purchases-confirm.component.html
+// ============================================
 <!-- purchases-confirm.component.html -->
 <div class="animate-fadeIn">
 
+  <div class="w-full border-b dark:border-slate-700 pb-2 mb-4">
+    <p class="text-gray-500 dark:text-gray-300 text-base">Confirmación de Compra</p>
+  </div>
+
   <div class="mb-6">
-    <p class="text-gray-600 dark:text-gray-300 font-semibold text-lg mb-4">
-      <ng-icon name="matCheckCircleOutline" size="24" class="inline mr-2 text-green-600"></ng-icon>
-      Confirmar Compra
+    <p class="text-gray-600 dark:text-gray-300 font-semibold text-lg mb-2">
+      <ng-icon name="matCheckCircleOutline" size="24" class="inline mr-2 text-green-600 dark:text-green-400"></ng-icon>
+      Revisar Información
     </p>
     <p class="text-sm text-gray-500 dark:text-gray-400">
-      Revisa la información antes de confirmar la compra. Los productos se agregarán al inventario.
+      Verifica los datos antes de confirmar. Los productos se agregarán al inventario.
     </p>
   </div>
 
@@ -57,7 +64,7 @@
         </thead>
         <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
           @for (product of products; track product.sku; let i = $index) {
-            <tr class="hover:bg-gray-50 dark:hover:bg-slate-800">
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
               <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                 {{ i + 1 }}
               </td>
@@ -65,15 +72,15 @@
                 {{ product.sku }}
               </td>
               <td class="px-4 py-3 text-sm">
-                <div class="text-gray-700 dark:text-gray-400 font-medium">{{ product.productName }}</div>
+                <div class="text-gray-700 dark:text-gray-300 font-medium">{{ product.productName }}</div>
                 @if (product.variantName) {
                   <div class="text-xs text-gray-500 dark:text-gray-500">{{ product.variantName }}</div>
                 }
               </td>
-              <td class="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-400">
+              <td class="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300">
                 {{ product.quantity }}
               </td>
-              <td class="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-400">
+              <td class="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300">
                 Q {{ product.unitPrice | number:'1.2-2' }}
               </td>
               <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-300">
@@ -115,32 +122,23 @@
         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Estado</p>
         <p class="text-sm font-semibold text-green-600 dark:text-green-400 mt-1">
           <ng-icon name="matCheckCircleOutline" size="18" class="inline mr-1"></ng-icon>
-          Listo para confirmar
+          Listo
         </p>
       </div>
     </div>
   </div>
 
   <!-- BOTONES DE ACCIÓN -->
-  <div class="flex justify-between gap-3">
-    <button
-      (click)="goBack()"
-      class="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600 rounded">
-      <ng-icon name="matArrowBackOutline" size="18" class="inline mr-2"></ng-icon>
-      Modificar Productos
-    </button>
-
+  <div class="w-full border-b dark:border-slate-700 pb-3 pt-3 flex justify-center sm:justify-end mb-2">
     @if (!loading) {
       <button
         (click)="confirm()"
-        class="btn-primary h-10 px-8 font-bold">
-        <ng-icon name="matCheckCircleOutline" size="18" class="inline mr-2"></ng-icon>
-        Confirmar Compra
+        class="btn-primary h-10 w-36 font-bold">
+        Guardar
       </button>
     } @else {
-      <button class="btn-primary h-10 px-8 font-bold animate-pulse" disabled>
-        <ng-icon name="matHourglassEmptyOutline" size="18" class="inline mr-2 animate-spin"></ng-icon>
-        Procesando...
+      <button class="btn-primary h-10 w-36 font-bold animate-pulse" disabled>
+        Guardando...
       </button>
     }
   </div>

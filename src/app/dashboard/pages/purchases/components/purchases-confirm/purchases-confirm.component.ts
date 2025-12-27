@@ -35,7 +35,7 @@ import { AuthService } from '../../../../../shared/services/auth.service';
   ]
 })
 export class PurchasesConfirmComponent {
-@Input() mode: any;
+  @Input() mode: any;
 
   @Input() supplier: { id: number; name: string };
   @Input() products: PurchaseProductSelect[] = [];
@@ -50,21 +50,37 @@ export class PurchasesConfirmComponent {
 
   constructor(private auth: AuthService) {}
 
+  /**
+   * Calcula el total de unidades sumando las cantidades de todos los productos
+   */
   getTotalUnits(): number {
     return this.products.reduce((sum, p) => sum + p.quantity, 0);
   }
 
+  /**
+   * Regresa al paso anterior (selección de productos)
+   */
   goBack(): void {
     this.backStep.emit(true);
   }
 
+  /**
+   * Confirma la compra y emite el objeto Purchase completo
+   */
   confirm(): void {
+    console.log('Confirmando compra...');
+    console.log('Proveedor:', this.supplier);
+    console.log('Productos:', this.products);
+
+    // Validaciones básicas
     if (!this.supplier || !this.products || this.products.length === 0) {
+      console.error('Faltan datos para confirmar la compra');
       return;
     }
 
     this.loading = true;
 
+    // Construir el objeto Purchase
     const purchase: Purchase = {
       purchaseDate: this.purchaseDate,
       supplierId: this.supplier.id,
@@ -88,6 +104,9 @@ export class PurchasesConfirmComponent {
       idUser: this.auth.getUserData().id
     };
 
+    console.log('Purchase object:', purchase);
+
+    // Emitir el evento con la compra completa
     this.confirmPurchase.emit(purchase);
   }
 }

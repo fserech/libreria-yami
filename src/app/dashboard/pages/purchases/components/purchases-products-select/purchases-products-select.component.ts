@@ -1,4 +1,6 @@
+// ============================================
 // purchases-products-select.component.ts
+// ============================================
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -79,7 +81,6 @@ export class PurchasesProductsSelectComponent implements OnInit {
   async loadProducts(): Promise<void> {
     this.loading = true;
     try {
-      // Cargar productos del proveedor específico
       let url = `${environment.apiUrl}/api/v1/products`;
 
       if (this.supplierId) {
@@ -92,6 +93,8 @@ export class PurchasesProductsSelectComponent implements OnInit {
 
       this.allProducts = this.flattenProducts(productsList);
       this.filteredProducts = [...this.allProducts];
+
+      console.log('Productos cargados:', this.allProducts.length);
 
     } catch (error) {
       console.error('Error cargando productos:', error);
@@ -147,9 +150,10 @@ export class PurchasesProductsSelectComponent implements OnInit {
 
   async loadCategories(): Promise<void> {
     try {
-      this.categories = await firstValueFrom(
-        this.crud.http.get<any[]>(`${environment.apiUrl}/api/v1/categories`)
+      const response = await firstValueFrom(
+        this.crud.http.get<any>(`${environment.apiUrl}/api/v1/categories`)
       );
+      this.categories = Array.isArray(response) ? response : (response.content || []);
     } catch (error) {
       console.error('Error cargando categorías:', error);
     }
@@ -236,17 +240,24 @@ export class PurchasesProductsSelectComponent implements OnInit {
 
   emitChanges(): void {
     const selectedProducts = this.allProducts.filter(p => p.selected);
+    console.log('Emitiendo cambios:', selectedProducts.length, 'productos');
     this.changes.emit(selectedProducts);
   }
 
   confirmSelection(): void {
     const selectedProducts = this.allProducts.filter(p => p.selected);
 
+    console.log('Confirmando selección:', selectedProducts.length, 'productos');
+
     if (selectedProducts.length === 0) {
       this.toast.warning('Debes seleccionar al menos un producto');
       return;
     }
 
+    // Emitir los productos una última vez antes de finalizar
+    this.changes.emit(selectedProducts);
+
+    // Emitir que se finalizó la selección
     this.finalized.emit(true);
   }
 
