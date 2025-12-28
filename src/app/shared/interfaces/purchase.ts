@@ -1,40 +1,51 @@
-// purchases.interface.ts
+import { Product } from "./product";
+import { Supplier } from "./supplier";
+
+/**
+ * Interfaz principal de Compra
+ * Similar a Order pero para compras a proveedores
+ */
 export interface Purchase {
   id?: number;
-  purchaseDate: string;
   supplierId: number;
-  supplierName?: string;
-  totalAmount: number;
-  status: 'PENDING' | 'COMPLETED' | 'CANCELLED';
+  supplier?: Supplier; // Opcional, puede venir del backend
+  userId: number;
+  purchaseDate: string;
+  totalAmount?: number; // Calculado automáticamente
+  status?: 'PENDING' | 'COMPLETED' | 'CANCELLED';
   observation?: string;
-  items: PurchaseItem[];
-  idUser?: number;
-  createdAt?: string;
-  updatedAt?: string;
+  dateCreated?: string;
+  products: ProductPurchase[];
 }
 
-export interface PurchaseItem {
+/**
+ * Producto dentro de una compra
+ * Equivalente a ProductOrder
+ */
+export interface ProductPurchase {
   id?: number;
+  product?: Product; // Opcional, puede venir del backend con todos los detalles
   productId?: number;
-  variantId?: number;
-  productName: string;
-  variantName?: string;
-  sku: string;
+  variantId?: number | null;
+  priceCost: number; // Precio de compra (equivalente a priceSale en Order)
   quantity: number;
-  unitPrice: number;
   subtotal: number;
-  // Información adicional del producto
-  categoryName?: string;
-  brandName?: string;
-  currentStock?: number;
 }
 
-export interface PurchaseProductSelect extends PurchaseItem {
-  // Para el selector de productos
-  selected?: boolean;
-  maxQuantity?: number;
+/**
+ * Para la selección de productos en el UI
+ * Equivalente a ProductOrderSelect
+ */
+export interface ProductPurchaseSelect {
+  id?: number;
+  product: Product;
+  variantId?: number | null;
+  quantity: number;
 }
 
+/**
+ * Filtros para búsqueda de compras
+ */
 export interface PurchaseFilter {
   supplierId?: number;
   status?: string;

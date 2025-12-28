@@ -1,7 +1,4 @@
-// ============================================
-// purchases-products-select.component.html
-// ============================================
-<!-- purchases-products-select.component.html -->
+<!-- purchases-products-select.component.html - CORREGIDO -->
 <div class="animate-fadeIn">
 
   <div class="w-full border-b dark:border-slate-700 pb-2 mb-4">
@@ -24,13 +21,11 @@
     <input
       type="text"
       [(ngModel)]="searchText"
-      (input)="filterProducts()"
       placeholder="Buscar por nombre o SKU..."
       class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
 
     <select
       [(ngModel)]="selectedCategory"
-      (change)="filterProducts()"
       class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
       <option value="">Todas las categorías</option>
       @for (cat of categories; track cat.id) {
@@ -52,12 +47,7 @@
       <thead class="bg-gray-50 dark:bg-slate-800">
         <tr>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-10">
-            <input
-              type="checkbox"
-              [checked]="allSelected"
-              (change)="toggleSelectAll()"
-              [disabled]="disabled"
-              class="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-400 rounded">
+            <input type="checkbox" class="w-4 h-4 opacity-0 cursor-not-allowed">
           </th>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
           <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Producto</th>
@@ -69,7 +59,15 @@
         </tr>
       </thead>
       <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
-        @if (filteredProducts.length === 0) {
+        @if (loading) {
+          <tr>
+            <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+              <div class="animate-pulse">Cargando productos...</div>
+            </td>
+          </tr>
+        }
+
+        @if (!loading && filteredProducts.length === 0) {
           <tr>
             <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
               <ng-icon name="matSearchOffOutline" size="48" class="mx-auto mb-2 opacity-50"></ng-icon>
@@ -78,57 +76,111 @@
           </tr>
         }
 
-        @for (product of filteredProducts; track product.sku) {
-          <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-            <td class="px-4 py-3">
-              <input
-                type="checkbox"
-                [(ngModel)]="product.selected"
-                (change)="toggleProduct(product)"
-                [disabled]="disabled"
-                class="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-400 rounded">
-            </td>
-            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-300 font-mono">
-              {{ product.sku }}
-            </td>
-            <td class="px-4 py-3 text-sm">
-              <div class="text-gray-700 dark:text-gray-300 font-medium">{{ product.productName }}</div>
-              @if (product.variantName) {
-                <div class="text-xs text-gray-500 dark:text-gray-500">{{ product.variantName }}</div>
-              }
-            </td>
-            <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
-              {{ product.categoryName }}
-            </td>
-            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-              <span [class]="product.currentStock < 10 ? 'text-red-600 dark:text-red-400 font-semibold' : ''">
-                {{ product.currentStock }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-              Q {{ product.unitPrice | number:'1.2-2' }}
-            </td>
-            <td class="px-4 py-3">
-              @if (product.selected) {
+        @for (product of filteredProducts; track product.id) {
+          <!-- PRODUCTO SIMPLE -->
+          @if (!product.hasVariants) {
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+              <td class="px-4 py-3">
                 <input
-                  type="number"
-                  [(ngModel)]="product.quantity"
-                  (input)="updateSubtotal(product)"
+                  type="checkbox"
+                  [checked]="isProductSelected(product)"
+                  (change)="toggleProduct(product)"
                   [disabled]="disabled"
-                  min="1"
-                  class="w-20 px-2 py-1 border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
-              } @else {
-                <span class="text-gray-400">-</span>
-              }
-            </td>
-            <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-300">
-              @if (product.selected && product.quantity > 0) {
-                Q {{ product.subtotal | number:'1.2-2' }}
-              } @else {
-                <span class="text-gray-400">-</span>
-              }
-            </td>
-          </tr>
+                  class="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-400 rounded">
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-300 font-mono">
+                {{ product.sku }}
+              </td>
+              <td class="px-4 py-3 text-sm">
+                <div class="text-gray-700 dark:text-gray-300 font-medium">{{ product.productName }}</div>
+              </td>
+              <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
+                {{ getCategoryName(product) }}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                <span [class]="getStockClass(product.currentStock!)">
+                  {{ product.currentStock }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                Q {{ product.costPrice | number:'1.2-2' }}
+              </td>
+              <td class="px-4 py-3">
+                @if (isProductSelected(product)) {
+                  <input
+                    type="number"
+                    [value]="getSelectedProduct(product)?.quantity"
+                    (input)="updateQuantity(product, getInputValue($event))"
+                    [disabled]="disabled"
+                    min="1"
+                    class="w-20 px-2 py-1 border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
+                } @else {
+                  <span class="text-gray-400">-</span>
+                }
+              </td>
+              <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-300">
+                @if (isProductSelected(product)) {
+                  Q {{ calculateSubtotal(product) | number:'1.2-2' }}
+                } @else {
+                  <span class="text-gray-400">-</span>
+                }
+              </td>
+            </tr>
+          }
+
+          <!-- PRODUCTO CON VARIANTES -->
+          @if (product.hasVariants && product.variants) {
+            @for (variant of product.variants; track variant.id) {
+              <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                <td class="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    [checked]="isProductSelected(product, variant.id!)"
+                    (change)="toggleProduct(product, variant.id!)"
+                    [disabled]="disabled"
+                    class="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-400 rounded">
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-300 font-mono">
+                  {{ variant.sku }}
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  <div class="text-gray-700 dark:text-gray-300 font-medium">{{ product.productName }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-500">{{ variant.variantName }}</div>
+                </td>
+                <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
+                  {{ getCategoryName(product) }}
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                  <span [class]="getStockClass(variant.currentStock)">
+                    {{ variant.currentStock }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                  Q {{ variant.costPrice | number:'1.2-2' }}
+                </td>
+                <td class="px-4 py-3">
+                  @if (isProductSelected(product, variant.id!)) {
+                    <input
+                      type="number"
+                      [value]="getSelectedProduct(product, variant.id!)?.quantity"
+                      (input)="updateQuantity(product, getInputValue($event), variant.id!)"
+                      [disabled]="disabled"
+                      min="1"
+                      class="w-20 px-2 py-1 border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
+                  } @else {
+                    <span class="text-gray-400">-</span>
+                  }
+                </td>
+                <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-300">
+                  @if (isProductSelected(product, variant.id!)) {
+                    Q {{ calculateSubtotal(product, variant.id!) | number:'1.2-2' }}
+                  } @else {
+                    <span class="text-gray-400">-</span>
+                  }
+                </td>
+              </tr>
+            }
+          }
         }
       </tbody>
       <tfoot class="bg-gray-50 dark:bg-slate-800">
@@ -150,7 +202,7 @@
       <button
         (click)="confirmSelection()"
         [disabled]="selectedCount === 0"
-        class="btn-primary h-10 w-36 font-bold">
+        class="btn-primary h-10 w-36 font-bold disabled:opacity-50 disabled:cursor-not-allowed">
         Continuar
       </button>
     </div>

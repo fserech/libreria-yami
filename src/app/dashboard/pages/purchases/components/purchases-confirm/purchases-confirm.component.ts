@@ -1,4 +1,4 @@
-// purchases-confirm.component.ts
+// purchases-confirm.component.ts - COMPLETO
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -15,7 +15,12 @@ import {
 } from '@ng-icons/material-icons/outline';
 
 // Interfaces
-import { Purchase, PurchaseProductSelect } from '../../../../../shared/interfaces/purchase';
+import {
+  Purchase,
+  ProductPurchaseSelect,
+  ProductPurchase
+} from '../../../../../shared/interfaces/purchase';
+import { Product } from '../../../../../shared/interfaces/product';
 import { AuthService } from '../../../../../shared/services/auth.service';
 
 @Component({
@@ -35,13 +40,12 @@ import { AuthService } from '../../../../../shared/services/auth.service';
   ]
 })
 export class PurchasesConfirmComponent {
-  @Input() mode: any;
-
-  @Input() supplier: { id: number; name: string };
-  @Input() products: PurchaseProductSelect[] = [];
+  @Input() mode: 'new' | 'edit' | 'view' = 'new';
+  @Input() supplierId: number;
+  @Input() supplierName: string;
+  @Input() products: ProductPurchaseSelect[] = [];
   @Input() purchaseDate: string;
   @Input() observation: string;
-  @Input() totalAmount: number = 0;
 
   @Output() confirmPurchase = new EventEmitter<Purchase>();
   @Output() backStep = new EventEmitter<boolean>();
@@ -50,63 +54,127 @@ export class PurchasesConfirmComponent {
 
   constructor(private auth: AuthService) {}
 
-  /**
-   * Calcula el total de unidades sumando las cantidades de todos los productos
-   */
   getTotalUnits(): number {
     return this.products.reduce((sum, p) => sum + p.quantity, 0);
   }
 
-  /**
-   * Regresa al paso anterior (selección de productos)
-   */
+  getTotalAmount(): number {
+    return this.products.reduce((sum, p) => {
+      const price = this.getProductPrice(p);
+      return sum + (price * p.quantity);
+    }, 0);
+  }
+
+  getProductPrice(productSelect: ProductPurchaseSelect): number {
+    if (productSelect.variantId && productSelect.product.variants) {
+      const variant = productSelect.product.variants.find(
+        v => v.id === productSelect.variantId
+      );
+      return variant?.costPrice || 0;
+    }
+    return productSelect.product.costPrice || 0;
+  }
+
+  getProductName(productSelect: ProductPurchaseSelect): string {
+    let name = productSelect.product.productName;
+
+    if (productSelect.variantId && productSelect.product.variants) {
+      const variant = productSelect.product.variants.find(
+        v => v.id === productSelect.variantId
+      );
+      if (variant) {
+        name += ` - ${variant.variantName}`;
+      }
+    }
+
+    return name;
+  }
+
+  getProductSku(productSelect: ProductPurchaseSelect): string {
+    if (productSelect.variantId && productSelect.product.variants) {
+      const variant = productSelect.product.variants.find(
+        v => v.id === productSelect.variantId
+      );
+      return variant?.sku || '';
+    }
+    return productSelect.product.sku || '';
+  }
+
+  getCategoryName(product: Product): string {
+    return (product as any).categoryName || '';
+  }
+
+  getSubtotal(productSelect: ProductPurchaseSelect): number {
+    const price = this.getProductPrice(productSelect);
+    return price * productSelect.quantity;
+  }
+
   goBack(): void {
     this.backStep.emit(true);
   }
 
-  /**
-   * Confirma la compra y emite el objeto Purchase completo
-   */
   confirm(): void {
-    console.log('Confirmando compra...');
-    console.log('Proveedor:', this.supplier);
-    console.log('Productos:', this.products);
-
-    // Validaciones básicas
-    if (!this.supplier || !this.products || this.products.length === 0) {
-      console.error('Faltan datos para confirmar la compra');
+    if (!this.validatePurchaseData()) {
       return;
     }
 
     this.loading = true;
 
-    // Construir el objeto Purchase
+    const purchase = this.buildPurchaseObject();
+
+    setTimeout(() => {
+      this.confirmPurchase.emit(purchase);
+    }, 300);
+  }
+
+  private validatePurchaseData(): boolean {
+    if (!this.supplierId) {
+      console.error('❌ Falta el proveedor');
+      return false;
+    }
+
+    if (!this.products || this.products.length === 0) {
+      console.error('❌ No hay productos seleccionados');
+      return false;
+    }
+
+    if (!this.purchaseDate) {
+      console.error('❌ Falta la fecha de compra');
+      return false;
+    }
+
+    return true;
+  }
+
+  private buildPurchaseObject(): Purchase {
+    const products: ProductPurchase[] = this.products.map(ps => {
+      const price = this.getProductPrice(ps);
+
+      return {
+        productId: ps.product.id,
+        variantId: ps.variantId || null,
+        priceCost: price,
+        quantity: ps.quantity,
+        subtotal: price * ps.quantity
+      };
+    });
+
     const purchase: Purchase = {
+      supplierId: this.supplierId,
+      userId: this.auth.getUserData()?.id,
       purchaseDate: this.purchaseDate,
-      supplierId: this.supplier.id,
-      supplierName: this.supplier.name,
-      totalAmount: this.totalAmount,
-      status: 'COMPLETED',
-      observation: this.observation || null,
-      items: this.products.map(p => ({
-        productId: p.productId,
-        variantId: p.variantId,
-        productName: p.productName,
-        variantName: p.variantName,
-        sku: p.sku,
-        quantity: p.quantity,
-        unitPrice: p.unitPrice,
-        subtotal: p.subtotal,
-        categoryName: p.categoryName,
-        brandName: p.brandName,
-        currentStock: p.currentStock
-      })),
-      idUser: this.auth.getUserData().id
+      totalAmount: this.getTotalAmount(),
+      status: 'PENDING',
+      observation: this.observation?.trim() || '',
+      products: products
     };
 
-    console.log('Purchase object:', purchase);
+    return purchase;
+  }
 
-    // Emitir el evento con la compra completa
-    this.confirmPurchase.emit(purchase);
+  canConfirm(): boolean {
+    return this.products.length > 0 &&
+           !this.loading &&
+           this.mode !== 'view';
   }
 }

@@ -1,7 +1,4 @@
-// ============================================
-// 3. purchases-confirm.component.html
-// ============================================
-<!-- purchases-confirm.component.html -->
+<!-- purchases-confirm.component.html - CORREGIDO -->
 <div class="animate-fadeIn">
 
   <div class="w-full border-b dark:border-slate-700 pb-2 mb-4">
@@ -28,7 +25,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
       <div>
         <span class="text-gray-500 dark:text-gray-400">Proveedor:</span>
-        <span class="ml-2 font-semibold text-gray-700 dark:text-gray-300">{{ supplier?.name }}</span>
+        <span class="ml-2 font-semibold text-gray-700 dark:text-gray-300">{{ supplierName }}</span>
       </div>
       <div>
         <span class="text-gray-500 dark:text-gray-400">Fecha:</span>
@@ -63,28 +60,32 @@
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
-          @for (product of products; track product.sku; let i = $index) {
+          @for (productSelect of products; track productSelect.product.id; let i = $index) {
             <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
               <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                 {{ i + 1 }}
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-300 font-mono">
-                {{ product.sku }}
+                {{ getProductSku(productSelect) }}
               </td>
               <td class="px-4 py-3 text-sm">
-                <div class="text-gray-700 dark:text-gray-300 font-medium">{{ product.productName }}</div>
-                @if (product.variantName) {
-                  <div class="text-xs text-gray-500 dark:text-gray-500">{{ product.variantName }}</div>
+                <div class="text-gray-700 dark:text-gray-300 font-medium">
+                  {{ getProductName(productSelect) }}
+                </div>
+                @if (getCategoryName(productSelect.product)) {
+                  <div class="text-xs text-gray-500 dark:text-gray-500">
+                    {{ getCategoryName(productSelect.product) }}
+                  </div>
                 }
               </td>
               <td class="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300">
-                {{ product.quantity }}
+                {{ productSelect.quantity }}
               </td>
               <td class="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300">
-                Q {{ product.unitPrice | number:'1.2-2' }}
+                Q {{ getProductPrice(productSelect) | number:'1.2-2' }}
               </td>
               <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-300">
-                Q {{ product.subtotal | number:'1.2-2' }}
+                Q {{ getSubtotal(productSelect) | number:'1.2-2' }}
               </td>
             </tr>
           }
@@ -95,7 +96,7 @@
               TOTAL:
             </td>
             <td class="px-4 py-4 text-right text-lg font-bold text-blue-600 dark:text-blue-400">
-              Q {{ totalAmount | number:'1.2-2' }}
+              Q {{ getTotalAmount() | number:'1.2-2' }}
             </td>
           </tr>
         </tfoot>
@@ -116,7 +117,7 @@
       </div>
       <div>
         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Total</p>
-        <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">Q {{ totalAmount | number:'1.2-2' }}</p>
+        <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">Q {{ getTotalAmount() | number:'1.2-2' }}</p>
       </div>
       <div>
         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Estado</p>
@@ -129,18 +130,21 @@
   </div>
 
   <!-- BOTONES DE ACCIÓN -->
-  <div class="w-full border-b dark:border-slate-700 pb-3 pt-3 flex justify-center sm:justify-end mb-2">
-    @if (!loading) {
-      <button
-        (click)="confirm()"
-        class="btn-primary h-10 w-36 font-bold">
-        Guardar
-      </button>
-    } @else {
-      <button class="btn-primary h-10 w-36 font-bold animate-pulse" disabled>
-        Guardando...
-      </button>
-    }
-  </div>
+  @if (mode !== 'view') {
+    <div class="w-full border-b dark:border-slate-700 pb-3 pt-3 flex justify-center sm:justify-end mb-2">
+      @if (!loading) {
+        <button
+          (click)="confirm()"
+          [disabled]="!canConfirm()"
+          class="btn-primary h-10 w-36 font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+          Guardar
+        </button>
+      } @else {
+        <button class="btn-primary h-10 w-36 font-bold animate-pulse" disabled>
+          Guardando...
+        </button>
+      }
+    </div>
+  }
 
 </div>

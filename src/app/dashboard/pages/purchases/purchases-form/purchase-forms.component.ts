@@ -1,7 +1,4 @@
-
-// ============================================
-// purchases-form.component.ts - CORREGIDO
-// ============================================
+// purchase-forms.component.ts - COMPLETO
 import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -38,7 +35,7 @@ import {
 
 // Constants & Interfaces
 import { URL_PURCHASES } from '../../../../shared/constants/endpoints';
-import { Purchase, PurchaseProductSelect } from '../../../../shared/interfaces/purchase';
+import { Purchase, ProductPurchaseSelect } from '../../../../shared/interfaces/purchase';
 import { InputOptionsSelect } from '../../../../shared/interfaces/input';
 import { environment } from '../../../../../environments/environment';
 import BaseForm from '../../../../shared/classes/base-form';
@@ -93,11 +90,11 @@ export default class PurchaseFormsComponent extends BaseForm implements OnInit, 
   productsForm: FormGroup;
 
   // ==================== DATA ====================
-  supplier: { id: number; name: string };
-  products: PurchaseProductSelect[] = [];
+  supplierId: number;
+  supplierName: string;
+  products: ProductPurchaseSelect[] = [];
   purchaseDate: string;
   observation: string;
-  totalAmount: number = 0;
 
   // ==================== OPTIONS ====================
   supplierOptions: InputOptionsSelect[] = [];
@@ -129,7 +126,6 @@ export default class PurchaseFormsComponent extends BaseForm implements OnInit, 
       observation: ['', Validators.maxLength(255)]
     });
 
-    // Este form se valida cuando hay productos seleccionados
     this.productsForm = this.fb.group({
       products: [[], Validators.required]
     });
@@ -181,10 +177,16 @@ export default class PurchaseFormsComponent extends BaseForm implements OnInit, 
         observation: purchase.observation
       });
 
-      if (purchase.items && purchase.items.length > 0) {
-        this.products = purchase.items;
+      // Convertir ProductPurchase[] a ProductPurchaseSelect[]
+      if (purchase.products && purchase.products.length > 0) {
+        this.products = purchase.products.map(pp => ({
+          id: pp.id,
+          product: pp.product!,
+          variantId: pp.variantId || null,
+          quantity: pp.quantity
+        }));
+
         this.productsForm.patchValue({ products: this.products });
-        this.calculateTotal();
       }
 
       this.supplierForm.markAsPristine();
@@ -211,11 +213,8 @@ export default class PurchaseFormsComponent extends BaseForm implements OnInit, 
         opt => opt.value === supplierId
       )?.label || '';
 
-      this.supplier = {
-        id: Number(supplierId),
-        name: supplierName
-      };
-
+      this.supplierId = Number(supplierId);
+      this.supplierName = supplierName;
       this.purchaseDate = this.supplierForm.get('purchaseDate')?.value;
       this.observation = this.supplierForm.get('observation')?.value;
 
@@ -233,22 +232,18 @@ export default class PurchaseFormsComponent extends BaseForm implements OnInit, 
 
   backStep(ev: boolean): void {
     if (ev) {
-      // Regresar al paso de selección de productos
       this.stepper.selectedIndex = 1;
     }
   }
 
   // ==================== PRODUCT SELECTION ====================
 
-  productsSelect(products: PurchaseProductSelect[]): void {
+  productsSelect(products: ProductPurchaseSelect[]): void {
     console.log('Productos seleccionados:', products);
     this.products = products;
-    this.calculateTotal();
 
-    // Actualizar el form control para que el stepper reconozca que hay productos
     this.productsForm.patchValue({ products: this.products });
 
-    // Marcar como válido si hay productos
     if (this.products.length > 0) {
       this.productsForm.markAsDirty();
     }
@@ -259,28 +254,16 @@ export default class PurchaseFormsComponent extends BaseForm implements OnInit, 
     console.log('Productos actuales:', this.products);
 
     if (ev && this.products.length > 0) {
-      this.calculateTotal();
-
-      // Actualizar el form antes de avanzar
       this.productsForm.patchValue({ products: this.products });
       this.productsForm.updateValueAndValidity();
 
       console.log('Form válido:', this.productsForm.valid);
       console.log('Avanzando al paso de confirmación...');
 
-      // Avanzar al paso de confirmación
       this.stepper.next();
     } else {
       this.toast.info('Selecciona al menos 1 producto.');
     }
-  }
-
-  calculateTotal(): void {
-    this.totalAmount = this.products.reduce(
-      (sum, item) => sum + (item.subtotal || 0),
-      0
-    );
-    console.log('Total calculado:', this.totalAmount);
   }
 
   // ==================== FORM SUBMISSION ====================
@@ -304,7 +287,6 @@ export default class PurchaseFormsComponent extends BaseForm implements OnInit, 
       this.supplierForm.markAsPristine();
       this.productsForm.markAsPristine();
 
-      // Redirigir después de un pequeño delay para que se vea el mensaje
       setTimeout(() => {
         this.router.navigate(['dashboard/purchases']);
       }, 1000);

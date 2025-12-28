@@ -156,6 +156,12 @@ export const routes: Routes =
       loadComponent: () =>
         import('./dashboard/pages/purchases/purchase-grid-main/purchase-grid-main.component'),
     },
+     {
+            path: 'view/:id',
+            title: 'Compras',
+            canMatch: [authGuard],
+            loadComponent: () => import('./dashboard/pages/purchases/components/purchases-view/purchases-view.component'),
+          },
     {
       path: 'detail/:mode',
       title: 'Nueva Compra',

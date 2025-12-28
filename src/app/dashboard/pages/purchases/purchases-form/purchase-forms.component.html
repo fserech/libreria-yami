@@ -1,4 +1,4 @@
-<!-- purchase-forms.component.html -->
+<!-- purchases-form.component.html - COMPLETO -->
 <app-header headerTitle="Compras" headerDescription="Gestión de módulo de compras para registrar entradas de inventario."></app-header>
 
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
@@ -95,7 +95,7 @@
 
       <app-purchases-products-select
         #selectProducts
-        [supplierId]="supplierForm.get('supplierId')?.value"
+        [supplierId]="supplierId"
         [disabled]="mode === 'view'"
         (changes)="productsSelect($event)"
         (finalized)="finalizedSelectProducts($event)">
@@ -111,13 +111,13 @@
       <app-purchases-confirm
         #confirmPurchase
         [mode]="mode"
-        (confirmPurchase)="submit($event)"
-        (backStep)="backStep($event)"
-        [supplier]="supplier"
+        [supplierId]="supplierId"
+        [supplierName]="supplierName"
         [products]="products"
         [purchaseDate]="purchaseDate"
         [observation]="observation"
-        [totalAmount]="totalAmount">
+        (confirmPurchase)="submit($event)"
+        (backStep)="backStep($event)">
       </app-purchases-confirm>
     </mat-step>
   </mat-stepper>

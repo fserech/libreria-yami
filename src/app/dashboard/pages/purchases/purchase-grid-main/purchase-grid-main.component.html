@@ -1,178 +1,254 @@
-<!-- purchases-grid-main.component.html -->
-<app-header headerTitle="Compras" headerDescription="Gestión de compras y control de inventario"></app-header>
+<!-- HEADER -->
+<app-header headerTitle="Compras" headerDescription="Gestión de módulo de compras u ordenes, se encarga de ingresar, cambiar de estado hasta finalizar cada compra."></app-header>
 
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
 
-  <!-- BÚSQUEDA Y ACCIONES -->
-  <div class="mb-4 flex flex-col sm:flex-row gap-3">
-    <div class="flex-1">
-      <input
-        type="text"
-        [(ngModel)]="searchText"
-        (keyup.enter)="search()"
-        placeholder="Buscar por proveedor, fecha, monto..."
-        class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-    </div>
-    <button (click)="openFilterDialog()" type="button" class="btn-success h-10 sm:flex md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
+  <!-- FILTER AND SEARCH -->
+  <!-- MOBILE -->
+  <div class="sticky top-0 z-10 grid grid-cols-1 gap-4 md:grid-cols-1 p-1 bg-white dark:bg-slate-900 border-b dark:border-slate-600">
+    <div class="border dark:border-slate-700 border-none border-t-0 border-l-0 border-r-0 m-0 p-0 pb-2 w-full">
+
+      <button (click)="openFilterDialog()" type="button" class="btn-success h-10 sm:flex md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
         <div class="flex text-center justify-center align-middle">
           <p class="text-sm md:text-base">Filtros</p>
           <ng-icon class="text-white font-bold m-1" size="15" name="matFilterAltOutline"></ng-icon>
         </div>
       </button>
 
-    <button (click)="add()" type="button" class="btn-primary h-10 float-right w-28">
+      <button (click)="add()" type="button" class="btn-primary h-10 float-right w-28">
         <div class="flex text-center justify-center align-middle">
           <p class="text-sm md:text-base">Nuevo</p>
           <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
         </div>
       </button>
+
+    </div>
+
+    <!-- FILTER DESKTOP -->
+    <div class="md:flex w-full hidden pl-6">
+      <div class="w-96">
+        <input
+          type="text"
+          [(ngModel)]="searchText"
+          (keydown.enter)="search()"
+          (keydown.escape)="clearAllFilters()"
+          placeholder="Fecha creación"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <button (click)="search()" type="button" class="btn-success h-10">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base align-middle">Buscar</p>
+          <ng-icon class="text-white font-bold m-1" size="17" name="matSearchOutline"></ng-icon>
+        </div>
+      </button>
+
+      <button (click)="openFilterDialog()" type="button" class="btn-success h-10">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base">Filtros</p>
+          <ng-icon class="text-white font-bold m-1" size="17" name="matFilterAltOutline"></ng-icon>
+        </div>
+      </button>
+    </div>
+
+    <!-- SEARCH MOBILE -->
+    <div class="w-full md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
+      <div class="flex">
+        <input
+          type="text"
+          [(ngModel)]="searchText"
+          (keydown.enter)="search()"
+          (keydown.escape)="clearAllFilters()"
+          placeholder="Buscar compra..."
+          class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+        <button (click)="search()" type="button" class="btn-success h-10">
+          <div class="flex text-center justify-center align-middle">
+            <ng-icon class="text-white font-bold p-0 m-0" size="20" name="matSearchOutline"></ng-icon>
+          </div>
+        </button>
+      </div>
+    </div>
+
   </div>
 
-  <!-- FILTROS ACTIVOS -->
-  @if (hasActiveFilters) {
-    <div class="mb-4 flex flex-wrap gap-2 items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-      <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Filtros activos:</span>
+  <!-- TABS DE TIEMPO -->
+  <div class="flex gap-2 my-4">
+    <button
+      (click)="setActiveTimeTab('month')"
+      [class]="activeTimeTab === 'month'
+        ? 'flex-1 py-3 px-6 rounded-lg bg-blue-400'
+        : 'flex-1 py-3 px-6 rounded-lg bg-white dark:bg-slate-900 text-gray-600 border dark:border-slate-700'">
+      <div class="flex text-center justify-center align-middle">
+        <p
+          class="text-sm md:text-base"
+          [class.text-white]="activeTimeTab === 'month'"
+          [class.font-bold]="activeTimeTab === 'month'">
+          Mes
+        </p>
+      </div>
+    </button>
 
-      @if (currentFilters.supplierId) {
-        <span class="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full flex items-center">
-          Proveedor
-          <button (click)="removeFilter('supplierId')" class="ml-2 hover:text-blue-600">
-            <ng-icon name="matCloseOutline" size="14"></ng-icon>
-          </button>
-        </span>
-      }
+    <button
+      (click)="setActiveTimeTab('week')"
+      [class]="activeTimeTab === 'week'
+        ? 'flex-1 py-3 px-6 rounded-lg bg-blue-400'
+        : 'flex-1 py-3 px-6 rounded-lg bg-white dark:bg-slate-900 text-gray-600 border dark:border-slate-700'">
+      <div class="flex text-center justify-center align-middle">
+        <p
+          class="text-sm md:text-base"
+          [class.text-white]="activeTimeTab === 'week'"
+          [class.font-bold]="activeTimeTab === 'week'">
+          Semana
+        </p>
+      </div>
+    </button>
 
-      @if (currentFilters.status) {
-        <span class="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full flex items-center">
-          Estado: {{ getStatusLabel(currentFilters.status) }}
-          <button (click)="removeFilter('status')" class="ml-2 hover:text-blue-600">
-            <ng-icon name="matCloseOutline" size="14"></ng-icon>
-          </button>
-        </span>
-      }
+    <button
+      (click)="setActiveTimeTab('day')"
+      [class]="activeTimeTab === 'day'
+        ? 'flex-1 py-3 px-6 rounded-lg bg-blue-400'
+        : 'flex-1 py-3 px-6 rounded-lg bg-white dark:bg-slate-900 text-gray-600 border dark:border-slate-700'">
+      <div class="flex text-center justify-center align-middle">
+        <p
+          class="text-sm md:text-base"
+          [class.text-white]="activeTimeTab === 'day'"
+          [class.font-bold]="activeTimeTab === 'day'">
+          Día
+        </p>
+      </div>
+    </button>
+  </div>
 
-      @if (currentFilters.startDate || currentFilters.endDate) {
-        <span class="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full flex items-center">
-          Rango de fechas
-          <button (click)="removeDateRange()" class="ml-2 hover:text-blue-600">
-            <ng-icon name="matCloseOutline" size="14"></ng-icon>
-          </button>
-        </span>
-      }
-
-      @if (currentFilters.minAmount || currentFilters.maxAmount) {
-        <span class="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full flex items-center">
-          Rango de montos
-          <button (click)="removeAmountRange()" class="ml-2 hover:text-blue-600">
-            <ng-icon name="matCloseOutline" size="14"></ng-icon>
-          </button>
-        </span>
-      }
-
-      <button
-        (click)="clearAllFilters()"
-        class="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold">
-        Limpiar todos
-      </button>
+  <!-- MENSAJE SIN COMPRAS -->
+  @if (!load && items.length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 px-4">
+      <div class="text-center">
+        <div class="mx-auto mb-4 w-24 h-24 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+          <ng-icon class="text-gray-400 dark:text-gray-500" size="48" name="matShoppingBagOutline"></ng-icon>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          No hay compras registradas
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">
+          @if (activeTimeTab === 'day') {
+            No se encontraron compras para el día de hoy
+          }
+          @if (activeTimeTab === 'week') {
+            No se encontraron compras para esta semana
+          }
+          @if (activeTimeTab === 'month') {
+            No se encontraron compras para este mes
+          }
+        </p>
+        <button (click)="add()" type="button" class="btn-primary px-6 py-3">
+          <div class="flex items-center justify-center gap-2">
+            <ng-icon class="text-white" size="20" name="matAddOutline"></ng-icon>
+            <span>Crear primera compra</span>
+          </div>
+        </button>
+      </div>
     </div>
   }
 
-  <!-- TABLA -->
-  <div class="overflow-x-auto">
-    @if (load && items.length === 0) {
-      <div class="text-center py-12">
-        <ng-icon name="matHourglassEmptyOutline" size="48" class="mx-auto mb-4 text-gray-400 animate-spin"></ng-icon>
-        <p class="text-gray-500 dark:text-gray-400">Cargando compras...</p>
-      </div>
-    } @else if (!load && items.length === 0) {
-      <div class="text-center py-12">
-        <ng-icon name="matShoppingBagOutline" size="48" class="mx-auto mb-4 text-gray-400 opacity-50"></ng-icon>
-        <p class="text-gray-500 dark:text-gray-400 mb-2">No hay compras registradas</p>
+  <!-- TABLE -->
+  @if (!load && items.length > 0) {
+    <div class="rounded-lg">
 
-      </div>
-    } @else {
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-        <thead class="bg-gray-50 dark:bg-slate-800">
+      <!-- TABLE DESKTOP -->
+      <table class="table-grid w-full mt-4 hidden sm:table">
+        <thead>
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700" (click)="sort('id')">
-              ID
-              <ng-icon [name]="getSortIcon('id')" size="14" class="inline ml-1"></ng-icon>
+            <th>
+              <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1" (click)="sort('id')">
+                <p>ID</p>
+                @if(sortField === 'id' && sortDirection === 'asc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+                }
+                @if(sortField === 'id' && sortDirection === 'desc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+                }
+              </button>
             </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700" (click)="sort('purchaseDate')">
-              Fecha
-              <ng-icon [name]="getSortIcon('purchaseDate')" size="14" class="inline ml-1"></ng-icon>
+            <th>
+              <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1" (click)="sort('purchaseDate')">
+                <p>Fecha</p>
+                @if(sortField === 'purchaseDate' && sortDirection === 'asc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+                }
+                @if(sortField === 'purchaseDate' && sortDirection === 'desc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+                }
+              </button>
             </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Proveedor</th>
-            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Productos</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700" (click)="sort('totalAmount')">
-              Total
-              <ng-icon [name]="getSortIcon('totalAmount')" size="14" class="inline ml-1"></ng-icon>
+            <th>
+              <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1">
+                <p>Proveedor</p>
+              </button>
             </th>
-            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Estado</th>
-            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
+            <th>
+              <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1">
+                <p>Productos</p>
+              </button>
+            </th>
+            <th>
+              <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1" (click)="sort('totalAmount')">
+                <p>Total</p>
+                @if(sortField === 'totalAmount' && sortDirection === 'asc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+                }
+                @if(sortField === 'totalAmount' && sortDirection === 'desc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+                }
+              </button>
+            </th>
+            <th>
+              <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1" (click)="sort('status')">
+                <p>Estado</p>
+                @if(sortField === 'status' && sortDirection === 'asc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+                }
+                @if(sortField === 'status' && sortDirection === 'desc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+                }
+              </button>
+            </th>
           </tr>
         </thead>
-        <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
-          @for (purchase of items; track purchase.id) {
-            <tr class="hover:bg-gray-50 dark:hover:bg-slate-800">
-              <td class="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-300">
-                #{{ purchase.id }}
+
+        <tbody>
+          @for (purchase of items; track $index) {
+            <tr class="text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{' bg-gray-200 dark:bg-slate-950': $odd }">
+              <td class="rounded">{{ purchase.id }}</td>
+              <td class="rounded">{{ purchase.purchaseDate | date:'dd/MM/yyyy' }}</td>
+              <td class="rounded">{{ getSupplierName(purchase) }}</td>
+              <td class="rounded text-center">{{ getProductsCount(purchase) }}</td>
+              <td class="rounded text-right">Q {{ purchase.totalAmount | number:'1.2-2' }}</td>
+              <td class="rounded">
+                <p class="rounded-lg p-1 text-xs text-center w-full m-0"
+                   [ngClass]="{
+                     'bg-yellow-100 text-yellow-600': purchase.status === 'PENDING',
+                     'bg-emerald-200 text-emerald-600': purchase.status === 'COMPLETED',
+                     'bg-gray-50 text-gray-600': purchase.status === 'CANCELLED'
+                   }">
+                  {{ getStatusLabel(purchase.status) }}
+                </p>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">
-                {{ purchase.purchaseDate | date:'dd/MM/yyyy' }}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">
-                {{ purchase.supplierName }}
-              </td>
-              <td class="px-4 py-3 text-sm text-center text-gray-700 dark:text-gray-400">
-                {{ purchase.items?.length || 0 }}
-              </td>
-              <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-gray-300">
-                Q {{ purchase.totalAmount | number:'1.2-2' }}
-              </td>
-              <td class="px-4 py-3 text-center">
-                @switch (purchase.status) {
-                  @case ('COMPLETED') {
-                    <span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 dark:bg-green-900/30 dark:text-green-300 rounded-full">
-                      Completada
-                    </span>
-                  }
-                  @case ('PENDING') {
-                    <span class="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-full">
-                      Pendiente
-                    </span>
-                  }
-                  @case ('CANCELLED') {
-                    <span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 dark:bg-red-900/30 dark:text-red-300 rounded-full">
-                      Cancelada
-                    </span>
-                  }
-                }
-              </td>
-              <td class="px-4 py-3 text-center">
-                <div class="flex justify-center gap-2">
-                  <button
-                    (click)="view(purchase.id)"
-                    class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
-                    title="Ver detalle">
-                    <ng-icon name="matVisibilityOutline" size="18"></ng-icon>
+              <td class="rounded">
+                <div class="flex">
+                  <!-- Ver siempre visible -->
+                  <button (click)="view(purchase.id!)" class="btn-action" title="Ver detalles">
+                    <ng-icon class="text-blue-500 font-bold float-end" size="20" name="matVisibilityOutline"></ng-icon>
                   </button>
 
+                  <!-- Completar y Cancelar solo para PENDING -->
                   @if (purchase.status === 'PENDING') {
-                    <button
-                      (click)="edit(purchase.id)"
-                      class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                      title="Editar">
-                      <ng-icon name="matEditOutline" size="18"></ng-icon>
+                    <button (click)="changeStatus(purchase.id!, 'COMPLETED')" class="btn-action" title="Completar">
+                      <ng-icon class="text-emerald-500 font-bold float-end" size="20" name="matCheckCircleOutline"></ng-icon>
+                    </button>
+                    <button (click)="changeStatus(purchase.id!, 'CANCELLED')" class="btn-action" title="Cancelar">
+                      <ng-icon class="text-red-500 font-bold float-end" size="20" name="matCancelOutline"></ng-icon>
                     </button>
                   }
-
-                  <button
-                    (click)="delete(purchase.id)"
-                    class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                    title="Eliminar">
-                    <ng-icon name="matDeleteOutline" size="18"></ng-icon>
-                  </button>
                 </div>
               </td>
             </tr>
@@ -180,41 +256,191 @@
         </tbody>
       </table>
 
-      <!-- PAGINACIÓN -->
-      <div class="mt-4 flex justify-between items-center">
-        <div class="text-sm text-gray-500 dark:text-gray-400">
-          Mostrando {{ (page - 1) * pageSize + 1 }} - {{ Math.min(page * pageSize, totalItems) }} de {{ totalItems }} compras
-        </div>
-
-        <div class="flex gap-2">
-          <button
-            (click)="previousPage()"
-            [disabled]="page === 1"
-            class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600 rounded disabled:opacity-50 disabled:cursor-not-allowed">
-            Anterior
-          </button>
-
-          <div class="flex items-center gap-1">
-            @for (pageNum of getPageNumbers(); track pageNum) {
-              <button
-                (click)="goToPage(pageNum)"
-                [class]="pageNum === page
-                  ? 'px-3 py-2 text-sm font-bold text-white bg-blue-600 rounded'
-                  : 'px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600 rounded'">
-                {{ pageNum }}
+      <!-- TABLE MOBILE -->
+      <table class="table-grid w-full mt-4 sm:hidden">
+        <thead>
+          <tr>
+            <th>
+              <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1" (click)="sort('purchaseDate')">
+                <p>Compras por fecha</p>
+                @if(sortField === 'purchaseDate' && sortDirection === 'desc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+                }
+                @if(sortField === 'purchaseDate' && sortDirection === 'asc'){
+                  <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+                }
               </button>
-            }
-          </div>
+            </th>
+          </tr>
+        </thead>
 
-          <button
-            (click)="nextPage()"
-            [disabled]="page >= totalPages"
-            class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600 rounded disabled:opacity-50 disabled:cursor-not-allowed">
-            Siguiente
-          </button>
+        <tbody>
+          @for (purchase of items; track $index) {
+            <tr class="text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{' bg-gray-200 dark:bg-slate-950': $odd }">
+              <td class="rounded">
+                <div class="flex justify-between mt-4 mb-4">
+                  <h1>
+                    <p class="font-bold text-gray-400 flex">
+                      @if (purchase.status === 'COMPLETED') {<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>}
+                      @if (purchase.status === 'PENDING') {<span class="relative inline-flex rounded-full h-2 w-2 bg-yellow-400"></span>}
+                      @if (purchase.status === 'CANCELLED') {<span class="relative inline-flex rounded-full h-2 w-2 bg-gray-400"></span>}
+                      <b class="ml-2 font-semibold text-xs text-gray-400">ID: {{ purchase.id }}</b>
+                    </p>
+                    <p class="font-bold dark:text-gray-400">{{ getSupplierName(purchase) }}</p>
+                    <p class="text-sm"><b class="dark:text-gray-400">Fecha: </b>{{ purchase.purchaseDate | date:'dd/MM/yyyy' }}</p>
+                    <p class="text-sm"><b class="dark:text-gray-400">Productos: </b>{{ getProductsCount(purchase) }}</p>
+                    <p class="text-sm"><b class="dark:text-gray-400">Total: </b>Q {{ purchase.totalAmount | number:'1.2-2' }}</p>
+                  </h1>
+
+                  <div class="h-100 p-2 pb-0 pl-1">
+                    <app-chat-bubble
+                      [id]="purchase.id!"
+                      [options]="getActionsForPurchase(purchase)"
+                      (selectOption)="selectOption($event)">
+                    </app-chat-bubble>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+    </div>
+  }
+
+  <!-- LOADING STATE -->
+  @if (load) {
+    <div class="rounded-lg">
+      <!-- DESKTOP LOADING -->
+      <table class="table-grid w-full mt-4 hidden sm:table">
+        <thead>
+          <tr>
+            @for (item of [1,2,3,4,5,6]; track $index) {
+              <td>
+                <div class="rounded pt-2 pb-2 p-1">
+                  <div class="animate-pulse flex space-x-4">
+                    <div class="flex-1 space-y-6 py-1">
+                      <div class="h-7 bg-gray-400 dark:bg-slate-500 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of [1,2,3,4,5,6,7,8,9,10]; track $index) {
+            <tr class="w-full text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{' bg-gray-200 dark:bg-slate-950': $odd }">
+              @for (loading of [1,2,3,4,5,6]; track $index) {
+                <td class="w-20">
+                  <div class="rounded pt-2 pb-2 p-1">
+                    <div class="animate-pulse flex space-x-4">
+                      <div class="flex-1 space-y-6 py-1">
+                        <div class="h-2 bg-gray-400 dark:bg-slate-800 rounded" [ngClass]="{'bg-gray-400 dark:bg-slate-500': $odd }"></div>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              }
+              <td class="w-20">
+                <div class="flex">
+                  <div class="rounded pl-2">
+                    <div class="animate-pulse flex space-x-4">
+                      <div class="rounded-md bg-emerald-400 h-5 w-5"></div>
+                    </div>
+                  </div>
+                  <div class="rounded-md pl-1">
+                    <div class="animate-pulse flex space-x-4">
+                      <div class="rounded-md bg-blue-400 h-5 w-5"></div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <!-- MOBILE LOADING -->
+      <table class="table-grid w-full mt-4 sm:hidden">
+        <thead>
+          <tr>
+            <th>
+              <button class="w-full h-full flex bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1">
+                <p>Compras</p>
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of [1,2,3,4,5,6]; track $index) {
+            <tr class="text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{' bg-gray-200 dark:bg-slate-950': $odd }">
+              <td class="rounded">
+                <div class="flex">
+                  <div class="rounded-md p-2 w-60">
+                    <div class="animate-pulse flex space-x-4">
+                      <div class="flex-1 space-y-6 py-1">
+                        <div class="space-y-3">
+                          <div class="grid grid-cols-2 gap-2">
+                            <div class="h-2 bg-gray-300 dark:bg-slate-700 rounded col-span-1"></div>
+                            <div class="h-2 bg-gray-300 dark:bg-slate-700 rounded col-span-1"></div>
+                            <div class="h-2 bg-gray-300 dark:bg-slate-700 rounded col-span-2"></div>
+                            <div class="h-2 bg-gray-300 dark:bg-slate-700 rounded col-span-1"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rounded-md p-2 w-20">
+                    <div class="animate-pulse flex space-x-4">
+                      <div class="flex-1 space-y-6 py-1">
+                        <div class="float-end h-9 w-2 bg-gray-300 dark:bg-slate-700 rounded col-span-1"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- PAGINACIÓN -->
+  @if (!load && items.length > 0) {
+    <div class="mt-4">
+      <!-- MOBILE -->
+      <div class="block sm:hidden">
+        <div class="w-full bg-gray-100 rounded-lg dark:bg-slate-950">
+          <div class="flex justify-between mb-2 p-2 rounded-lg border m-1 bg-white dark:bg-slate-900 dark:border-slate-700">
+            <button class="btn-pagination"><ng-icon (click)="firstPage()" size="22" name="bootstrapChevronBarLeft"></ng-icon></button>
+            <button class="btn-pagination"><ng-icon (click)="previousPage()" size="22" name="bootstrapChevronLeft"></ng-icon></button>
+            <button class="btn-pagination"><ng-icon (click)="nextPage()" size="22" name="bootstrapChevronRight"></ng-icon></button>
+            <button class="btn-pagination"><ng-icon (click)="lastPage()" size="22" name="bootstrapChevronBarRight"></ng-icon></button>
+          </div>
+          <div class="flex justify-between">
+            <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Páginas: </b> {{page}} de {{totalPages}}</p>
+            <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Items: </b> {{(page - 1) * pageSize + 1}} - {{Math.min(page * pageSize, totalItems)}} de {{totalItems}}</p>
+          </div>
         </div>
       </div>
-    }
-  </div>
+
+      <!-- DESKTOP -->
+      <div class="hidden sm:block">
+        <div class="pagination">
+          <div class="pagination-child">
+            <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{page}} de {{totalPages}}</b></p>
+            <p>Items {{(page - 1) * pageSize + 1}} - {{Math.min(page * pageSize, totalItems)}} de {{totalItems}}</p>
+            <button><ng-icon (click)="firstPage()" class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
+            <button><ng-icon (click)="previousPage()" class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
+            <button><ng-icon (click)="nextPage()" class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
+            <button><ng-icon (click)="lastPage()" class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 
 </div>

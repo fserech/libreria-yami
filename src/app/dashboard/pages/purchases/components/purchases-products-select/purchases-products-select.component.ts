@@ -1,5 +1,5 @@
 // ============================================
-// purchases-products-select.component.ts
+// purchases-products-select.component.ts - CORREGIDO
 // ============================================
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -23,7 +23,9 @@ import {
 } from '@ng-icons/material-icons/outline';
 
 // Interfaces
-import { PurchaseProductSelect } from '../../../../../shared/interfaces/purchase';
+import { Product, ProductVariant } from '../../../../../shared/interfaces/product';
+import { Category } from '../../../../../shared/interfaces/category';
+import { ProductPurchaseSelect } from '../../../../../shared/interfaces/purchase';
 import { environment } from '../../../../../../environments/environment';
 
 @Component({
@@ -45,14 +47,14 @@ import { environment } from '../../../../../../environments/environment';
 export class PurchasesProductsSelectComponent implements OnInit {
 
   @Input() supplierId: number;
-  @Output() changes = new EventEmitter<PurchaseProductSelect[]>();
   @Input() disabled: boolean = false;
+  @Output() changes = new EventEmitter<ProductPurchaseSelect[]>();
   @Output() finalized = new EventEmitter<boolean>();
 
   // ==================== DATA ====================
-  allProducts: PurchaseProductSelect[] = [];
-  filteredProducts: PurchaseProductSelect[] = [];
-  categories: any[] = [];
+  allProducts: Product[] = [];
+  selectedProducts: ProductPurchaseSelect[] = [];
+  categories: Category[] = [];
 
   // ==================== FILTERS ====================
   searchText: string = '';
@@ -60,10 +62,22 @@ export class PurchasesProductsSelectComponent implements OnInit {
 
   // ==================== STATE ====================
   loading: boolean = false;
-  allSelected: boolean = false;
 
   get selectedCount(): number {
-    return this.allProducts.filter(p => p.selected).length;
+    return this.selectedProducts.length;
+  }
+
+  get filteredProducts(): Product[] {
+    return this.allProducts.filter(product => {
+      const matchesSearch = !this.searchText ||
+        product.productName.toLowerCase().includes(this.searchText.toLowerCase()) ||
+        (product.sku && product.sku.toLowerCase().includes(this.searchText.toLowerCase()));
+
+      const matchesCategory = !this.selectedCategory ||
+        this.getCategoryName(product) === this.selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
   }
 
   constructor(
@@ -87,65 +101,23 @@ export class PurchasesProductsSelectComponent implements OnInit {
         url += `?supplierId=${this.supplierId}`;
       }
 
-      const response = await firstValueFrom(this.crud.http.get<any>(url));
+      const response = await firstValueFrom(
+        this.crud.http.get<any>(url)
+      );
 
-      const productsList = Array.isArray(response) ? response : (response.content || []);
+      this.allProducts = Array.isArray(response)
+        ? response
+        : (response.content || []);
 
-      this.allProducts = this.flattenProducts(productsList);
-      this.filteredProducts = [...this.allProducts];
-
-      console.log('Productos cargados:', this.allProducts.length);
+      console.log('✅ Productos cargados:', this.allProducts.length);
 
     } catch (error) {
-      console.error('Error cargando productos:', error);
+      console.error('❌ Error cargando productos:', error);
       this.toast.error('Error al cargar productos');
+      this.allProducts = [];
     } finally {
       this.loading = false;
     }
-  }
-
-  flattenProducts(products: any[]): PurchaseProductSelect[] {
-    const result: PurchaseProductSelect[] = [];
-
-    products.forEach(product => {
-      if (product.hasVariants && product.variants?.length > 0) {
-        // Producto con variantes
-        product.variants.forEach((variant: any) => {
-          result.push({
-            productId: product.id,
-            variantId: variant.id,
-            productName: product.productName,
-            variantName: variant.variantName,
-            sku: variant.sku,
-            unitPrice: variant.costPrice,
-            quantity: 1,
-            subtotal: variant.costPrice,
-            categoryName: product.categoryName,
-            brandName: product.brandName,
-            currentStock: variant.currentStock,
-            selected: false
-          });
-        });
-      } else {
-        // Producto simple
-        result.push({
-          productId: product.id,
-          variantId: null,
-          productName: product.productName,
-          variantName: null,
-          sku: product.sku,
-          unitPrice: product.costPrice,
-          quantity: 1,
-          subtotal: product.costPrice,
-          categoryName: product.categoryName,
-          brandName: product.brandName,
-          currentStock: product.currentStock,
-          selected: false
-        });
-      }
-    });
-
-    return result;
   }
 
   async loadCategories(): Promise<void> {
@@ -153,111 +125,151 @@ export class PurchasesProductsSelectComponent implements OnInit {
       const response = await firstValueFrom(
         this.crud.http.get<any>(`${environment.apiUrl}/api/v1/categories`)
       );
-      this.categories = Array.isArray(response) ? response : (response.content || []);
+
+      this.categories = Array.isArray(response)
+        ? response
+        : (response.content || []);
+
     } catch (error) {
-      console.error('Error cargando categorías:', error);
+      console.error('❌ Error cargando categorías:', error);
+      this.categories = [];
+    }
+  }
+
+  // ==================== SELECTION ====================
+
+  isProductSelected(product: Product, variantId?: number): boolean {
+    return this.selectedProducts.some(
+      sp => sp.product.id === product.id &&
+           (variantId ? sp.variantId === variantId : !sp.variantId)
+    );
+  }
+
+  getSelectedProduct(product: Product, variantId?: number): ProductPurchaseSelect | undefined {
+    return this.selectedProducts.find(
+      sp => sp.product.id === product.id &&
+           (variantId ? sp.variantId === variantId : !sp.variantId)
+    );
+  }
+
+  toggleProduct(product: Product, variantId?: number): void {
+    const index = this.selectedProducts.findIndex(
+      sp => sp.product.id === product.id &&
+           (variantId ? sp.variantId === variantId : !sp.variantId)
+    );
+
+    if (index >= 0) {
+      // Remover
+      this.selectedProducts.splice(index, 1);
+    } else {
+      // Agregar
+      this.selectedProducts.push({
+        product: product,
+        variantId: variantId || null,
+        quantity: 1
+      });
+    }
+
+    this.emitChanges();
+  }
+
+  updateQuantity(product: Product, quantity: number, variantId?: number): void {
+    const selected = this.getSelectedProduct(product, variantId);
+
+    if (selected) {
+      selected.quantity = quantity < 1 ? 1 : quantity;
+      this.emitChanges();
     }
   }
 
   // ==================== FILTERING ====================
 
-  filterProducts(): void {
-    this.filteredProducts = this.allProducts.filter(product => {
-      const matchesSearch = !this.searchText ||
-        product.productName.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        product.sku.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        (product.variantName && product.variantName.toLowerCase().includes(this.searchText.toLowerCase()));
-
-      const matchesCategory = !this.selectedCategory ||
-        product.categoryName === this.selectedCategory;
-
-      return matchesSearch && matchesCategory;
-    });
-
-    this.checkAllSelected();
-  }
-
   clearFilters(): void {
     this.searchText = '';
     this.selectedCategory = '';
-    this.filterProducts();
-  }
-
-  // ==================== SELECTION ====================
-
-  toggleProduct(product: PurchaseProductSelect): void {
-    if (product.selected) {
-      this.updateSubtotal(product);
-    } else {
-      product.quantity = 1;
-      product.subtotal = 0;
-    }
-
-    this.emitChanges();
-    this.checkAllSelected();
-  }
-
-  toggleSelectAll(): void {
-    this.allSelected = !this.allSelected;
-
-    this.filteredProducts.forEach(product => {
-      product.selected = this.allSelected;
-      if (product.selected) {
-        product.quantity = 1;
-        this.updateSubtotal(product);
-      } else {
-        product.subtotal = 0;
-      }
-    });
-
-    this.emitChanges();
-  }
-
-  checkAllSelected(): void {
-    const visibleProducts = this.filteredProducts;
-    this.allSelected = visibleProducts.length > 0 &&
-                       visibleProducts.every(p => p.selected);
-  }
-
-  updateSubtotal(product: PurchaseProductSelect): void {
-    if (product.quantity < 1) {
-      product.quantity = 1;
-    }
-
-    product.subtotal = product.quantity * product.unitPrice;
-    this.emitChanges();
   }
 
   // ==================== CALCULATIONS ====================
 
   getTotal(): number {
-    return this.allProducts
-      .filter(p => p.selected)
-      .reduce((sum, p) => sum + p.subtotal, 0);
+    return this.selectedProducts.reduce((sum, sp) => {
+      const price = this.getProductPrice(sp.product, sp.variantId || undefined);
+      return sum + (price * sp.quantity);
+    }, 0);
+  }
+
+  getProductPrice(product: Product, variantId?: number): number {
+    if (variantId && product.variants) {
+      const variant = product.variants.find(v => v.id === variantId);
+      return variant?.costPrice || 0;
+    }
+    return product.costPrice || 0;
+  }
+
+  getProductSku(product: Product, variantId?: number): string {
+    if (variantId && product.variants) {
+      const variant = product.variants.find(v => v.id === variantId);
+      return variant?.sku || '';
+    }
+    return product.sku || '';
+  }
+
+  getProductStock(product: Product, variantId?: number): number {
+    if (variantId && product.variants) {
+      const variant = product.variants.find(v => v.id === variantId);
+      return variant?.currentStock || 0;
+    }
+    return product.currentStock || 0;
+  }
+
+  // ==================== HELPERS PARA TEMPLATE ====================
+
+  /**
+   * Obtiene el nombre de la categoría de forma segura
+   */
+  getCategoryName(product: Product): string {
+    return (product as any).categoryName || '';
+  }
+
+  /**
+   * Obtiene las clases CSS según el stock
+   */
+  getStockClass(stock: number): string {
+    return stock < 10
+      ? 'text-red-600 dark:text-red-400 font-semibold'
+      : '';
+  }
+
+  /**
+   * Extrae el valor numérico del input de forma segura
+   */
+  getInputValue(event: Event): number {
+    return +(event.target as HTMLInputElement).value;
+  }
+
+  /**
+   * Calcula el subtotal de un producto seleccionado
+   */
+  calculateSubtotal(product: Product, variantId?: number): number {
+    const selected = this.getSelectedProduct(product, variantId);
+    if (!selected) return 0;
+
+    const price = this.getProductPrice(product, variantId);
+    return price * selected.quantity;
   }
 
   // ==================== EMIT EVENTS ====================
 
   emitChanges(): void {
-    const selectedProducts = this.allProducts.filter(p => p.selected);
-    console.log('Emitiendo cambios:', selectedProducts.length, 'productos');
-    this.changes.emit(selectedProducts);
+    this.changes.emit([...this.selectedProducts]);
   }
 
   confirmSelection(): void {
-    const selectedProducts = this.allProducts.filter(p => p.selected);
-
-    console.log('Confirmando selección:', selectedProducts.length, 'productos');
-
-    if (selectedProducts.length === 0) {
+    if (this.selectedProducts.length === 0) {
       this.toast.warning('Debes seleccionar al menos un producto');
       return;
     }
 
-    // Emitir los productos una última vez antes de finalizar
-    this.changes.emit(selectedProducts);
-
-    // Emitir que se finalizó la selección
     this.finalized.emit(true);
   }
 

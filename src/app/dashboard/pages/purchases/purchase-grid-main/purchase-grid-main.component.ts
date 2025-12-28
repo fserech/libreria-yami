@@ -1,4 +1,4 @@
-// purchases-grid-main.component.ts
+// purchases-grid-main.component.ts - COMPLETO
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -16,8 +16,9 @@ import { AuthService } from '../../../../shared/services/auth.service';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { PurchasesFilterDialogComponent } from '../purchases-filter-dialog/purchases-filter-dialog.component';
+import { ChatBubbleComponent } from '../../../../shared/components/chat-bubble/chat-bubble.component';
 
-// Icons
+// Icons de Material
 import {
   matAddCircleOutline,
   matFilterAltOutline,
@@ -28,12 +29,25 @@ import {
   matShoppingBagOutline,
   matArrowUpwardOutline,
   matArrowDownwardOutline,
-  matCloseOutline
+  matCloseOutline,
+  matAddOutline,
+  matCheckCircleOutline,
+  matCancelOutline,
+  matSearchOutline
 } from '@ng-icons/material-icons/outline';
+
+// Icons de Bootstrap
+import {
+  bootstrapChevronBarLeft,
+  bootstrapChevronLeft,
+  bootstrapChevronRight,
+  bootstrapChevronBarRight
+} from '@ng-icons/bootstrap-icons';
 
 // Constants & Interfaces
 import { URL_PURCHASES } from '../../../../shared/constants/endpoints';
 import { Purchase, PurchaseFilter } from '../../../../shared/interfaces/purchase';
+import { OptionsChatBubble } from '../../../../shared/interfaces/options-chat-bubble';
 import BaseForm from '../../../../shared/classes/base-form';
 
 @Component({
@@ -43,7 +57,8 @@ import BaseForm from '../../../../shared/classes/base-form';
     CommonModule,
     FormsModule,
     HeaderComponent,
-    NgIconComponent
+    NgIconComponent,
+    ChatBubbleComponent
   ],
   templateUrl: './purchase-grid-main.component.html',
   styleUrl: './purchase-grid-main.component.scss',
@@ -58,7 +73,15 @@ import BaseForm from '../../../../shared/classes/base-form';
       matShoppingBagOutline,
       matArrowUpwardOutline,
       matArrowDownwardOutline,
-      matCloseOutline
+      matCloseOutline,
+      matAddOutline,
+      matCheckCircleOutline,
+      matCancelOutline,
+      matSearchOutline,
+      bootstrapChevronBarLeft,
+      bootstrapChevronLeft,
+      bootstrapChevronRight,
+      bootstrapChevronBarRight
     })
   ]
 })
@@ -76,8 +99,11 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
   override totalPages: number = 0;
 
   // ==================== SORTING ====================
-  sortField: string = 'id';
+  sortField: string = 'purchaseDate';
   sortDirection: 'asc' | 'desc' = 'desc';
+
+  // ==================== TIME TAB ====================
+  activeTimeTab: 'day' | 'week' | 'month' = 'month';
 
   Math = Math;
 
@@ -98,7 +124,59 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
   }
 
   ngOnInit(): void {
+    this.loadPurchasesByTimeRange(this.activeTimeTab);
+  }
+
+  // ==================== TIME TAB MANAGEMENT ====================
+
+  setActiveTimeTab(tab: 'day' | 'week' | 'month') {
+    this.activeTimeTab = tab;
+    this.currentFilters = {}; // Limpiar filtros al cambiar de tab
+    this.searchText = '';
+    this.page = 1;
+    this.loadPurchasesByTimeRange(tab);
+  }
+
+  loadPurchasesByTimeRange(timeRange: 'day' | 'week' | 'month') {
+    const dateInit: Date = new Date();
+    const dateEnd: Date = new Date();
+
+    switch (timeRange) {
+      case 'day':
+        dateInit.setHours(0, 0, 0, 0);
+        dateEnd.setHours(23, 59, 59, 999);
+        break;
+
+      case 'week':
+        const dayOfWeek = dateInit.getDay();
+        const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+        dateInit.setDate(dateInit.getDate() + diffToMonday);
+        dateInit.setHours(0, 0, 0, 0);
+        dateEnd.setDate(dateInit.getDate() + 6);
+        dateEnd.setHours(23, 59, 59, 999);
+        break;
+
+      case 'month':
+        dateInit.setDate(1);
+        dateInit.setHours(0, 0, 0, 0);
+        dateEnd.setMonth(dateEnd.getMonth() + 1);
+        dateEnd.setDate(0);
+        dateEnd.setHours(23, 59, 59, 999);
+        break;
+    }
+
+    // Formato: YYYY-MM-DD (sin hora, solo fecha)
+    this.currentFilters.startDate = this.formatDateToLocalDate(dateInit);
+    this.currentFilters.endDate = this.formatDateToLocalDate(dateEnd);
     this.loadPurchases();
+  }
+
+  // Método helper para convertir Date a formato LocalDate (YYYY-MM-DD)
+  formatDateToLocalDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = ('0' + (date.getMonth() + 1)).slice(-2);
+    const day = ('0' + date.getDate()).slice(-2);
+    return `${year}-${month}-${day}`;
   }
 
   // ==================== DATA LOADING ====================
@@ -173,6 +251,82 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
     return params.length > 0 ? `?${params.join('&')}` : '';
   }
 
+  // ==================== HELPERS PARA TEMPLATE ====================
+
+  getSupplierName(purchase: Purchase): string {
+    if (purchase.supplier) {
+      return purchase.supplier.supplierName || 'N/A';
+    }
+    return 'N/A';
+  }
+
+  getProductsCount(purchase: Purchase): number {
+    if (purchase.products) {
+      return purchase.products.length;
+    }
+    return 0;
+  }
+
+  getStatusLabel(status: string): string {
+    const labels: { [key: string]: string } = {
+      'PENDING': 'Pendiente',
+      'COMPLETED': 'Completada',
+      'CANCELLED': 'Cancelada'
+    };
+    return labels[status] || status;
+  }
+
+  // ==================== ACTIONS FOR CHAT BUBBLE ====================
+
+  getActionsForPurchase(purchase: Purchase): OptionsChatBubble[] {
+    const actions: OptionsChatBubble[] = [];
+
+    // Ver siempre disponible
+    actions.push({
+      id: purchase.id!,
+      icon: 'matVisibilityOutline',
+      label: 'Ver',
+      action: 'VIEW_PURCHASE',
+      colorIcon: 'text-blue-500'
+    });
+
+    // Solo si está PENDING mostrar las demás opciones
+    if (purchase.status === 'PENDING') {
+      actions.push(
+        {
+          id: purchase.id!,
+          icon: 'matCheckCircleOutline',
+          label: 'Completar',
+          action: 'COMPLETE',
+          colorIcon: 'text-emerald-500'
+        },
+        {
+          id: purchase.id!,
+          icon: 'matCancelOutline',
+          label: 'Cancelar',
+          action: 'CANCEL',
+          colorIcon: 'text-red-500'
+        }
+      );
+    }
+
+    return actions;
+  }
+
+  selectOption(option: OptionsChatBubble) {
+    switch (option.action) {
+      case 'VIEW_PURCHASE':
+        this.view(option.id);
+        break;
+      case 'COMPLETE':
+        this.changeStatus(option.id, 'COMPLETED');
+        break;
+      case 'CANCEL':
+        this.changeStatus(option.id, 'CANCELLED');
+        break;
+    }
+  }
+
   // ==================== SEARCH & FILTERS ====================
 
   search(): void {
@@ -185,12 +339,15 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
     const dialogRef = this.dialog.open(PurchasesFilterDialogComponent, {
       backdropClass: ['bg-black/60', 'dark:bg-white'],
       panelClass: darkmode === 'dark'
-        ? ['bg-slate-900', 'rounded-lg', 'text-gray-200']
-        : ['bg-white', 'rounded-lg', 'text-gray-500'],
+        ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4']
+        : ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
       width: this.getDialogWidth(),
       closeOnDestroy: true,
       disableClose: false,
-      data: { currentFilters: this.currentFilters }
+      data: {
+        title: 'Filtros de compras',
+        currentFilters: this.currentFilters
+      }
     });
 
     const result = await firstValueFrom(dialogRef.closed);
@@ -202,40 +359,11 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
     }
   }
 
-  removeFilter(key: keyof PurchaseFilter): void {
-    delete this.currentFilters[key];
-    this.page = 1;
-    this.loadPurchases();
-  }
-
-  removeDateRange(): void {
-    delete this.currentFilters.startDate;
-    delete this.currentFilters.endDate;
-    this.page = 1;
-    this.loadPurchases();
-  }
-
-  removeAmountRange(): void {
-    delete this.currentFilters.minAmount;
-    delete this.currentFilters.maxAmount;
-    this.page = 1;
-    this.loadPurchases();
-  }
-
   clearAllFilters(): void {
     this.currentFilters = {};
     this.searchText = '';
     this.page = 1;
-    this.loadPurchases();
-  }
-
-  getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      'PENDING': 'Pendiente',
-      'COMPLETED': 'Completada',
-      'CANCELLED': 'Cancelada'
-    };
-    return labels[status] || status;
+    this.loadPurchasesByTimeRange(this.activeTimeTab);
   }
 
   // ==================== SORTING ====================
@@ -249,11 +377,6 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
     }
 
     this.loadPurchases();
-  }
-
-  getSortIcon(field: string): string {
-    if (this.sortField !== field) return 'matArrowDownwardOutline';
-    return this.sortDirection === 'asc' ? 'matArrowUpwardOutline' : 'matArrowDownwardOutline';
   }
 
   // ==================== PAGINATION ====================
@@ -272,58 +395,94 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
     }
   }
 
-  goToPage(pageNum: number): void {
-    this.page = pageNum;
+  override firstPage(): void {
+    this.page = 1;
     this.loadPurchases();
   }
 
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisible = 5;
-
-    let start = Math.max(1, this.page - Math.floor(maxVisible / 2));
-    let end = Math.min(this.totalPages, start + maxVisible - 1);
-
-    if (end - start < maxVisible - 1) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
-    return pages;
+  override lastPage(): void {
+    this.page = this.totalPages;
+    this.loadPurchases();
   }
 
   // ==================== ACTIONS ====================
-    edit(id: number){
+
+  edit(id: number): void {
     this.router.navigate([`/dashboard/purchases/detail/edit/${id}`]);
   }
 
-   add(){
+  add(): void {
     this.router.navigate([`/dashboard/purchases/detail/new`]);
   }
-
 
   view(id:number){
     this.router.navigate([`/dashboard/purchases/view/${id}`]);
   }
 
-
-
   async delete(id: number): Promise<void> {
-    if (!confirm('¿Estás seguro de eliminar esta compra? Esta acción no se puede deshacer.')) {
-      return;
-    }
+    this.load = true;
 
-    try {
-      await firstValueFrom(await this.crud.deleteId(id));
-      this.toast.success('Compra eliminada correctamente');
-      this.loadPurchases();
-    } catch (error: any) {
-      console.error('Error eliminando compra:', error);
-      this.toast.error(error.error?.message || 'Error al eliminar la compra');
-    }
+    this.toast.confirm(
+      '¿Seguro que desea eliminar la compra?',
+      null,
+      null,
+      'El registro se eliminará de forma permanente.',
+      'question'
+    ).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await firstValueFrom(await this.crud.deleteId(id));
+          this.toast.success('Compra eliminada correctamente');
+          this.loadPurchasesByTimeRange(this.activeTimeTab);
+        } catch (error: any) {
+          console.error('Error eliminando compra:', error);
+          this.toast.error(error.error?.message || 'Error al eliminar la compra');
+        } finally {
+          this.load = false;
+        }
+      } else {
+        this.load = false;
+      }
+    });
+  }
+
+  // ==================== CAMBIO DE ESTADO ====================
+
+  async changeStatus(id: number, newStatus: 'COMPLETED' | 'CANCELLED'): Promise<void> {
+    this.load = true;
+
+    const statusLabels = {
+      'COMPLETED': 'completar',
+      'CANCELLED': 'cancelar'
+    };
+
+    const action = statusLabels[newStatus];
+
+    this.toast.confirm(
+      `¿Seguro que desea ${action} la compra?`,
+      null,
+      null,
+      `El registro se ${action}á de forma permanente.`,
+      'question'
+    ).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await firstValueFrom(
+            this.crud.http.patch(`${this.crud.baseUrl}/${id}/status`, { status: newStatus })
+          );
+
+          this.toast.success(`Compra ${newStatus === 'COMPLETED' ? 'completada' : 'cancelada'} correctamente`);
+          this.loadPurchasesByTimeRange(this.activeTimeTab);
+        } catch (error: any) {
+          console.error('Error cambiando estado:', error);
+          this.toast.error(error.error?.message || 'Error al cambiar el estado');
+        } finally {
+          this.load = false;
+        }
+      } else {
+        this.load = false;
+      }
+    });
   }
 
   override getDialogWidth(): string {
