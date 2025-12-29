@@ -212,12 +212,13 @@
                 }
               </button>
             </th>
+            <th></th>
           </tr>
         </thead>
 
         <tbody>
           @for (purchase of items; track $index) {
-            <tr class="text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{' bg-gray-200 dark:bg-slate-950': $odd }">
+            <tr class="text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{'bg-gray-200 dark:bg-slate-950': $odd }">
               <td class="rounded">{{ purchase.id }}</td>
               <td class="rounded">{{ purchase.purchaseDate | date:'dd/MM/yyyy' }}</td>
               <td class="rounded">{{ getSupplierName(purchase) }}</td>
@@ -236,12 +237,15 @@
               <td class="rounded">
                 <div class="flex">
                   <!-- Ver siempre visible -->
-                  <button (click)="view(purchase.id!)" class="btn-action" title="Ver detalles">
+                  <button (click)="view(purchase.id!)" class="btn-action">
                     <ng-icon class="text-blue-500 font-bold float-end" size="20" name="matVisibilityOutline"></ng-icon>
                   </button>
 
-                  <!-- Completar y Cancelar solo para PENDING -->
+                  <!-- Editar, Completar y Cancelar solo para PENDING -->
                   @if (purchase.status === 'PENDING') {
+                    <button (click)="edit(purchase.id!)" class="btn-action" title="Editar">
+                      <ng-icon class="text-blue-600 font-bold float-end" size="20" name="matEditOutline"></ng-icon>
+                    </button>
                     <button (click)="changeStatus(purchase.id!, 'COMPLETED')" class="btn-action" title="Completar">
                       <ng-icon class="text-emerald-500 font-bold float-end" size="20" name="matCheckCircleOutline"></ng-icon>
                     </button>
@@ -276,7 +280,7 @@
 
         <tbody>
           @for (purchase of items; track $index) {
-            <tr class="text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{' bg-gray-200 dark:bg-slate-950': $odd }">
+            <tr class="text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{'bg-gray-200 dark:bg-slate-950': $odd }">
               <td class="rounded">
                 <div class="flex justify-between mt-4 mb-4">
                   <h1>
@@ -316,7 +320,7 @@
       <table class="table-grid w-full mt-4 hidden sm:table">
         <thead>
           <tr>
-            @for (item of [1,2,3,4,5,6]; track $index) {
+            @for (item of [1,2,3,4,5,6,7]; track $index) {
               <td>
                 <div class="rounded pt-2 pb-2 p-1">
                   <div class="animate-pulse flex space-x-4">
@@ -331,7 +335,7 @@
         </thead>
         <tbody>
           @for (item of [1,2,3,4,5,6,7,8,9,10]; track $index) {
-            <tr class="w-full text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{' bg-gray-200 dark:bg-slate-950': $odd }">
+            <tr class="w-full text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{'bg-gray-200 dark:bg-slate-950': $odd }">
               @for (loading of [1,2,3,4,5,6]; track $index) {
                 <td class="w-20">
                   <div class="rounded pt-2 pb-2 p-1">
@@ -347,12 +351,17 @@
                 <div class="flex">
                   <div class="rounded pl-2">
                     <div class="animate-pulse flex space-x-4">
+                      <div class="rounded-md bg-blue-400 h-5 w-5"></div>
+                    </div>
+                  </div>
+                  <div class="rounded-md pl-1">
+                    <div class="animate-pulse flex space-x-4">
                       <div class="rounded-md bg-emerald-400 h-5 w-5"></div>
                     </div>
                   </div>
                   <div class="rounded-md pl-1">
                     <div class="animate-pulse flex space-x-4">
-                      <div class="rounded-md bg-blue-400 h-5 w-5"></div>
+                      <div class="rounded-md bg-red-400 h-5 w-5"></div>
                     </div>
                   </div>
                 </div>
@@ -375,7 +384,7 @@
         </thead>
         <tbody>
           @for (item of [1,2,3,4,5,6]; track $index) {
-            <tr class="text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{' bg-gray-200 dark:bg-slate-950': $odd }">
+            <tr class="text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800" [ngClass]="{'bg-gray-200 dark:bg-slate-950': $odd }">
               <td class="rounded">
                 <div class="flex">
                   <div class="rounded-md p-2 w-60">

@@ -295,6 +295,13 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
       actions.push(
         {
           id: purchase.id!,
+          icon: 'matEditOutline',
+          label: 'Editar',
+          action: 'EDIT',
+          colorIcon: 'text-blue-600'
+        },
+        {
+          id: purchase.id!,
           icon: 'matCheckCircleOutline',
           label: 'Completar',
           action: 'COMPLETE',
@@ -317,6 +324,9 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
     switch (option.action) {
       case 'VIEW_PURCHASE':
         this.view(option.id);
+        break;
+      case 'EDIT':
+        this.edit(option.id);
         break;
       case 'COMPLETE':
         this.changeStatus(option.id, 'COMPLETED');
