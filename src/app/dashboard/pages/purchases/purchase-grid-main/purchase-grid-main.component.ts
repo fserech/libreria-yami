@@ -2,7 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { Dialog } from '@angular/cdk/dialog';
 import { BreakpointObserver } from '@angular/cdk/layout';
@@ -17,6 +17,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { PurchasesFilterDialogComponent } from '../purchases-filter-dialog/purchases-filter-dialog.component';
 import { ChatBubbleComponent } from '../../../../shared/components/chat-bubble/chat-bubble.component';
+import { DatePickerSearchComponent } from '../../../../shared/components/date-picker-search/date-picker-search.component';
 
 // Icons de Material
 import {
@@ -46,6 +47,7 @@ import {
 
 // Constants & Interfaces
 import { URL_PURCHASES } from '../../../../shared/constants/endpoints';
+import { MIN_DATE, MAX_DATE } from '../../../../shared/constants/date-min-max';
 import { Purchase, PurchaseFilter } from '../../../../shared/interfaces/purchase';
 import { OptionsChatBubble } from '../../../../shared/interfaces/options-chat-bubble';
 import BaseForm from '../../../../shared/classes/base-form';
@@ -56,9 +58,11 @@ import BaseForm from '../../../../shared/classes/base-form';
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     HeaderComponent,
     NgIconComponent,
-    ChatBubbleComponent
+    ChatBubbleComponent,
+    DatePickerSearchComponent
   ],
   templateUrl: './purchase-grid-main.component.html',
   styleUrl: './purchase-grid-main.component.scss',
@@ -86,6 +90,15 @@ import BaseForm from '../../../../shared/classes/base-form';
   ]
 })
 export default class PurchasesGridMainComponent extends BaseForm implements OnInit {
+
+  // ==================== FORM ====================
+  form: FormGroup = new FormGroup({
+    purchaseDate: new FormControl('')
+  });
+
+  // ==================== DATE LIMITS ====================
+  minDate: Date = MIN_DATE;
+  maxDate: Date = MAX_DATE;
 
   // ==================== DATA ====================
   items: Purchase[] = [];
@@ -204,6 +217,12 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
         this.totalPages = 0;
       }
 
+      // Debug: verificar si los suppliers vienen en la respuesta
+      console.log('Purchases loaded:', this.items);
+      if (this.items.length > 0) {
+        console.log('First purchase supplier:', this.items[0].supplier);
+      }
+
     } catch (error) {
       console.error('Error cargando compras:', error);
       this.toast.error('Error al cargar las compras');
@@ -254,10 +273,25 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
   // ==================== HELPERS PARA TEMPLATE ====================
 
   getSupplierName(purchase: Purchase): string {
-    if (purchase.supplier) {
-      return purchase.supplier.supplierName || 'N/A';
+    // Prioridad 1: Objeto supplier completo
+    if (purchase?.supplier?.supplierName) {
+      return purchase.supplier.supplierName;
     }
-    return 'N/A';
+
+    // Prioridad 2: Campo supplierName directo
+
+
+    // Prioridad 3: Si hay supplier pero sin nombre
+    if (purchase?.supplier?.id) {
+      return `Proveedor ID: ${purchase.supplier.id}`;
+    }
+
+    // Prioridad 4: Si solo hay supplierId
+    if (purchase?.supplierId) {
+      return `Proveedor ID: ${purchase.supplierId}`;
+    }
+
+    return 'Sin proveedor';
   }
 
   getProductsCount(purchase: Purchase): number {
@@ -344,6 +378,25 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
     this.loadPurchases();
   }
 
+  searchByDate(): void {
+    const dateValue = this.form.controls['purchaseDate'].value;
+    if (dateValue) {
+      const date = new Date(dateValue);
+      this.currentFilters.startDate = this.formatDateToLocalDate(date);
+      this.currentFilters.endDate = this.formatDateToLocalDate(date);
+      this.page = 1;
+      this.loadPurchases();
+    }
+  }
+
+  changePurchaseDate(event: any): void {
+    if (event && event.value) {
+      const date = new Date(event.value);
+      this.currentFilters.startDate = this.formatDateToLocalDate(date);
+      this.currentFilters.endDate = this.formatDateToLocalDate(date);
+    }
+  }
+
   async openFilterDialog(): Promise<void> {
     const darkmode = localStorage.getItem('theme');
     const dialogRef = this.dialog.open(PurchasesFilterDialogComponent, {
@@ -372,6 +425,7 @@ export default class PurchasesGridMainComponent extends BaseForm implements OnIn
   clearAllFilters(): void {
     this.currentFilters = {};
     this.searchText = '';
+    this.form.controls['purchaseDate'].setValue('');
     this.page = 1;
     this.loadPurchasesByTimeRange(this.activeTimeTab);
   }
