@@ -1,0 +1,16 @@
+@for (menu of menuService.pagesMenu; track menu.group) {
+  <div class="dropdown relative inline-block m-1 z-50">
+    <!-- Button -->
+    <button
+      class="mr-2 inline-flex rounded-md px-3 py-2 text-sm font-medium bgc-primary">
+      <span>{{ menu.group }}</span>
+    </button>
+    <!-- Dropdown  -->
+    <div
+      class="dropdown-content absolute top-[100%] min-w-[200px] origin-top-left"
+      navbar-submenu
+      [submenu]="menu.items">
+    </div>
+  </div>
+
+}

@@ -1,0 +1,33 @@
+<!-- <div class="w-full">
+
+</div> -->
+<div class="relative">
+  <div class="relative w-full cursor-default overflow-hidden rounded-2xl bg-gray-200 dark:bg-slate-950 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
+    <input type="text"
+    class="text-gray-600 bg-gray-200 dark:bg-slate-950 w-full border-none py-2 h-10 pl-3 pr-10 rounded-2xl"
+    placeholder="{{(placeholder && placeholder !== '') ? placeholder : 'Buscar registro'}}"
+           [(ngModel)]="query" (input)="search()">
+
+           @if(icon){
+            <span class="top-1/4">
+              <ng-icon class="text-slate-500 font-bold dark:text-slate-400" size="20" name="{{ icon }}"></ng-icon>
+            </span>
+          }
+    <button class="bg-transparent absolute inset-y-0 right-0 flex items-center pr-2" (click)="toggleOptions()">
+      <ng-icon class="bg-transparent text-gray-600 bg-gray-200" name="matKeyboardArrowDownOutline" size="25"></ng-icon>
+    </button>
+  </div>
+  <div *ngIf="showOptions" class="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm">
+    <div *ngIf="filteredPeople.length === 0 && query !== ''" class="relative cursor-default select-none px-4 py-2 text-gray-700">
+      Nothing found.
+    </div>
+    <div *ngFor="let person of filteredPeople" class="relative cursor-default select-none py-2 pl-10 pr-4" [ngClass]="{'bg-teal-600 text-white': selected?.id === person.id, 'text-gray-900': selected?.id !== person.id}" (click)="selectItem(person)">
+      <span class="block truncate" [ngClass]="{'font-medium': selected?.id === person.id, 'font-normal': selected?.id !== person.id}">
+        {{ person.name }}
+      </span>
+      <svg *ngIf="selected?.id === person.id" xmlns="http://www.w3.org/2000/svg" class="absolute inset-y-0 left-0 flex items-center pl-3 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M5.293 8.293a1 1 0 011.414 0L10 11.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414zM5 5a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd" />
+      </svg>
+    </div>
+  </div>
+</div>

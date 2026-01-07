@@ -1,0 +1,167 @@
+<div class="flex flex-col sm:flex-row sm:items-center w-full justify-between sticky top-0">
+
+<!-- Botón "Nuevo" -->
+<div class="w-full mb-4 sm:hidden">
+  <button (click)="add()" type="button" class="btn-primary float-end h-10 w-48 mb-5">
+    <div class="flex text-center justify-center align-middle">
+      <p class="text-sm md:text-base">Nuevo</p>
+      <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+    </div>
+  </button>
+</div>
+
+  <!-- Búsqueda -->
+  <div class="flex sm:w-5/12 sm:ml-4 mb-5">
+    <app-search-input-text
+      class="w-full"
+      [form]="form"
+      name="name"
+      icon="matSearchOutline"
+      label="Cliente"
+      placeholder="Nombre de cliente"
+      [maxlength]="50"
+      [load]="load"
+      [counter]="true"
+      (keydown.enter)="introSearch()"
+      (keydown.escape)="initPage()"
+      (clearFilters)="initPage()">
+    </app-search-input-text>
+    <button (click)="(form.controls['name'].value && form.controls['name'].value !== '') ?
+    filter(form.controls['name'].value) : null" type="button" class="btn-success h-10">
+      <div class="flex text-center justify-center align-middle">
+        <ng-icon class="text-white font-bold p-0 m-0" size="20" name="matSearchOutline"></ng-icon>
+      </div>
+    </button>
+  </div>
+
+<!-- Botón "Nuevo" -->
+<button (click)="add()" type="button" class="btn-primary h-10 w-48 mb-2 sm:mb-0 hidden sm:inline-block">
+  <div class="flex text-center justify-center align-middle">
+    <p class="text-sm md:text-base">Nuevo</p>
+    <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+  </div>
+</button>
+
+
+</div>
+
+<div class="rounded-lg">
+  <table class="table-grid">
+    <thead>
+      <tr>
+        <th class="text-left">
+          <button (click)="changeSortOrderBy('name')">
+            <p>Nombre</p>
+            @if(sortConfig.sortBy === 'name' && sortConfig.sortOrder === 'asc'){
+              <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+            }
+            @if(sortConfig.sortBy === 'name' && sortConfig.sortOrder === 'desc'){
+              <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+            }
+          </button>
+        </th>
+      </tr>
+
+    </thead>
+
+    <tbody>
+
+      @for (client of ItemsList; track $index) {
+        @defer {
+          <tr [ngClass]="{' bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
+            <td class="pb-2 pt-2">
+              <mat-radio-button color="primary"
+                                [value]="client.id"
+                                [checked]="selectedIdControl.value === client.id"
+                                (change)="toggleSelection(client)">
+                <h1 style="width: 100rem;">
+                  <p class="font-normal text-sm"><b>ID:</b> {{ client.id }} - <b>Día visita: </b>{{ getDay(client.offerDay) }}</p>
+                  <p class="font-normal"> <b class="text-gray-600 dark:text-gray-400">{{ client.name }} </b></p>
+                  <p class="font-normal text-sm text-wrap break-words"><b>Dirección: </b> {{ client.address }}</p>
+                </h1>
+              </mat-radio-button>
+            </td>
+          </tr>
+        } @loading {
+          <tr [ngClass]="{' bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
+            <td class="content-desktop">
+              <div class="rounded pt-2 pb-2 p-1">
+                <div class="animate-pulse flex space-x-4">
+                  <div class="flex-1 space-y-6 py-1">
+                    <div class="h-2 bg-gray-400 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="rounded pt-2 pb-2 p-1">
+                <div class="animate-pulse flex space-x-4">
+                  <div class="flex-1 space-y-6 py-1">
+                    <div class="h-2 bg-gray-400 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="rounded pt-2 pb-2 p-1">
+                <div class="animate-pulse flex space-x-4">
+                  <div class="flex-1 space-y-6 py-1">
+                    <div class="h-2 bg-gray-400 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="flex justify-center">
+              <div class="rounded pl-2">
+                <div class="animate-pulse flex space-x-4">
+                  <div class="rounded-md bg-blue-400 h-5 w-5"></div>
+                </div>
+              </div>
+              <div class="rounded-md pl-1">
+                <div class="animate-pulse flex space-x-4">
+                  <div class="rounded-md bg-red-400 h-5 w-5"></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        }
+       }
+    </tbody>
+
+  </table>
+
+  <!-- PAGINATION DESKTOP -->
+  <div class="content-desktop w-full">
+    <div class="pagination">
+      <div class="pagination-child">
+        <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{page}} de {{totalPages}}</b></p>
+        <p>Items {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+        <button><ng-icon (click)="firstPage()" class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
+        <button><ng-icon (click)="previousPage()" class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
+        <button><ng-icon (click)="nextPage()" class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
+        <button><ng-icon (click)="lastPage()" class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGINATION MOBILE -->
+  <div class="content-sm">
+    <div class="pagination">
+      <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
+
+        <div class="flex justify-between mb-2 p-2 rounded-lg border m-1 bg-white dark:bg-slate-900 dark:border-slate-700">
+          <button class="btn-pagination"><ng-icon (click)="firstPage()" size="22" name="bootstrapChevronBarLeft"></ng-icon></button>
+          <button class="btn-pagination"><ng-icon (click)="previousPage()" size="22" name="bootstrapChevronLeft"></ng-icon></button>
+          <button class="btn-pagination"><ng-icon (click)="nextPage()" size="22" name="bootstrapChevronRight"></ng-icon></button>
+          <button class="btn-pagination"><ng-icon (click)="lastPage()" size="22" name="bootstrapChevronBarRight"></ng-icon></button>
+        </div>
+
+        <div class="flex justify-between">
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Páginas: </b> {{page}} de {{totalPages}}</p>
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Items: </b> {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

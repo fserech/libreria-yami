@@ -1,0 +1,35 @@
+<!--
+	Mobile menu, show/hide based on mobile menu state.
+	Entering: "duration-200 ease-out"
+		From: "opacity-0 scale-95"
+		To: "opacity-100 scale-100"
+	Leaving: "duration-100 ease-in"
+		From: "opacity-100 scale-100"
+		To: "opacity-0 scale-95"
+-->
+<div [ngClass]="menuService.showMobileMenu ? 'pointer-events-auto scale-100 animate-fade-in-up opacity-100 duration-200'
+      : 'pointer-events-none scale-95 opacity-0 duration-100 ease-out'"
+  class="absolute inset-x-0 top-0 z-50 origin-top-right transform p-2 transition md:hidden">
+  <div
+    class="divide-y-2 divide-gray-50 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-slate-900">
+    <div class="pt-5 pb-6">
+      <div class="flex items-center justify-between px-5">
+        <div>
+
+        </div>
+        <div class="-mr-2">
+          <button
+            (click)="toggleMobileMenu()"
+            type="button"
+            class="inline-flex bg-red-500 text-white items-center justify-center rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 hover:bg-red-400 hover:text-white dark:text-red-300 dark:hover:bg-red-400 dark:hover:text-white">
+            <ng-icon name="matCloseRound" class="text-2xl"></ng-icon>
+          </button>
+        </div>
+      </div>
+      <div
+        class="scrollbar-thumb-rounded scrollbar-track-rounded max-h-[500px] overflow-y-auto px-5 scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-100 dark:scrollbar-thumb-slate-500 dark:scrollbar-track-slate-600">
+        <app-navbar-mobile-menu></app-navbar-mobile-menu>
+      </div>
+    </div>
+  </div>
+</div>

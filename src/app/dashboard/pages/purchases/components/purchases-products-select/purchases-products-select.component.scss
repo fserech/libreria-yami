@@ -1,0 +1,53 @@
+/*CHECKBOX ENABLED*/
+:host ::ng-deep .mdc-form-field label{
+  @apply text-gray-500;
+}
+:host ::ng-deep .mat-mdc-radio-button .mdc-radio .mdc-radio__native-control:enabled:not(:checked)+.mdc-radio__background .mdc-radio__outer-circle {
+  @apply border-gray-400 dark:border-gray-500;
+}
+
+/*CHECKBOX DISABLED*/
+:host ::ng-deep .mat-mdc-radio-button .mdc-radio--disabled+label{
+  @apply text-gray-300 dark:text-slate-600;
+}
+:host ::ng-deep .mat-mdc-radio-button .mdc-radio .mdc-radio__native-control:disabled:not(:checked)+.mdc-radio__background .mdc-radio__outer-circle {
+  @apply border-slate-400 dark:border-slate-600;
+}
+
+:host ::ng-deep .mat-step-icon-state-done{
+  @apply bg-emerald-500;
+}
+
+:is(.dark [_nghost-ng-c231210037] .mat-step-icon) {
+  --tw-bg-opacity: 1;
+  @apply bg-emerald-500;
+}
+
+
+
+ /*CHECKBOX ENABLED*/
+ :host ::ng-deep .mdc-form-field label{
+  @apply text-gray-500;
+}
+
+:host ::ng-deep .mdc-checkbox .mdc-checkbox__native-control:enabled:not(:checked):not(:indeterminate):not([data-indeterminate=true])~.mdc-checkbox__background{
+  @apply border-gray-400 dark:border-gray-500;
+}
+
+/*CHECKBOX DISABLED*/
+:host ::ng-deep .mat-mdc-checkbox.mat-mdc-checkbox-disabled label{
+  @apply text-gray-400 dark:text-slate-600;
+}
+
+:host ::ng-deep .mdc-checkbox .mdc-checkbox__native-control[disabled]:not(:checked):not(:indeterminate):not([data-indeterminate=true])~.mdc-checkbox__background{
+  @apply border-slate-300 dark:border-slate-700;
+}
+
+:host ::ng-deep .mat-badge-before .mat-badge-content {
+  right: -1%;
+  top: 0;
+  text-align: center;
+  font-size: 19px;
+  padding: 4px;
+  @apply bg-red-600 w-8 h-8;
+}

@@ -1,0 +1,50 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+<div class="w-full p-3 border-b">
+  <div class="w-full grid grid-cols-1 sm:grid-cols-1 gap-4">
+    <!-- Selector de Sucursal -->
+    <app-select
+      [form]="form"
+      name="idBranch"
+      label="Sucursal de destino"
+      icon="bootstrapShop"
+      placeholder="Seleccione una sucursal"
+      helpMessage="Seleccione la sucursal donde ingresará la mercadería"
+      errorMessage="Debe seleccionar una sucursal"
+      [load]="load"
+      [options]="branches">
+    </app-select>
+
+
+
+
+    <!-- Campo de Observación -->
+    <app-input
+      [form]="form"
+      name="observation"
+      icon="matInsertCommentOutline"
+      label="Observación (Opcional)"
+      placeholder="Observaciones adicionales..."
+      helpMessage="Agregue cualquier nota o comentario sobre esta compra"
+      errorMessage="Error al ingresar la observación"
+      [counter]="true"
+      [minlength]="0"
+      [maxlength]="300">
+    </app-input>
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="flex justify-center align-middle gap-2 mt-4">
+    <button
+      (click)="close()"
+      [disabled]="load"
+      class="btn-danger h-12 w-48 font-bold">
+      Cancelar
+    </button>
+    <button
+      (click)="ok()"
+      [disabled]="load || form.invalid"
+      class="btn-success h-12 w-48 font-bold">
+      Continuar
+    </button>
+  </div>
+</div>

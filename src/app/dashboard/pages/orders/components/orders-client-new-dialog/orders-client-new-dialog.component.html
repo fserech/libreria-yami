@@ -1,0 +1,71 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+
+<div class="w-full p-3 border-b">
+<div class="w-full grid grid-cols-1 sm:grid-cols-1">
+
+  <app-input
+    [form]="form"
+    name="name"
+    icon="matDriveFileRenameOutlineOutline"
+    label="Nombre de Cliente"
+    placeholder="Nombre de Cliente"
+    helpMessage="Sólo se aceptan caracteres alfanumericos"
+    errorMessage="Error message."
+    [minlength]="1"
+    [maxlength]="20">
+  </app-input>
+
+  <app-select
+    [form]="form"
+    name="offerDay"
+    label="Día de visita"
+    icon="matTodayOutline"
+    placeholder="Día de visita"
+    helpMessage="Seleccione un semana."
+    errorMessage="Error message."
+    [load]="load"
+    [options]="daysOfWeek">
+  </app-select>
+
+  <app-input
+    [form]="form"
+    name="address"
+    icon="matAddLocationAltOutline"
+    label="Dirección de cliente"
+    placeholder="Dirección de cliente"
+    helpMessage="Sólo se aceptan caracteres alfanumericos"
+    errorMessage="Error message."
+    [minlength]="1"
+    [maxlength]="300"
+    [counter]="true"
+    [load]="load">
+  </app-input>
+
+  <app-input
+    [form]="form"
+    name="telephone"
+    icon="matAddIcCallOutline"
+    label="Teléfono de cliente"
+    placeholder="Teléfono de cliente"
+    helpMessage="Sólo se aceptan números enteros "
+    errorMessage="Error message."
+    [minlength]="1"
+    [maxlength]="8"
+    [counter]="true"
+    [load]="load">
+  </app-input>
+
+</div>
+
+
+  <div class="flex justify-center align-middle">
+    <button (click)="close()" [disabled]="load" class="btn-danger h-12 w-48 font-bold">
+      Cancelar
+    </button>
+    <button (click)="ok()" [disabled]="load || form.invalid" class="btn-primary h-12 w-48 font-bold">
+      Guardar y continuar
+    </button>
+  </div>
+
+
+</div>

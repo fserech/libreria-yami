@@ -1,0 +1,49 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+<div class="w-full p-3 border-b">
+  <div class="w-full grid grid-cols-1 sm:grid-cols-1">
+    @if (product) {
+      <div class="text-center mb-4">
+        <!-- ✅ Mostrar precio según contexto -->
+        @if (isPurchase) {
+          <!-- Para compras: mostrar precio de costo -->
+          <p class="text-sm text-gray-500 dark:text-gray-400">Precio de costo</p>
+          <p class="text-2xl font-bold text-blue-500">
+            Q {{ product?.costPrice?.toFixed(2) ?? '0.00' }}
+          </p>
+          <!-- Mostrar precio de venta como referencia -->
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            Precio venta: Q {{ product?.salePrice?.toFixed(2) ?? '0.00' }}
+          </p>
+        } @else {
+          <!-- Para ventas: mostrar precio de venta -->
+          <p class="text-sm text-gray-500 dark:text-gray-400">Precio de venta</p>
+          <p class="text-2xl font-bold text-emerald-500">
+            Q {{ product?.salePrice?.toFixed(2) ?? '0.00' }}
+          </p>
+        }
+      </div>
+    }
+
+    <app-input
+      [form]="form"
+      name="quantity"
+      icon="matFilter2Outline"
+      label="Cantidad"
+      placeholder="Cantidad"
+      helpMessage="Sólo se aceptan números enteros"
+      errorMessage="Debe ingresar una cantidad válida"
+      [counter]="true"
+      [minlength]="1"
+      [maxlength]="5">
+    </app-input>
+  </div>
+
+  <div class="flex justify-center align-middle gap-2 mt-4">
+    <button (click)="close()" [disabled]="load" class="btn-danger h-12 w-48 font-bold">
+      Cancelar
+    </button>
+    <button (click)="ok()" [disabled]="load || form.invalid" class="btn-success h-12 w-48 font-bold">
+      Continuar
+    </button>
+  </div>
+</div>

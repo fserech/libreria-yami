@@ -1,0 +1,146 @@
+
+<app-header headerTitle="Usuarios" headerDescription="Gestión de módulo de Usuarios, crear, editar, activar, desactivar y eliminar usuarios."></app-header>
+
+<form [formGroup]="form" autocomplete="off">
+
+  <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
+    <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between">
+      @if (mode==='new') {
+        <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo Usuario</p>
+      }
+      @if (mode === 'edit'|| mode === 'view') {
+        <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID usuario: </b>{{ id }}</p>
+      }
+
+      <button (click)="back()" class="btn-back">
+        <ng-icon class="btn-back-icon" size="20" name="matArrowBackOutline"></ng-icon>
+        <p class="hidden sm:block text-sm font-bold">Regresar</p>
+      </button>
+    </div>
+
+    <div class="w-full text-lg dark:border-slate-700 mb-4 pb-2">
+      <p class="text-gray-500 dark:text-gray-300 text-base">Información General</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      @if (!load) {
+        <div>
+          <div class="relative">
+            <input #input type="{{ passwordVisibility ? 'text' : 'password'}}" formControlName="userPassword" placeholder="Contraseña de usuario"
+                    autocomplete="disabled" autocomplete="new-password"
+                    class="text-gray-600 bg-gray-200 py-2 px-10 w-full border-none
+                            focus:border-gray-400 focus:outline-none focus:border
+                            dark:border-slate-800 dark:bg-slate-950 dark:focus:border-slate-700 dark:text-white
+                            disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl"/>
+            <div class="absolute top-2 left-0 pl-3 flex items-center pointer-events-none">
+
+              <span class="top-1">
+                <ng-icon class="text-slate-500 font-bold dark:text-slate-400" size="20" name="matPasswordOutline"></ng-icon>
+              </span>
+
+            </div>
+
+            <div class="absolute top-2 right-0 pr-3 flex items-center">
+              <button type="button" (click)="togglePasswordVisibility()" class="bg-transparent mr-5">
+                <ng-icon class="text-slate-500 font-bold dark:text-slate-400" size="20" name="{{ passwordVisibility ? 'matKeyOutline' : 'matKeyOffOutline' }}"></ng-icon>
+              </button>
+              <span class="top-1">
+                @if(this.form.controls['userPassword'].valid) {
+                  <ng-icon class="text-green-500" size="20" name="matCheckCircleOutline"></ng-icon>
+                }
+                @if(!this.form.controls['userPassword'].valid) {
+                  <ng-icon class="text-red-500 transform rotate-45" size="20" name="matAddCircleOutlineOutline"></ng-icon>
+                }
+              </span>
+            </div>
+
+          </div>
+
+          <div class="relative mt-1">
+              <div class="text-xs text-gray-500 mt-1 mb-4 z-40 float-start">Solo se aceptan mayusculas, minusculas, números y simbolos</div>
+              <div class="text-xs text-gray-500 float-end z-40">{{ (this.form.controls['userPassword'].value?.length) ? this.form.controls['userPassword'].value.length : 0 }}/14</div>
+            <br>
+          </div>
+        </div>
+      }@else if(load){
+        <div class="relative">
+          <input class="relative w-full pl-12 pr-3 py-2 rounded-2xl bg-gray-300 dark:bg-gray-700 dark:text-white border-none focus:border focus:border-gray-300 animate-pulse" disabled>
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span class="top-1/4">
+                  <ng-icon class="text-slate-500 font-bold dark:text-slate-400 animate-pulse" size="20" name="matPasswordOutline"></ng-icon>
+                </span>
+            </div>
+          </div>
+          <div class="relative mt-1">
+              <div class="bg-emerald-200 dark:bg-slate-800 mt-1 mb-4 z-40 float-start animate-pulse rounded-lg text-xs text-transparent" style="user-select: none;">Solo se aceptan mayusculas, minusculas, números y simbolos</div>
+              <div class="bg-gray-200 dark:bg-slate-800 float-end z-50 animate-pulse rounded-lg text-xs text-transparent" style="user-select: none;">{{ (this.form.controls['userPassword'].value?.length) ? this.form.controls['userPassword'].value.length : 0 }}/14</div>
+            <br>
+          </div>
+      }
+
+      <app-input
+        [form]="form"
+        name="email"
+        icon="matAlternateEmailOutline"
+        label="Email Usuario"
+        placeholder="Email Usuario"
+        helpMessage="Sólo se aceptan carates validos de correo electrónico"
+        errorMessage="Error message."
+        [minlength]="1"
+        [maxlength]="120"
+        [counter]="true"
+        [load]="load">
+      </app-input>
+
+      <app-input
+        [form]="form"
+        name="name"
+        icon="matDriveFileRenameOutlineOutline"
+        label="Nombre Usuario"
+        placeholder="Nombre Usuario"
+        helpMessage="Sólo se aceptan caracteres alfanumericos sin espacios"
+        errorMessage="Error message."
+        [minlength]="1"
+        [maxlength]="20"
+        [counter]="true"
+        [load]="load">
+      </app-input>
+
+    <app-radio-button
+      label="Rol de usuario"
+      name="role"
+      [form]="form"
+      [options]="optionsRole"
+      [load]="load"
+      (changes)="changeRole($event)">
+    </app-radio-button>
+
+    </div>
+
+    @if (this.form.controls['role'].value === 1 || this.form.controls['role'].value === 2) {
+      <div class="grid grid-cols-1 sm:grid-cols-1 gap-4">
+        <app-checkbox
+          #checkbox
+          [form]="form"
+          name="days_sale"
+          label="Dias asignados"
+          [load]="load"
+          [labels]="['Domingo', 'Lunes', 'Marte', 'Miercoles', 'Jueves', 'Viernes', 'Sábado']"
+          (changes)="changeDays($event)">
+        </app-checkbox>
+      </div>
+    }
+
+    <div class="w-full border-b dark:border-slate-700 pb-3 pt-3 flex justify-center sm:justify-end mb-2">
+      @if(!load){
+      <button (click)="submit()" [disabled]="form.invalid || load" class="btn-primary h-10 w-36 font-bold">Guardar</button>
+      } @else if(load){
+        <button class="btn-primary h-10 w-36 font-bold animate-pulse"></button>
+        }
+    </div>
+
+  </div>
+
+</form>
+

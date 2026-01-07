@@ -1,0 +1,91 @@
+
+// Custom Theming for Angular Material
+// For more information: https://material.angular.io/guide/theming
+@use '@angular/material' as mat;
+// Plus imports for other components in your app.
+
+// Include the common styles for Angular Material. We include this here so that you only
+// have to load a single css file for Angular Material in your app.
+// Be sure that you only ever include this mixin once!
+@include mat.core();
+
+// Define the palettes for your theme using the Material Design palettes available in palette.scss
+// (imported above). For each palette, you can optionally specify a default, lighter, and darker
+// hue. Available color palettes: https://material.io/design/color/
+$bodegasa-frontend-pwa-primary: mat.define-palette(mat.$teal-palette);
+$bodegasa-frontend-pwa-accent: mat.define-palette(mat.$teal-palette, A200, A100, A400);
+
+// The warn palette is optional (defaults to red).
+$bodegasa-frontend-pwa-warn: mat.define-palette(mat.$red-palette);
+
+// Create the theme object. A theme consists of configurations for individual
+// theming systems such as "color" or "typography".
+$bodegasa-frontend-pwa-theme: mat.define-light-theme((
+  color: (
+    primary: $bodegasa-frontend-pwa-primary,
+    accent: $bodegasa-frontend-pwa-accent,
+    warn: $bodegasa-frontend-pwa-warn,
+  ),
+  // typography: mat.define-typography-config(),
+  // density: 0
+));
+
+// Include theme styles for core and each component used in your app.
+// Alternatively, you can import and @include the theme mixins for each component
+// that you are using.
+@include mat.all-component-themes($bodegasa-frontend-pwa-theme);
+
+/* You can add global styles to this file, and also import other style files */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import '../src/assets/scss/inputs.scss';
+@import '../src/assets/scss/buttons.scss';
+@import '../src/assets/scss/tables.scss';
+@import '../src/assets/scss/dialogs.scss';
+@import '@angular/cdk/overlay-prebuilt.css';
+
+
+@layer components {
+	.dropdown-content {
+		@apply pointer-events-none scale-95 opacity-0 duration-100 ease-in;
+	}
+
+	.dropdown:hover > .dropdown-content {
+		@apply pointer-events-auto block scale-100 opacity-100 duration-200;
+	}
+}
+
+.bgc-primary{
+  background-color: #00C793;
+  @apply text-white;
+}
+
+.bgc-success{
+  background-color: #3887BF;
+}
+
+.bgc-info{
+  background-color: #9DABB4;
+}
+
+// content responsive
+
+.content-sm {
+  @apply  block sm:hidden;
+}
+
+.content-desktop {
+  @apply hidden sm:block md:block lg:block xl:block 2xl:block;
+}
+
+.content-desktop-custom {
+  @apply hidden sm:block md:block lg:block xl:block 2xl:block;
+}
+
+.content-desktop-test {
+  @apply hidden sm:block md:block lg:block xl:block 2xl:block;
+}
+
+// html, body { height: 100%; }
+// body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

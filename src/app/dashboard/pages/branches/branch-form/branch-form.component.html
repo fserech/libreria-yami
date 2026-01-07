@@ -1,0 +1,166 @@
+<app-header
+  headerTitle="Sucursales"
+  headerDescription="Gestión de módulo de sucursales, crear, editar, activar, desactivar y eliminar sucursales.">
+</app-header>
+
+<div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
+  <!-- Header con título y botón regresar -->
+  <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between">
+    <div>
+      @if (mode === 'new') {
+        <p class="text-gray-500 dark:text-gray-300 font-bold text-xl">Nueva Sucursal</p>
+      }
+      @if (mode === 'edit') {
+        <p class="text-gray-500 dark:text-gray-300 font-bold text-xl">Editar Sucursal</p>
+        <p class="text-gray-400 dark:text-gray-400 text-sm"><b>ID: </b>{{ id }}</p>
+      }
+      @if (mode === 'view') {
+        <p class="text-gray-500 dark:text-gray-300 font-bold text-xl">Ver Sucursal</p>
+        <p class="text-gray-400 dark:text-gray-400 text-sm"><b>ID: </b>{{ id }}</p>
+      }
+    </div>
+
+    <button (click)="back()" class="btn-back">
+      <ng-icon class="btn-back-icon" size="20" name="matArrowBackOutline"></ng-icon>
+      <p class="hidden sm:block text-sm font-bold">Regresar</p>
+    </button>
+  </div>
+
+  <!-- Sección de información general -->
+  <div class="w-full text-lg dark:border-slate-700 mb-4">
+    <p class="text-gray-500 dark:text-gray-300 text-base font-semibold">Información General</p>
+    <p class="text-gray-400 dark:text-gray-400 text-xs mt-1">
+      Complete los datos de la sucursal. Los campos marcados con * son obligatorios.
+    </p>
+  </div>
+
+  <!-- Formulario -->
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Nombre de la Sucursal -->
+      <app-input
+        [form]="form"
+        name="name"
+        icon="matDriveFileRenameOutlineOutline"
+        label="Nombre Sucursal *"
+        placeholder="Ej: Sucursal Centro"
+        helpMessage="Sólo se aceptan caracteres alfabéticos (mínimo 3 caracteres)"
+        errorMessage="El nombre es requerido y debe tener al menos 3 caracteres"
+        [minlength]="3"
+        [maxlength]="60"
+        [counter]="true"
+        [load]="load">
+      </app-input>
+
+      <!-- Dirección -->
+      <app-input
+        [form]="form"
+        name="address"
+        icon="matAddLocationAltOutline"
+        label="Dirección de sucursal *"
+        placeholder="Ej: Av. Principal #123, Zona 10"
+        helpMessage="Dirección completa de la sucursal (mínimo 5 caracteres)"
+        errorMessage="La dirección es requerida y debe tener al menos 5 caracteres"
+        [minlength]="5"
+        [maxlength]="100"
+        [counter]="true"
+        [load]="load">
+      </app-input>
+
+      <!-- Teléfono -->
+      <app-input
+        [form]="form"
+        name="telephone"
+        icon="matLocalPhoneOutline"
+        label="Teléfono de sucursal *"
+        placeholder="Ej: 12345678"
+        helpMessage="Sólo números, exactamente 8 dígitos"
+        errorMessage="El teléfono debe tener exactamente 8 dígitos"
+        [minlength]="8"
+        [maxlength]="8"
+        [counter]="true"
+        [load]="load">
+      </app-input>
+
+      <!-- Usuario Responsable (solo para admin) -->
+      @if (isAdmin()) {
+        <app-select
+          [form]="form"
+          [load]="load"
+          [options]="users"
+          placeholder="Seleccione usuario responsable"
+          name="idUser"
+          icon="matPersonOutline"
+          label="Usuario responsable *"
+          helpMessage="Usuario que administrará esta sucursal"
+          errorMessage="Debe seleccionar un usuario responsable">
+        </app-select>
+      }
+    </div>
+
+    <!-- Información adicional para modo edición -->
+    @if (mode === 'edit' && branch) {
+      <div class="mt-6 p-4 bg-gray-50 dark:bg-slate-950 rounded-lg">
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 font-semibold">Información del registro</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
+          @if (branch.dateCreated) {
+            <p><b>Fecha de creación:</b> {{ branch.dateCreated | date: 'dd/MM/yyyy HH:mm' }}</p>
+          }
+          @if (branch.dateUpdated) {
+            <p><b>Última actualización:</b> {{ branch.dateUpdated | date: 'dd/MM/yyyy HH:mm' }}</p>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Botones de acción -->
+    <div class="w-full border-t dark:border-slate-700 pt-4 mt-6 flex justify-center sm:justify-end gap-3">
+      @if (mode !== 'view') {
+        @if (!load && !isSaving) {
+          <button
+            type="button"
+            (click)="back()"
+            class="btn-secondary h-10 w-36 font-bold">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="form.invalid || isSaving"
+            class="btn-primary h-10 w-36 font-bold"
+            [class.opacity-50]="form.invalid"
+            [class.cursor-not-allowed]="form.invalid">
+            @if (mode === 'edit') {
+              Actualizar
+            } @else {
+              Guardar
+            }
+          </button>
+        } @else {
+          <button
+            type="button"
+            disabled
+            class="btn-primary h-10 w-36 font-bold animate-pulse">
+            Guardando...
+          </button>
+        }
+      } @else {
+        <button
+          type="button"
+          (click)="back()"
+          class="btn-primary h-10 w-36 font-bold">
+          Regresar
+        </button>
+      }
+    </div>
+  </form>
+
+  <!-- Mensaje de ayuda -->
+  @if (mode === 'new') {
+    <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+      <p class="text-xs text-blue-600 dark:text-blue-400">
+        <b>💡 Consejo:</b> Asegúrese de verificar que todos los datos sean correctos antes de guardar.
+        Una vez creada, la sucursal estará disponible para asociar productos y realizar operaciones.
+      </p>
+    </div>
+  }
+</div>
