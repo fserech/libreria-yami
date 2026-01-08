@@ -27,7 +27,7 @@ import { provideIcons } from '@ng-icons/core';
 import { matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline, matDeleteOutline, matEditOutline, matFilterAltOutline, matSearchOutline } from '@ng-icons/material-icons/outline';
 import { bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarLeft, bootstrapChevronBarRight } from '@ng-icons/bootstrap-icons';
 import { environment } from '../../../../environments/environment';
-import { InventoryMovement } from '../../../shared/interfaces/inventory.interface';
+import { InventoryMovement } from '../../../shared/interfaces/inventory';
 
 // Interfaz unificada para el inventario
 interface InventoryItem {
