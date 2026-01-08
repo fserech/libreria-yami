@@ -1,4 +1,4 @@
-// src/app/shared/interfaces/inventory.interface.ts
+
 
 export interface Inventory {
   id?: number;
