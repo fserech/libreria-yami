@@ -15,6 +15,7 @@ export const URL_RECEIPTS: string = `${API_BASE}reports/orders-day`;
 export const URL_BRANCHES: string = `${API_BASE}branches`;
 export const URL_PURCHASES: string = `${API_BASE}purchases`;
 export const URL_USERS: string = `${API_BASE}users`;
+export const URL_INVENTORY: string = `${API_BASE}inventory`;
 export const URL_PERMISSIONS: string = `${API_BASE}permissions/`;
 export const URL_LOGIN: string = `http://localhost:8080/auth/login`;
 

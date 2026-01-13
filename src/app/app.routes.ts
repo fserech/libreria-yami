@@ -67,7 +67,7 @@ export const routes: Routes =
   path: 'inventory',
   title: 'Inventario',
   canMatch: [authGuard],
-   loadComponent: () => import('./dashboard/pages/inventory/inventory.component'),
+   //loadComponent: () => import('./dashboard/pages/inventory/inventory.component'),
   children: [
     {
       path: '',
