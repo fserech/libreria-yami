@@ -1,309 +1,374 @@
-<!-- stock-movements.component.html -->
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
-  <div class="max-w-[1600px] mx-auto space-y-6">
+<!-- stock-movements.component.html - VERSIÓN CORREGIDA -->
+<div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
 
-    <!-- ============================================ -->
-    <!-- HEADER -->
-    <!-- ============================================ -->
-    <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <!-- Título -->
-        <div>
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-              </svg>
-            </div>
-            <h1 class="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-              Movimientos de Inventario
-            </h1>
-          </div>
-          <p class="text-slate-600 ml-15">Gestión y seguimiento de movimientos de stock en tiempo real</p>
-        </div>
-
-        <!-- Acciones -->
-        <div class="flex flex-wrap gap-3">
-          <button
-            (click)="exportToExcel()"
-            class="px-5 py-2.5 bg-white border-2 border-emerald-500 text-emerald-600 rounded-xl font-semibold hover:bg-emerald-50 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            Exportar Excel
-          </button>
-          <button
-            (click)="showAdjustmentModal = true"
-            class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-            </svg>
-            Ajuste Manual
-          </button>
-        </div>
+  <!-- HEADER CON TÍTULO -->
+  <div class="flex items-center justify-between mb-4 pb-4 border-b dark:border-slate-700">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200">Movimientos de Inventario</h1>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Gestión y seguimiento de movimientos de stock</p>
       </div>
     </div>
+  </div>
 
-    <!-- ============================================ -->
-    <!-- ALERTAS DE STOCK BAJO -->
-    <!-- ============================================ -->
-    <div *ngIf="lowStockProducts.length > 0" class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl shadow-lg border-2 border-amber-200 p-6">
-      <div class="flex items-start gap-4 mb-4">
-        <div class="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
-          <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/>
-          </svg>
-        </div>
-        <div>
-          <h3 class="text-lg font-bold text-amber-900 mb-1">Atención: Stock Bajo</h3>
-          <p class="text-amber-800">Hay <span class="font-bold">{{ lowStockProducts.length }}</span> producto(s) que requieren reabastecimiento.</p>
-        </div>
-      </div>
+  <!-- FILTER AND SEARCH -->
 
-      <!-- Tarjetas de productos con stock bajo -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div *ngFor="let stock of lowStockProducts.slice(0, 3)" class="bg-white rounded-xl p-4 border border-amber-200 hover:border-amber-400 transition-all duration-200 hover:shadow-md">
-          <div class="flex items-start gap-3">
-            <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <h6 class="font-semibold text-slate-800 truncate">{{ stock.product?.productName || 'Producto' }}</h6>
-              <div class="flex items-center gap-2 mt-1">
-                <span class="text-sm text-slate-600">Stock:</span>
-                <span class="font-bold text-amber-600">{{ stock.currentStock }}</span>
-                <span class="text-xs text-slate-500">(Mín: {{ stock.minStock }})</span>
-              </div>
-              <p class="text-xs text-slate-500 mt-1">{{ stock.branchName }}</p>
-            </div>
-          </div>
-        </div>
+  <!-- MOBILE -->
+  <div class="sticky top-0 z-10 grid grid-cols-1 gap-4 md:grid-cols-1 p-1 bg-white dark:bg-slate-900 border-b dark:border-slate-600">
+    <div class="border dark:border-slate-700 border-none border-t-0 border-l-0 border-r-0 m-0 p-0 pb-2 w-full">
 
-        <!-- Ver todos -->
-        <div *ngIf="lowStockProducts.length > 3" class="bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl p-4 border-2 border-dashed border-amber-300 flex items-center justify-center cursor-pointer hover:from-amber-200 hover:to-orange-200 transition-all duration-200">
-          <div class="text-center">
-            <p class="text-2xl font-bold text-amber-700">+{{ lowStockProducts.length - 3 }}</p>
-            <p class="text-sm text-amber-600 mt-1">Ver todos</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- FILTROS -->
-    <!-- ============================================ -->
-    <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-      <div class="flex items-center gap-3 mb-5">
-        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button type="button" class="btn-success h-10 sm:flex md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base">Filtros</p>
+          <svg class="w-4 h-4 ml-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
           </svg>
         </div>
-        <h5 class="text-lg font-bold text-slate-800">Filtros de Búsqueda</h5>
+      </button>
+
+      <button (click)="showAdjustmentModal = true" type="button" class="btn-primary h-10 float-right w-36">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base">Ajuste Manual</p>
+          <svg class="w-4 h-4 ml-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+          </svg>
+        </div>
+      </button>
+
+      <button (click)="exportToExcel()" type="button" class="btn-success h-10 float-right w-36 mr-2">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base">Exportar Excel</p>
+          <svg class="w-4 h-4 ml-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+      </button>
+
+    </div>
+
+    <!-- FILTER DESKTOP -->
+    <div class="md:flex w-full hidden pl-6 gap-2">
+      <div class="w-64">
+        <select [(ngModel)]="filter.movementType"
+                class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          <option [ngValue]="undefined">Todos los tipos</option>
+          <option *ngFor="let type of movementTypes" [value]="type">{{ getMovementTypeLabel(type) }}</option>
+        </select>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <!-- Tipo de Movimiento -->
-        <div class="lg:col-span-2">
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Tipo de Movimiento</label>
-          <select [(ngModel)]="filter.movementType" class="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all">
-            <option [ngValue]="undefined">Todos los tipos</option>
-            <option *ngFor="let type of movementTypes" [value]="type">{{ getMovementTypeLabel(type) }}</option>
-          </select>
-        </div>
+      <div class="w-48">
+        <input type="date"
+               [(ngModel)]="filter.startDate"
+               placeholder="Fecha Inicio"
+               class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+      </div>
 
-        <!-- Fecha Inicio -->
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Fecha Inicio</label>
-          <input type="date" [(ngModel)]="filter.startDate" class="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all">
-        </div>
+      <div class="w-48">
+        <input type="date"
+               [(ngModel)]="filter.endDate"
+               placeholder="Fecha Fin"
+               class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+      </div>
 
-        <!-- Fecha Fin -->
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Fecha Fin</label>
-          <input type="date" [(ngModel)]="filter.endDate" class="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all">
-        </div>
+      <div class="w-48">
+        <select [(ngModel)]="filter.branchId"
+                class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          <option [ngValue]="undefined">Todas las sucursales</option>
+        </select>
+      </div>
 
-        <!-- Sucursal -->
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Sucursal</label>
-          <select [(ngModel)]="filter.branchId" class="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all">
-            <option [ngValue]="undefined">Todas</option>
-            <!-- Agregar sucursales dinámicamente -->
-          </select>
+      <button (click)="applyFilter()" type="button" class="btn-success h-10">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base align-middle">Buscar</p>
+          <svg class="w-4 h-4 ml-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
         </div>
+      </button>
 
-        <!-- Botones -->
-        <div class="flex gap-2">
-          <button (click)="applyFilter()" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg">
-            <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button (click)="clearFilter()" type="button" class="btn-secondary h-10 px-3">
+        <div class="flex text-center justify-center align-middle">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </div>
+      </button>
+    </div>
+
+    <!-- MOBILE SEARCH -->
+    <div class="w-full md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
+      <div class="flex gap-2">
+        <select [(ngModel)]="filter.movementType"
+                class="flex-1 h-10 px-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          <option [ngValue]="undefined">Todos los tipos</option>
+          <option *ngFor="let type of movementTypes" [value]="type">{{ getMovementTypeLabel(type) }}</option>
+        </select>
+
+        <button (click)="applyFilter()" type="button" class="btn-success h-10 px-3">
+          <div class="flex text-center justify-center align-middle">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-          </button>
-          <button (click)="clearFilter()" class="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-all duration-200">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
+          </div>
+        </button>
       </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- TABLA DE MOVIMIENTOS -->
-    <!-- ============================================ -->
-    <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-      <!-- Loading -->
-      <div *ngIf="loading" class="flex items-center justify-center py-20">
-        <div class="relative">
-          <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <div class="absolute inset-0 flex items-center justify-center">
-            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-            </svg>
+  </div>
+
+  <!-- ALERTAS DE STOCK BAJO -->
+  <div *ngIf="lowStockProducts.length > 0" class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 my-4 rounded">
+    <div class="flex items-start">
+      <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/>
+      </svg>
+      <div class="flex-1">
+        <p class="font-semibold text-yellow-800 dark:text-yellow-200">Atención: Stock Bajo</p>
+        <p class="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+          Hay <span class="font-bold">{{ lowStockProducts.length }}</span> producto(s) que requieren reabastecimiento.
+        </p>
+        <div class="mt-2 space-y-1">
+          <div *ngFor="let stock of lowStockProducts.slice(0, 3)" class="text-sm text-yellow-800 dark:text-yellow-200">
+            • {{ stock.product?.productName || 'Producto' }} - Stock: <span class="font-bold">{{ stock.currentStock }}</span> (Mín: {{ stock.minStock }}) - {{ stock.branchName }}
+          </div>
+          <div *ngIf="lowStockProducts.length > 3" class="text-sm text-yellow-800 dark:text-yellow-200 font-semibold">
+            + {{ lowStockProducts.length - 3 }} producto(s) más
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Tabla -->
-      <div *ngIf="!loading" class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
-              <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Fecha</th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Tipo</th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Producto</th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Sucursal</th>
-              <th class="px-6 py-4 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">Cantidad</th>
-              <th class="px-6 py-4 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">Stock Ant.</th>
-              <th class="px-6 py-4 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">Stock Nuevo</th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Usuario</th>
-              <th class="px-6 py-4 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <!-- Sin resultados -->
-            <tr *ngIf="filteredMovements.length === 0">
-              <td colspan="9" class="px-6 py-20 text-center">
-                <div class="flex flex-col items-center justify-center">
-                  <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                    <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                    </svg>
-                  </div>
-                  <p class="text-slate-600 font-semibold text-lg">No se encontraron movimientos</p>
-                  <p class="text-slate-400 text-sm mt-1">Intenta ajustar los filtros de búsqueda</p>
-                </div>
-              </td>
-            </tr>
-
-            <!-- Filas de movimientos -->
-            <tr *ngFor="let movement of filteredMovements" class="hover:bg-slate-50 transition-colors duration-150">
-              <!-- Fecha -->
-              <td class="px-6 py-4">
-                <div>
-                  <p class="font-semibold text-slate-800">{{ movement.dateCreated | date:'dd/MM/yyyy' }}</p>
-                  <p class="text-xs text-slate-500">{{ movement.dateCreated | date:'HH:mm' }}</p>
-                </div>
-              </td>
-
-              <!-- Tipo -->
-              <td class="px-6 py-4">
-                <span [ngClass]="getMovementTypeClass(movement.movementType)" class="px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1">
-                  {{ getMovementTypeLabel(movement.movementType) }}
-                </span>
-              </td>
-
-              <!-- Producto -->
-              <td class="px-6 py-4">
-                <div>
-                  <p class="font-semibold text-slate-800">{{ movement.product?.productName || 'N/A' }}</p>
-                  <p *ngIf="movement.product?.sku" class="text-xs text-slate-500">SKU: {{ movement.product.sku }}</p>
-                </div>
-              </td>
-
-              <!-- Sucursal -->
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1zm-5 8.274l-.818 2.552c.25.112.526.174.818.174.292 0 .569-.062.818-.174L5 10.274zm10 0l-.818 2.552c.25.112.526.174.818.174.292 0 .569-.062.818-.174L15 10.274z"/>
-                    </svg>
-                  </div>
-                  <span class="text-sm text-slate-700">{{ movement.branchName || 'N/A' }}</span>
-                </div>
-              </td>
-
-              <!-- Cantidad -->
-              <td class="px-6 py-4 text-center">
-                <span [class]="isStockIncrease(movement) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold border">
-                  <svg *ngIf="isStockIncrease(movement)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-                  </svg>
-                  <svg *ngIf="!isStockIncrease(movement)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-                  </svg>
-                  {{ movement.quantity > 0 ? '+' : '' }}{{ movement.quantity }}
-                </span>
-              </td>
-
-              <!-- Stock Anterior -->
-              <td class="px-6 py-4 text-right">
-                <span class="font-semibold text-slate-700">{{ movement.previousStock }}</span>
-              </td>
-
-              <!-- Stock Nuevo -->
-              <td class="px-6 py-4 text-right">
-                <span class="font-bold text-blue-600">{{ movement.newStock }}</span>
-              </td>
-
-              <!-- Usuario -->
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <svg class="w-3 h-3 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
-                    </svg>
-                  </div>
-                  <span class="text-sm text-slate-700">{{ movement.userName || 'Sistema' }}</span>
-                </div>
-              </td>
-
-              <!-- Acciones -->
-              <td class="px-6 py-4 text-center">
-                <button (click)="viewMovementDetail(movement)" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors duration-200">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                  </svg>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Paginación -->
-      <div *ngIf="filteredMovements.length > 0" class="bg-slate-50 px-6 py-4 border-t border-slate-200">
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p class="text-sm text-slate-600">
-            Mostrando <span class="font-semibold text-slate-800">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> -
-            <span class="font-semibold text-slate-800">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span> de
-            <span class="font-semibold text-slate-800">{{ totalItems }}</span> registros
+  <!-- PAGINATION MOBILE -->
+  <div class="content-sm">
+    <div class="pagination">
+      <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
+        <div class="flex justify-between">
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-xs text-start pl-2 w-48">
+            <b>Páginas:</b> {{currentPage}} de {{Math.ceil(totalItems / itemsPerPage) || 1}}
           </p>
-          <div class="flex items-center gap-2">
-            <button (click)="previousPage()" [disabled]="currentPage === 1" [class.opacity-50]="currentPage === 1" [class.cursor-not-allowed]="currentPage === 1" class="px-4 py-2 bg-white border-2 border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors disabled:hover:bg-white">
-              Anterior
-            </button>
-            <span class="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold">
-              {{ currentPage }} / {{ Math.ceil(totalItems / itemsPerPage) }}
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-xs text-start pl-2 w-48">
+            <b>Items:</b> {{(currentPage - 1) * itemsPerPage + 1}} - {{Math.min(currentPage * itemsPerPage, totalItems)}} de {{totalItems}}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="rounded-lg overflow-x-auto">
+    <table class="table-grid mt-4 w-full">
+      <thead>
+        <tr>
+          <th class="hidden sm:table-cell">
+            <p>Fecha</p>
+          </th>
+
+          <th class="hidden sm:table-cell">
+            <p>Tipo</p>
+          </th>
+
+          <th class="hidden sm:table-cell">
+            <p>Producto</p>
+          </th>
+
+          <th class="hidden sm:table-cell">
+            <p>Sucursal</p>
+          </th>
+
+          <th class="hidden sm:table-cell text-center">
+            <p>Cantidad</p>
+          </th>
+
+          <th class="hidden sm:table-cell text-right">
+            <p>Stock Ant.</p>
+          </th>
+
+          <th class="hidden sm:table-cell text-right">
+            <p>Stock Nuevo</p>
+          </th>
+
+          <th class="hidden sm:table-cell">
+            <p>Usuario</p>
+          </th>
+
+          <th class="hidden sm:table-cell text-center">
+            <p>Acciones</p>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <!-- Loading -->
+        <tr *ngIf="loading">
+          <td colspan="9" class="text-center py-8">
+            <div class="flex items-center justify-center">
+              <div class="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+              <span class="ml-3 text-slate-600 dark:text-slate-400">Cargando movimientos...</span>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Sin resultados -->
+        <tr *ngIf="!loading && filteredMovements.length === 0">
+          <td colspan="9" class="text-center py-8">
+            <div class="flex flex-col items-center">
+              <svg class="w-16 h-16 text-slate-300 dark:text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+              </svg>
+              <p class="text-slate-600 dark:text-slate-400 font-semibold">No se encontraron movimientos</p>
+              <p class="text-slate-400 dark:text-slate-500 text-sm mt-1">Intenta ajustar los filtros de búsqueda</p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Filas de movimientos -->
+        <tr *ngFor="let movement of filteredMovements; let odd = odd"
+            [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': odd}">
+
+          <!-- DESKTOP VIEW -->
+          <td class="hidden sm:table-cell">
+            <div>
+              <p class="font-bold text-sm">{{ movement.dateCreated | date:'dd/MM/yyyy' }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">{{ movement.dateCreated | date:'HH:mm' }}</p>
+            </div>
+          </td>
+
+          <td class="hidden sm:table-cell">
+            <span [ngClass]="getMovementTypeClass(movement.movementType)"
+                  class="px-2 py-1 rounded text-xs font-semibold inline-block">
+              {{ getMovementTypeLabel(movement.movementType) }}
             </span>
-            <button (click)="nextPage()" [disabled]="currentPage * itemsPerPage >= totalItems" [class.opacity-50]="currentPage * itemsPerPage >= totalItems" [class.cursor-not-allowed]="currentPage * itemsPerPage >= totalItems" class="px-4 py-2 bg-white border-2 border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors disabled:hover:bg-white">
-              Siguiente
-            </button>
-          </div>
+          </td>
+
+          <td class="hidden sm:table-cell">
+            <div>
+              <p class="font-bold text-sm">{{ movement.product?.productName || 'N/A' }}</p>
+              <p *ngIf="movement.product?.sku" class="text-xs text-slate-500 dark:text-slate-400">SKU: {{ movement.product.sku }}</p>
+            </div>
+          </td>
+
+          <td class="hidden sm:table-cell">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1zm-5 8.274l-.818 2.552c.25.112.526.174.818.174.292 0 .569-.062.818-.174L5 10.274zm10 0l-.818 2.552c.25.112.526.174.818.174.292 0 .569-.062.818-.174L15 10.274z"/>
+              </svg>
+              <span class="text-sm">{{ movement.branchName || 'N/A' }}</span>
+            </div>
+          </td>
+
+          <td class="hidden sm:table-cell text-center">
+            <span [class]="isStockIncrease(movement) ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-300'"
+                  class="inline-flex items-center gap-1 px-3 py-1 rounded text-sm font-bold">
+              <svg *ngIf="isStockIncrease(movement)" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+              </svg>
+              <svg *ngIf="!isStockIncrease(movement)" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+              </svg>
+              {{ movement.quantity > 0 ? '+' : '' }}{{ movement.quantity }}
+            </span>
+          </td>
+
+          <td class="hidden sm:table-cell text-right">
+            <span class="font-semibold text-slate-700 dark:text-slate-300">{{ movement.previousStock }}</span>
+          </td>
+
+          <td class="hidden sm:table-cell text-right">
+            <span class="font-bold text-blue-600 dark:text-blue-400 text-lg">{{ movement.newStock }}</span>
+          </td>
+
+          <td class="hidden sm:table-cell">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+              </svg>
+              <span class="text-sm">{{ movement.userName || 'Sistema' }}</span>
+            </div>
+          </td>
+
+          <!-- MOBILE VIEW -->
+          <td class="content-sm">
+            <div class="w-full flex justify-between p-1">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span [ngClass]="getMovementTypeClass(movement.movementType)"
+                        class="px-2 py-0.5 rounded text-xs font-semibold">
+                    {{ getMovementTypeLabel(movement.movementType) }}
+                  </span>
+                  <span [class]="isStockIncrease(movement) ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'"
+                        class="px-2 py-0.5 rounded text-xs font-bold">
+                    {{ movement.quantity > 0 ? '+' : '' }}{{ movement.quantity }}
+                  </span>
+                </div>
+
+                <p class="font-bold text-sm">{{ movement.product?.productName || 'N/A' }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {{ movement.dateCreated | date:'dd/MM/yyyy HH:mm' }}
+                </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  Stock: {{ movement.previousStock }} → <span class="font-bold text-blue-600">{{ movement.newStock }}</span>
+                </p>
+              </div>
+
+              <button (click)="viewMovementDetail(movement)"
+                      class="p-2 h-fit bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+
+          <!-- Acciones Desktop -->
+          <td class="hidden sm:table-cell text-center">
+            <div class="w-full flex justify-center">
+              <button (click)="viewMovementDetail(movement)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+
+        </tr>
+
+      </tbody>
+    </table>
+
+    <!-- PAGINATION DESKTOP -->
+    <div class="content-desktop mt-4">
+      <div class="pagination">
+        <div class="pagination-child">
+          <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{currentPage}} de {{Math.ceil(totalItems / itemsPerPage) || 1}}</b></p>
+          <p>Items {{(currentPage - 1) * itemsPerPage + 1}} - {{Math.min(currentPage * itemsPerPage, totalItems)}} de {{totalItems}}</p>
+          <button (click)="currentPage = 1; loadMovements()" [disabled]="currentPage === 1">
+            <svg class="btn-pagination w-5 h-5" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M11.854 3.646a.5.5 0 0 1 0 .708L8.207 8l3.647 3.646a.5.5 0 0 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 0 1 .708 0zM4.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 1 0v-13a.5.5 0 0 0-.5-.5z"/>
+            </svg>
+          </button>
+          <button (click)="previousPage()" [disabled]="currentPage === 1">
+            <svg class="btn-pagination w-5 h-5" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+            </svg>
+          </button>
+          <button (click)="nextPage()" [disabled]="currentPage * itemsPerPage >= totalItems">
+            <svg class="btn-pagination w-5 h-5" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+            </svg>
+          </button>
+          <button (click)="currentPage = Math.ceil(totalItems / itemsPerPage); loadMovements()" [disabled]="currentPage * itemsPerPage >= totalItems">
+            <svg class="btn-pagination w-5 h-5" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M4.146 3.646a.5.5 0 0 0 0 .708L7.793 8l-3.647 3.646a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708 0zM11.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -311,193 +376,159 @@
   </div>
 </div>
 
-<!-- ============================================ -->
 <!-- MODAL: DETALLE DE MOVIMIENTO -->
-<!-- ============================================ -->
-<div *ngIf="selectedMovement" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-  <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="selectedMovement = undefined"></div>
-  <div class="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+<div *ngIf="selectedMovement" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+  <div class="relative bg-white dark:bg-slate-800 rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-bold text-white">Detalle del Movimiento</h3>
-        </div>
-        <button (click)="selectedMovement = undefined" class="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+      <h3 class="text-xl font-bold text-white">Detalle del Movimiento</h3>
+      <button (click)="selectedMovement = undefined"
+              class="text-white hover:bg-white/20 rounded p-1 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
     </div>
 
     <!-- Body -->
-    <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Tipo -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Tipo de Movimiento</label>
-          <span [ngClass]="getMovementTypeClass(selectedMovement.movementType)" class="inline-block px-4 py-2 rounded-lg text-sm font-semibold">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Tipo</label>
+          <span [ngClass]="getMovementTypeClass(selectedMovement.movementType)"
+                class="inline-block px-3 py-1 rounded text-sm font-semibold">
             {{ getMovementTypeLabel(selectedMovement.movementType) }}
           </span>
         </div>
 
-        <!-- Fecha -->
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Fecha y Hora</label>
-          <p class="font-semibold text-slate-800">{{ selectedMovement.dateCreated | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha</label>
+          <p class="font-semibold">{{ selectedMovement.dateCreated | date:'dd/MM/yyyy HH:mm:ss' }}</p>
         </div>
 
-        <!-- Producto -->
         <div class="md:col-span-2">
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Producto</label>
-          <div class="bg-slate-50 rounded-xl p-4">
-            <p class="font-bold text-slate-800">{{ selectedMovement.product?.productName || 'N/A' }}</p>
-            <p *ngIf="selectedMovement.product?.sku" class="text-sm text-slate-600 mt-1">SKU: {{ selectedMovement.product.sku }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Producto</label>
+          <div class="bg-slate-50 dark:bg-slate-700 rounded p-3">
+            <p class="font-bold">{{ selectedMovement.product?.productName || 'N/A' }}</p>
+            <p *ngIf="selectedMovement.product?.sku" class="text-sm text-slate-600 dark:text-slate-400 mt-1">SKU: {{ selectedMovement.product.sku }}</p>
           </div>
         </div>
 
-        <!-- Cantidad -->
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Cantidad</label>
-          <span [class]="isStockIncrease(selectedMovement) ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Cantidad</label>
+          <span [class]="isStockIncrease(selectedMovement) ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'"
+                class="inline-flex items-center gap-2 px-3 py-1 rounded font-bold">
             {{ selectedMovement.quantity > 0 ? '+' : '' }}{{ selectedMovement.quantity }}
           </span>
         </div>
 
-        <!-- Stock Anterior -->
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Stock Anterior</label>
-          <p class="text-2xl font-bold text-slate-800">{{ selectedMovement.previousStock }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Stock Anterior</label>
+          <p class="text-2xl font-bold">{{ selectedMovement.previousStock }}</p>
         </div>
 
-        <!-- Stock Nuevo -->
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Stock Nuevo</label>
-          <p class="text-2xl font-bold text-blue-600">{{ selectedMovement.newStock }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Stock Nuevo</label>
+          <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ selectedMovement.newStock }}</p>
         </div>
 
-        <!-- Sucursal -->
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Sucursal</label>
-          <p class="font-semibold text-slate-800">{{ selectedMovement.branchName || 'N/A' }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Sucursal</label>
+          <p class="font-semibold">{{ selectedMovement.branchName || 'N/A' }}</p>
         </div>
 
-        <!-- Usuario -->
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Usuario</label>
-          <p class="font-semibold text-slate-800">{{ selectedMovement.userName || 'Sistema' }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Usuario</label>
+          <p class="font-semibold">{{ selectedMovement.userName || 'Sistema' }}</p>
         </div>
 
-        <!-- Costos -->
         <div *ngIf="selectedMovement.unitCost">
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Costo Unitario</label>
-          <p class="text-lg font-bold text-slate-800">{{ selectedMovement.unitCost | currency:'GTQ':'symbol':'1.2-2' }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Costo Unitario</label>
+          <p class="text-lg font-bold">{{ selectedMovement.unitCost | currency:'GTQ':'symbol':'1.2-2' }}</p>
         </div>
 
         <div *ngIf="selectedMovement.totalValue">
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Valor Total</label>
-          <p class="text-lg font-bold text-emerald-600">{{ selectedMovement.totalValue | currency:'GTQ':'symbol':'1.2-2' }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total</label>
+          <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ selectedMovement.totalValue | currency:'GTQ':'symbol':'1.2-2' }}</p>
         </div>
 
-        <!-- Referencias -->
         <div *ngIf="selectedMovement.purchaseId">
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Referencia Compra</label>
-          <p class="font-mono text-blue-600">#{{ selectedMovement.purchaseId }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Ref. Compra</label>
+          <p class="font-mono text-blue-600 dark:text-blue-400">#{{ selectedMovement.purchaseId }}</p>
         </div>
 
         <div *ngIf="selectedMovement.orderId">
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Referencia Venta</label>
-          <p class="font-mono text-blue-600">#{{ selectedMovement.orderId }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Ref. Venta</label>
+          <p class="font-mono text-blue-600 dark:text-blue-400">#{{ selectedMovement.orderId }}</p>
         </div>
 
-        <!-- Motivo -->
         <div *ngIf="selectedMovement.reason" class="md:col-span-2">
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Motivo</label>
-          <p class="text-slate-700">{{ selectedMovement.reason }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Motivo</label>
+          <p>{{ selectedMovement.reason }}</p>
         </div>
 
-        <!-- Notas -->
         <div *ngIf="selectedMovement.notes" class="md:col-span-2">
-          <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Notas Adicionales</label>
-          <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
-            <p class="text-slate-700">{{ selectedMovement.notes }}</p>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Notas</label>
+          <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 p-3 rounded-r">
+            <p>{{ selectedMovement.notes }}</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Footer -->
-    <div class="bg-slate-50 px-6 py-4 border-t border-slate-200">
-      <button (click)="selectedMovement = undefined" class="px-6 py-2.5 bg-slate-600 text-white rounded-xl font-semibold hover:bg-slate-700 transition-colors">
+    <div class="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-t border-slate-200 dark:border-slate-600">
+      <button (click)="selectedMovement = undefined"
+              class="px-6 py-2 bg-slate-600 dark:bg-slate-500 text-white rounded hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors font-semibold">
         Cerrar
       </button>
     </div>
   </div>
 </div>
 
-<!-- ============================================ -->
 <!-- MODAL: AJUSTE MANUAL -->
-<!-- ============================================ -->
-<div *ngIf="showAdjustmentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-  <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="showAdjustmentModal = false"></div>
-  <div class="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full">
+<div *ngIf="showAdjustmentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+  <div class="relative bg-white dark:bg-slate-800 rounded-lg shadow-2xl max-w-2xl w-full">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-bold text-white">Ajuste Manual de Inventario</h3>
-        </div>
-        <button (click)="showAdjustmentModal = false" class="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between">
+      <h3 class="text-xl font-bold text-white">Ajuste Manual de Inventario</h3>
+      <button (click)="showAdjustmentModal = false"
+              class="text-white hover:bg-white/20 rounded p-1 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
     </div>
 
     <!-- Body -->
     <div class="p-6">
-      <form class="space-y-5">
-        <!-- Producto -->
+      <form class="space-y-4">
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Producto *</label>
-          <select class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all" required>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Producto *</label>
+          <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
             <option value="">Seleccione un producto</option>
-            <!-- Agregar productos dinámicamente -->
           </select>
         </div>
 
-        <!-- Sucursal -->
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Sucursal *</label>
-          <select class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all" required>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Sucursal *</label>
+          <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
             <option value="">Seleccione una sucursal</option>
-            <!-- Agregar sucursales dinámicamente -->
           </select>
         </div>
 
-        <!-- Cantidad -->
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Cantidad de Ajuste *</label>
-          <input type="number" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all" placeholder="Ej: +10 o -5" required>
-          <p class="text-xs text-slate-500 mt-2">Use números positivos para aumentar y negativos para disminuir</p>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Cantidad de Ajuste *</label>
+          <input type="number"
+                 class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                 placeholder="Ej: +10 o -5"
+                 required>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Use números positivos para aumentar y negativos para disminuir</p>
         </div>
 
-        <!-- Motivo -->
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Motivo *</label>
-          <select class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all" required>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Motivo *</label>
+          <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
             <option value="">Seleccione un motivo</option>
             <option value="inventario_fisico">Inventario Físico</option>
             <option value="producto_danado">Producto Dañado</option>
@@ -507,30 +538,31 @@
           </select>
         </div>
 
-        <!-- Notas -->
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Notas Adicionales</label>
-          <textarea class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all resize-none" rows="3" placeholder="Detalles adicionales del ajuste..."></textarea>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Notas Adicionales</label>
+          <textarea class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    rows="3"
+                    placeholder="Detalles adicionales del ajuste..."></textarea>
         </div>
 
-        <!-- Alerta informativa -->
-        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 rounded-r">
           <div class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/>
             </svg>
-            <p class="text-sm text-blue-800">Este ajuste quedará registrado en el historial de movimientos con todos los detalles proporcionados.</p>
+            <p class="text-sm text-blue-800 dark:text-blue-300">Este ajuste quedará registrado en el historial de movimientos con todos los detalles proporcionados.</p>
           </div>
         </div>
       </form>
     </div>
 
     <!-- Footer -->
-    <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex gap-3 justify-end">
-      <button (click)="showAdjustmentModal = false" class="px-6 py-2.5 bg-white border-2 border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors">
+    <div class="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-t border-slate-200 dark:border-slate-600 flex gap-3 justify-end">
+      <button (click)="showAdjustmentModal = false"
+              class="px-6 py-2 bg-white dark:bg-slate-600 border-2 border-slate-300 dark:border-slate-500 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-semibold">
         Cancelar
       </button>
-      <button class="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2">
+      <button class="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg font-semibold flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
