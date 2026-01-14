@@ -1,14 +1,14 @@
-import { NgClass } from '@angular/common';
+import { NgClass, KeyValuePipe } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatRadioModule } from '@angular/material/radio';
 import { bootstrapChevronBarLeft, bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarRight } from '@ng-icons/bootstrap-icons';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { matAddOutline, matArrowUpwardOutline, matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline } from '@ng-icons/material-icons/outline';
+import { matAddOutline, matArrowUpwardOutline, matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline, matExpandMoreOutline } from '@ng-icons/material-icons/outline';
 import { ChatBubbleComponent } from '../../../../../shared/components/chat-bubble/chat-bubble.component';
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
 import { SearchInputTextComponent } from '../../../../../shared/components/search-input-text/search-input-text.component';
-import { Product } from '../../../../../shared/interfaces/product';
+import { Product, ProductVariant } from '../../../../../shared/interfaces/product';
 import { Dialog } from '@angular/cdk/dialog';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -29,12 +29,12 @@ import { PurchasesProductsSelectListDialogComponent } from '../purchases-product
   standalone: true,
   imports: [HeaderComponent, NgIcon, SearchInputTextComponent, NgClass, ChatBubbleComponent,
     MatCheckboxModule, FormsModule, ReactiveFormsModule, SelectProductQuantityDialogComponent,
-    MatBadgeModule],
+    MatBadgeModule, KeyValuePipe],
   templateUrl: './purchases-products-select.component.html',
   styleUrl: './purchases-products-select.component.scss',
   viewProviders: [ provideIcons({ matAddOutline, bootstrapChevronBarLeft, bootstrapChevronLeft,
     bootstrapChevronRight, bootstrapChevronBarRight, matArrowUpwardOutline,
-    matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline
+    matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline, matExpandMoreOutline
    }) ]
 })
 export class PurchasesProductsSelectComponent extends BaseForm implements OnInit {
@@ -44,6 +44,8 @@ export class PurchasesProductsSelectComponent extends BaseForm implements OnInit
   displayedColumns: string[] = ['productName'];
   dataSource;
   selectedIdControl = new FormControl(null);
+  expandedProductId: number | null = null; // Para controlar qué producto está expandido
+
   @Output() changes = new EventEmitter<ProductPurchaseSelect[]>();
   @Output() finalized = new EventEmitter<boolean>();
 
@@ -59,14 +61,11 @@ export class PurchasesProductsSelectComponent extends BaseForm implements OnInit
   ){
     super(crud, toast, auth, bpo);
 
-    // ✅ SOLUCIÓN: Forzar el baseUrl correcto DESPUÉS del super()
     this.crud.baseUrl = URL_PRODUCTS;
-
     this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
     this.sortConfig.sortBy = 'productName';
     this.sortConfig.sortOrder = 'asc';
     this.pageSize = 10;
-
     this.products = [];
 
     if(this.mode !== 'new') this.id = Number(this.route.snapshot.paramMap.get('id'));
@@ -77,18 +76,14 @@ export class PurchasesProductsSelectComponent extends BaseForm implements OnInit
   }
 
   ngOnInit(): void {
-    // ✅ Asegurar que siempre use el endpoint correcto
     this.crud.baseUrl = URL_PRODUCTS;
-
-    // Llamar a filter() directamente para cargar productos activos
     this.filter();
   }
 
   filter(name?: string){
-    // ✅ Garantizar que siempre use el endpoint de productos
     this.crud.baseUrl = URL_PRODUCTS;
 
-    // Siempre filtrar por productos activos
+    // Cargar TODOS los productos activos (con y sin variantes)
     let filter = '&active=true';
     if(name){
       filter = filter.concat(`&productName=${encodeURIComponent(name)}`);
@@ -124,16 +119,27 @@ export class PurchasesProductsSelectComponent extends BaseForm implements OnInit
   }
 
   initPage(){
-    // ✅ Asegurar endpoint correcto al resetear
     this.crud.baseUrl = URL_PRODUCTS;
-
-    // Resetear filtros y cargar productos activos
     let filter = '&active=true';
     this.filters = filter;
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, 1, 10, this.filters);
     this.form.reset();
   }
 
+  // Toggle para expandir/colapsar variantes
+  toggleVariants(productId: number): void {
+    if (this.expandedProductId === productId) {
+      this.expandedProductId = null;
+    } else {
+      this.expandedProductId = productId;
+    }
+  }
+
+  isExpanded(productId: number): boolean {
+    return this.expandedProductId === productId;
+  }
+
+  // Seleccionar producto SIMPLE (sin variantes)
   async selectProduct(product: Product) {
     const darkmode = localStorage.getItem('theme');
     const dialogRef = this.dialog.open(SelectProductQuantityDialogComponent, {
@@ -157,11 +163,64 @@ export class PurchasesProductsSelectComponent extends BaseForm implements OnInit
             quantity: quantity,
             variantId: null
           }
-          if (!this.products.some(p => p.product.id === record.product.id)){
+          if (!this.products.some(p => p.product.id === record.product.id && !p.variantId)){
             this.products.push(record);
             this.changes.emit(this.products);
           }else{
             this.toast.info('El producto ya se encuentra en la lista');
+          }
+        }
+      })
+      .catch((error: any) => {
+        this.toast.error(error.message);
+      });
+  }
+
+  // Seleccionar VARIANTE específica
+  async selectVariant(product: Product, variant: ProductVariant) {
+    const darkmode = localStorage.getItem('theme');
+
+    // Crear un producto temporal con los datos de la variante
+    const variantAsProduct: Product = {
+      ...product,
+      id: product.id,
+      productName: variant.variantName,
+      sku: variant.sku,
+      costPrice: variant.costPrice,
+      salePrice: variant.salePrice,
+      currentStock: variant.currentStock,
+      minStock: variant.minStock,
+      maxStock: variant.maxStock
+    };
+
+    const dialogRef = this.dialog.open(SelectProductQuantityDialogComponent, {
+      backdropClass: ['bg-black/60', 'dark:bg-white'],
+      panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
+                  ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
+      width: this.getDialogWidth(),
+      closeOnDestroy: true,
+      data: {
+        title: variant.variantName,
+        record: variantAsProduct,
+        isPurchase: true
+      },
+    });
+
+    await firstValueFrom(dialogRef.closed)
+      .then(async (quantity: number) => {
+        if(quantity){
+          const record: ProductPurchaseSelect = {
+            product: variantAsProduct,
+            quantity: quantity,
+            variantId: variant.id || null
+          }
+
+          // Verificar si esta variante específica ya está en la lista
+          if (!this.products.some(p => p.product.id === product.id && p.variantId === variant.id)){
+            this.products.push(record);
+            this.changes.emit(this.products);
+          }else{
+            this.toast.info('Esta variante ya se encuentra en la lista');
           }
         }
       })
@@ -201,5 +260,30 @@ export class PurchasesProductsSelectComponent extends BaseForm implements OnInit
 
   finalizedPurchase(){
     this.finalized.emit(true);
+  }
+
+  // Helper para obtener el rango de precios de las variantes
+  getVariantPriceRange(product: Product): string {
+    if (!product.variants || product.variants.length === 0) return '';
+
+    const prices = product.variants.map(v => v.costPrice);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+
+    if (min === max) {
+      return `Q ${min.toFixed(2)}`;
+    }
+    return `Desde Q ${min.toFixed(2)} hasta Q ${max.toFixed(2)}`;
+  }
+
+  // Helper para mostrar los atributos de una variante
+  getVariantAttributesDisplay(variant: ProductVariant): string {
+    if (!variant.attributes || Object.keys(variant.attributes).length === 0) {
+      return '';
+    }
+
+    return Object.entries(variant.attributes)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ');
   }
 }

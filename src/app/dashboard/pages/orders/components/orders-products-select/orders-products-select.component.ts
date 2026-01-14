@@ -1,15 +1,14 @@
-import { NgClass } from '@angular/common';
+import { NgClass, KeyValuePipe } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatRadioModule } from '@angular/material/radio';
 import { bootstrapChevronBarLeft, bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarRight } from '@ng-icons/bootstrap-icons';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { matAddOutline, matArrowUpwardOutline, matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline } from '@ng-icons/material-icons/outline';
+import { matAddOutline, matArrowUpwardOutline, matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline, matExpandMoreOutline } from '@ng-icons/material-icons/outline';
 import { ChatBubbleComponent } from '../../../../../shared/components/chat-bubble/chat-bubble.component';
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
 import { SearchInputTextComponent } from '../../../../../shared/components/search-input-text/search-input-text.component';
-import { Client } from '../../../../../shared/interfaces/client';
-import { Product } from '../../../../../shared/interfaces/product';
+import { Product, ProductVariant } from '../../../../../shared/interfaces/product';
 import { Dialog } from '@angular/cdk/dialog';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -18,23 +17,24 @@ import { AuthService } from '../../../../../shared/services/auth.service';
 import { CrudService } from '../../../../../shared/services/crud.service';
 import { ToastService } from '../../../../../shared/services/toast.service';
 import BaseForm from '../../../../../shared/classes/base-form';
-import {MatCheckboxModule} from '@angular/material/checkbox';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { SelectProductQuantityDialogComponent } from '../select-product-quantity-dialog/select-product-quantity-dialog.component';
 import { firstValueFrom } from 'rxjs';
-import {MatBadgeModule} from '@angular/material/badge';
+import { MatBadgeModule } from '@angular/material/badge';
 import { ProductOrderSelect } from '../../../../../shared/interfaces/order';
 import { OrdersProductsSelectListDialogComponent } from '../orders-products-select-list-dialog/orders-products-select-list-dialog.component';
+
 @Component({
   selector: 'app-orders-products-select',
   standalone: true,
   imports: [HeaderComponent, NgIcon, SearchInputTextComponent, NgClass, ChatBubbleComponent,
     MatCheckboxModule, FormsModule, ReactiveFormsModule, SelectProductQuantityDialogComponent,
-    MatBadgeModule],
+    MatBadgeModule, KeyValuePipe],
   templateUrl: './orders-products-select.component.html',
   styleUrl: './orders-products-select.component.scss',
   viewProviders: [ provideIcons({ matAddOutline, bootstrapChevronBarLeft, bootstrapChevronLeft,
     bootstrapChevronRight, bootstrapChevronBarRight, matArrowUpwardOutline,
-    matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline
+    matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline, matExpandMoreOutline
    }) ]
 })
 export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
@@ -44,6 +44,8 @@ export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
   displayedColumns: string[] = ['productName'];
   dataSource;
   selectedIdControl = new FormControl(null);
+  expandedProductId: number | null = null;
+
   @Output() changes = new EventEmitter<ProductOrderSelect[]>();
   @Output() finalized = new EventEmitter<boolean>();
 
@@ -56,21 +58,20 @@ export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
     public dialog: Dialog,
     private auth: AuthService,
     private bpo: BreakpointObserver
-    ){
-      super(crud, toast, auth, bpo);
-      this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
-      this.sortConfig.sortBy = 'productName';
-      this.sortConfig.sortOrder = 'asc';
-      this.pageSize = 10;
-      this.crud.baseUrl = URL_PRODUCTS;
-      this.products = [];
+  ){
+    super(crud, toast, auth, bpo);
+    this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
+    this.sortConfig.sortBy = 'productName';
+    this.sortConfig.sortOrder = 'asc';
+    this.pageSize = 10;
+    this.crud.baseUrl = URL_PRODUCTS;
+    this.products = [];
 
-      if(this.mode !== 'new') this.id = Number(this.route.snapshot.paramMap.get('id'));
-      this.form = new FormGroup({
-        productName: new FormControl('', []),
-      });
+    if(this.mode !== 'new') this.id = Number(this.route.snapshot.paramMap.get('id'));
+    this.form = new FormGroup({
+      productName: new FormControl('', []),
+    });
   }
-
 
   ngOnInit(): void {
     this.filter();
@@ -90,7 +91,6 @@ export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
     if(name && name !== ''){
       this.filter(name);
     }
-
   }
 
   changeSortOrderBy(field: string){
@@ -113,11 +113,22 @@ export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
   }
 
   initPage(){
-    let filter = '';
-    filter = filter.concat(`&active=true`);
+    let filter = '&active=true';
     this.filters = filter;
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, 1, 10, this.filters);
     this.form.reset();
+  }
+
+  toggleVariants(productId: number): void {
+    if (this.expandedProductId === productId) {
+      this.expandedProductId = null;
+    } else {
+      this.expandedProductId = productId;
+    }
+  }
+
+  isExpanded(productId: number): boolean {
+    return this.expandedProductId === productId;
   }
 
   async selectProduct(product: Product) {
@@ -132,19 +143,70 @@ export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
         title: product.productName,
         record: product
       },
-      });
-      await firstValueFrom(dialogRef.closed)
+    });
+
+    await firstValueFrom(dialogRef.closed)
       .then(async (quantity: number) => {
         if(quantity){
           const record: ProductOrderSelect = {
             product: product,
-            quantity: quantity
+            quantity: quantity,
+            variantId: null
           }
-          if (!this.products.some(p => p.product.id === record.product.id)){
+          if (!this.products.some(p => p.product.id === record.product.id && !p.variantId)){
             this.products.push(record);
             this.changes.emit(this.products);
           }else{
             this.toast.info('El producto ya se encuentra en la lista');
+          }
+        }
+      })
+      .catch((error: any) => {
+        this.toast.error(error.message);
+      });
+  }
+
+  async selectVariant(product: Product, variant: ProductVariant) {
+    const darkmode = localStorage.getItem('theme');
+
+    const variantAsProduct: Product = {
+      ...product,
+      id: product.id,
+      productName: variant.variantName,
+      sku: variant.sku,
+      costPrice: variant.costPrice,
+      salePrice: variant.salePrice,
+      currentStock: variant.currentStock,
+      minStock: variant.minStock,
+      maxStock: variant.maxStock
+    };
+
+    const dialogRef = this.dialog.open(SelectProductQuantityDialogComponent, {
+      backdropClass: ['bg-black/60', 'dark:bg-white'],
+      panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
+                  ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
+      width: this.getDialogWidth(),
+      closeOnDestroy: true,
+      data: {
+        title: variant.variantName,
+        record: variantAsProduct
+      },
+    });
+
+    await firstValueFrom(dialogRef.closed)
+      .then(async (quantity: number) => {
+        if(quantity){
+          const record: ProductOrderSelect = {
+            product: variantAsProduct,
+            quantity: quantity,
+            variantId: variant.id || null
+          }
+
+          if (!this.products.some(p => p.product.id === product.id && p.variantId === variant.id)){
+            this.products.push(record);
+            this.changes.emit(this.products);
+          }else{
+            this.toast.info('Esta variante ya se encuentra en la lista');
           }
         }
       })
@@ -166,14 +228,14 @@ export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
         title: 'Lista de productos',
         products: this.products
       },
-      });
+    });
 
-      await firstValueFrom(dialogRef.closed)
+    await firstValueFrom(dialogRef.closed)
       .then(async (products: ProductOrderSelect[] | boolean) => {
         if(products && Array.isArray(products)){
           if((JSON.stringify(products) !== JSON.stringify(this.products))){
             this.products = [];
-           this.products = products;
+            this.products = products;
           }
         }else if(products === true){
           this.products = [];
@@ -186,4 +248,26 @@ export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
     this.finalized.emit(true);
   }
 
+  getVariantPriceRange(product: Product): string {
+    if (!product.variants || product.variants.length === 0) return '';
+
+    const prices = product.variants.map(v => v.salePrice);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+
+    if (min === max) {
+      return `Q ${min.toFixed(2)}`;
+    }
+    return `Desde Q ${min.toFixed(2)} hasta Q ${max.toFixed(2)}`;
+  }
+
+  getVariantAttributesDisplay(variant: ProductVariant): string {
+    if (!variant.attributes || Object.keys(variant.attributes).length === 0) {
+      return '';
+    }
+
+    return Object.entries(variant.attributes)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ');
+  }
 }

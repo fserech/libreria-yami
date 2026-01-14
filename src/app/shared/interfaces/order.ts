@@ -19,6 +19,7 @@ export interface ProductOrder {
   id?: number;
   product?: Product;
   productId?: number;
+  variantId?: number | null;     // ✅ AGREGADO: Para soportar variantes
   priceSale: number;
   quantity: number;
   subtotal: number;
@@ -27,5 +28,6 @@ export interface ProductOrder {
 export interface ProductOrderSelect {
   id?: number;
   product: Product;
+  variantId?: number | null;     // ✅ AGREGADO: Para soportar variantes
   quantity: number;
 }
