@@ -7,9 +7,9 @@ import { environment } from '../../../../../../environments/environment';
 import { Product } from '../../../../../shared/interfaces/product';
 import { StockMovement } from '../../../../../shared/interfaces/inventory';
 
-
 interface AdjustmentForm {
   productId: string;
+  variantId: string | null; // ⭐ AGREGADO
   branchId: string;
   quantity: number;
   reason: string;
@@ -31,12 +31,13 @@ interface Branch {
 })
 export class AdjustmentModalComponent implements OnInit, OnChanges {
   @Input() isOpen: boolean = false;
-  @Input() editingMovement?: any; // Puede ser StockMovement o ProductStock adaptado
+  @Input() editingMovement?: any;
   @Output() close = new EventEmitter<void>();
   @Output() adjustmentSuccess = new EventEmitter<void>();
 
   form: AdjustmentForm = {
     productId: '',
+    variantId: null, // ⭐ AGREGADO
     branchId: '',
     quantity: 0,
     reason: '',
@@ -53,8 +54,6 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
   showProductDropdown: boolean = false;
 
   branches: Branch[] = [];
-
-  // Stock actual precargado desde la alerta
   currentStockInBranch: number = 0;
 
   isSubmitting: boolean = false;
@@ -81,27 +80,25 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
   async loadMovementForEdit(data: any): Promise<void> {
     this.isEditMode = true;
 
-    // Determinar si es un movimiento adaptado desde ProductStock
     const isFromProductStock = data.currentStock !== undefined && !data.movementType;
 
     if (isFromProductStock) {
-      // Es un objeto adaptado desde low-stock-alerts
       this.movementId = undefined;
       await this.loadDataFromProductStock(data);
     } else {
-      // Es un StockMovement real desde stock-movements
       this.movementId = data.id;
       await this.loadDataFromStockMovement(data);
     }
   }
 
   private async loadDataFromProductStock(data: any): Promise<void> {
+    console.log('📥 Cargando datos desde ProductStock:', data);
+
     await Promise.all([
       this.loadProducts(),
       this.loadBranches()
     ]);
 
-    // Pre-cargar el producto
     const product = this.allProducts.find(p => p.id === data.productId);
     if (product) {
       this.selectedProduct = product;
@@ -109,13 +106,14 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
       this.productSearchTerm = `${product.productName} (${product.sku})`;
     }
 
-    // Pre-cargar la sucursal
     this.form.branchId = data.branchId?.toString() || '';
 
-    // Usar el stock que viene directamente del objeto
-    this.currentStockInBranch = data.currentStock || 0;
+    // ⭐ AGREGADO: Pre-cargar variantId si existe
+    this.form.variantId = data.variantId?.toString() || null;
 
-    // No pre-cargar cantidad, dejar en 0 para que el usuario la ingrese
+    console.log('🔹 VariantId cargado:', this.form.variantId);
+
+    this.currentStockInBranch = data.currentStock || 0;
     this.form.quantity = 0;
     this.form.reason = '';
     this.form.notes = '';
@@ -135,8 +133,11 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
     }
 
     this.form.branchId = movement.branchId?.toString() || '';
-    this.currentStockInBranch = movement.newStock || movement.previousStock || 0;
 
+    // ⭐ AGREGADO: Cargar variantId del movimiento
+    this.form.variantId = movement.variantId?.toString() || null;
+
+    this.currentStockInBranch = movement.newStock || movement.previousStock || 0;
     this.form.quantity = movement.quantity || 0;
     this.form.reason = movement.reason || '';
     this.form.notes = movement.notes || '';
@@ -215,16 +216,17 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
     this.productSearchTerm = `${product.productName} (${product.sku})`;
     this.showProductDropdown = false;
 
-    // Resetear el stock al cambiar de producto
     if (!this.isEditMode) {
       this.currentStockInBranch = 0;
       this.form.branchId = '';
+      this.form.variantId = null; // ⭐ AGREGADO: Reset variantId
     }
   }
 
   clearProductSelection(): void {
     this.selectedProduct = null;
     this.form.productId = '';
+    this.form.variantId = null; // ⭐ AGREGADO
     this.productSearchTerm = '';
     this.form.quantity = 0;
     this.currentStockInBranch = 0;
@@ -251,7 +253,6 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
   async onBranchChange(): Promise<void> {
     this.form.quantity = 0;
 
-    // Si estamos en modo edición, mantener el stock precargado
     if (!this.isEditMode) {
       this.currentStockInBranch = 0;
     }
@@ -270,34 +271,48 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
     this.submitError = '';
 
     try {
+      // ⭐ MODIFICADO: Construir payload con variantId
+      const payload: any = {
+        productId: parseInt(this.form.productId),
+        branchId: parseInt(this.form.branchId),
+        quantity: this.form.quantity,
+        reason: this.form.reason,
+        notes: this.form.notes
+      };
+
+      // ⭐ AGREGADO: Incluir variantId si existe
+      if (this.form.variantId) {
+        payload.variantId = parseInt(this.form.variantId);
+        console.log('✅ Enviando ajuste CON variantId:', payload.variantId);
+      } else {
+        console.log('✅ Enviando ajuste SIN variantId (producto simple)');
+      }
+
+      console.log('📤 Payload completo:', payload);
+
       let response;
 
       if (this.isEditMode && this.movementId) {
-        // Actualizar un movimiento existente (desde stock-movements)
         response = await firstValueFrom(
-          this.http.put<any>(`${environment.apiUrl}/api/v1/inventory/adjustments/${this.movementId}`, {
-            productId: parseInt(this.form.productId),
-            branchId: parseInt(this.form.branchId),
-            quantity: this.form.quantity,
-            reason: this.form.reason,
-            notes: this.form.notes
-          })
+          this.http.put<any>(
+            `${environment.apiUrl}/api/v1/inventory/adjustments/${this.movementId}`,
+            payload
+          )
         );
       } else {
-        // Crear un nuevo ajuste
         response = await firstValueFrom(
-          this.http.post<any>(`${environment.apiUrl}/api/v1/inventory/adjustments`, {
-            productId: parseInt(this.form.productId),
-            branchId: parseInt(this.form.branchId),
-            quantity: this.form.quantity,
-            reason: this.form.reason,
-            notes: this.form.notes
-          })
+          this.http.post<any>(
+            `${environment.apiUrl}/api/v1/inventory/adjustments`,
+            payload
+          )
         );
       }
 
-      // Actualizar el stock local
+      console.log('📥 Respuesta del servidor:', response);
+
+      // ⭐ MODIFICADO: Actualizar stock considerando variantes
       this.currentStockInBranch = response.newStock ??
+                                  response.variant?.newStock ??
                                   response.product?.newStock ??
                                   (this.currentStockInBranch + this.form.quantity);
 
@@ -309,7 +324,7 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
       }, 300);
 
     } catch (error: any) {
-      console.error('Error al procesar ajuste:', error);
+      console.error('❌ Error al procesar ajuste:', error);
       this.submitError = error.error?.error || error.error?.message ||
                         'Error al procesar el ajuste. Por favor intente nuevamente.';
       this.isSubmitting = false;
@@ -328,6 +343,7 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
   resetForm(): void {
     this.form = {
       productId: '',
+      variantId: null, // ⭐ AGREGADO
       branchId: '',
       quantity: 0,
       reason: '',

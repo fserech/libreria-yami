@@ -60,38 +60,30 @@ import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustm
 export class LowStockAlertsComponent implements OnInit {
   Math = Math;
 
-  // NUEVA: Vista activa
   activeView: 'alerts' | 'stock' = 'alerts';
 
-  // Datos
   alerts: ProductStock[] = [];
-  allStock: ProductStock[] = []; // NUEVO: Todos los productos
+  allStock: ProductStock[] = [];
   filteredAlerts: ProductStock[] = [];
-  filteredStock: ProductStock[] = []; // NUEVO: Productos filtrados
+  filteredStock: ProductStock[] = [];
   branches: Array<{id: number, branchName: string}> = [];
 
-  // Filtros
   selectedBranchId: string = '';
   selectedAlertLevel: string = 'all';
-  searchTerm: string = ''; // NUEVO: Búsqueda por nombre/SKU
+  searchTerm: string = '';
 
-  // UI
   loading = false;
   viewMode: 'table' | 'cards' = 'table';
 
-  // Paginación
   currentPage = 1;
   itemsPerPage = 10;
   totalPages = 0;
 
-  // Usuario actual
   user: any;
 
-  // Modal de ajuste
   showAdjustmentModal = false;
   editingMovement: any;
 
-  // Estadísticas calculadas
   get totalAlertsCount(): number {
     return this.filteredAlerts.length;
   }
@@ -104,7 +96,6 @@ export class LowStockAlertsComponent implements OnInit {
     return this.filteredAlerts.filter(a => a.currentStock > 0 && a.belowMinStock).length;
   }
 
-  // NUEVO: Estadísticas de existencias
   get totalProducts(): number {
     return this.filteredStock.length;
   }
@@ -115,7 +106,6 @@ export class LowStockAlertsComponent implements OnInit {
     );
   }
 
-  // Alertas/Stock paginados
   get paginatedItems(): ProductStock[] {
     const items = this.activeView === 'alerts' ? this.filteredAlerts : this.filteredStock;
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
@@ -123,7 +113,6 @@ export class LowStockAlertsComponent implements OnInit {
     return items.slice(startIndex, endIndex);
   }
 
-  // Índices para mostrar
   get startIndex(): number {
     const totalItems = this.activeView === 'alerts' ? this.filteredAlerts.length : this.filteredStock.length;
     return totalItems === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
@@ -151,10 +140,9 @@ export class LowStockAlertsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAlerts();
-    this.loadAllStock(); // NUEVO: Cargar todos los productos
+    this.loadAllStock();
   }
 
-  // NUEVO: Cambiar vista
   switchView(view: 'alerts' | 'stock'): void {
     this.activeView = view;
     this.currentPage = 1;
@@ -167,7 +155,6 @@ export class LowStockAlertsComponent implements OnInit {
     }
   }
 
-  // NUEVO: Cargar todas las existencias
   loadAllStock(forceReload: boolean = false): void {
     this.loading = true;
     const branchId = this.selectedBranchId ? Number(this.selectedBranchId) : undefined;
@@ -180,20 +167,18 @@ export class LowStockAlertsComponent implements OnInit {
           this.loading = false;
 
           if (forceReload) {
-            console.log('Existencias recargadas:', products.length);
+            console.log('✅ Existencias recargadas:', products.length);
           }
         },
         error: (error) => {
-          console.error('Error al cargar existencias:', error);
+          console.error('❌ Error al cargar existencias:', error);
           this.loading = false;
         }
       });
   }
 
-  // NUEVO: Aplicar filtros a existencias
   applyStockFilters(): void {
     this.filteredStock = this.allStock.filter(item => {
-      // Filtro por búsqueda
       if (this.searchTerm) {
         const searchLower = this.searchTerm.toLowerCase();
         const productName = this.getDisplayName(item).toLowerCase();
@@ -207,7 +192,6 @@ export class LowStockAlertsComponent implements OnInit {
       return true;
     });
 
-    // Ordenar por nombre
     this.filteredStock.sort((a, b) =>
       this.getDisplayName(a).localeCompare(this.getDisplayName(b))
     );
@@ -218,7 +202,6 @@ export class LowStockAlertsComponent implements OnInit {
     }
   }
 
-  // NUEVO: Método para búsqueda
   onSearchChange(): void {
     this.applyStockFilters();
   }
@@ -241,11 +224,11 @@ export class LowStockAlertsComponent implements OnInit {
           this.loading = false;
 
           if (forceReload) {
-            console.log('Alertas recargadas exitosamente:', products.length);
+            console.log('✅ Alertas recargadas exitosamente:', products.length);
           }
         },
         error: (error) => {
-          console.error('Error al cargar productos con stock bajo:', error);
+          console.error('❌ Error al cargar productos con stock bajo:', error);
           this.loading = false;
         }
       });
@@ -254,14 +237,12 @@ export class LowStockAlertsComponent implements OnInit {
   private extractBranches(): void {
     const branchMap = new Map<number, string>();
 
-    // Extraer de alertas
     this.alerts.forEach(alert => {
       if (alert.branchId && alert.branchName) {
         branchMap.set(alert.branchId, alert.branchName);
       }
     });
 
-    // Extraer de existencias
     this.allStock.forEach(item => {
       if (item.branchId && item.branchName) {
         branchMap.set(item.branchId, item.branchName);
@@ -285,7 +266,6 @@ export class LowStockAlertsComponent implements OnInit {
       return true;
     });
 
-    // Ordenar: primero críticos, luego advertencias
     this.filteredAlerts.sort((a, b) => {
       if (a.currentStock === 0 && b.currentStock > 0) return -1;
       if (a.currentStock > 0 && b.currentStock === 0) return 1;
@@ -305,7 +285,6 @@ export class LowStockAlertsComponent implements OnInit {
     this.applyFilters();
   }
 
-  // Métodos de paginación
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
@@ -334,7 +313,6 @@ export class LowStockAlertsComponent implements OnInit {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // NUEVO: Obtener estado del stock
   getStockStatus(item: ProductStock): 'critical' | 'warning' | 'good' | 'excess' {
     if (item.currentStock === 0) return 'critical';
     if (item.belowMinStock) return 'warning';
@@ -342,7 +320,6 @@ export class LowStockAlertsComponent implements OnInit {
     return 'good';
   }
 
-  // NUEVO: Clase CSS según estado
   getStockStatusClass(item: ProductStock): string {
     const status = this.getStockStatus(item);
     switch (status) {
@@ -352,8 +329,6 @@ export class LowStockAlertsComponent implements OnInit {
       default: return 'text-green-600 dark:text-green-400';
     }
   }
-
-  // ==================== MÉTODOS PARA VARIANTES ====================
 
   isVariant(alert: ProductStock): boolean {
     return alert.variantId != null;
@@ -400,8 +375,6 @@ export class LowStockAlertsComponent implements OnInit {
       : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
   }
 
-  // ==================== MÉTODOS ORIGINALES ====================
-
   getAlertLevel(alert: ProductStock): 'critical' | 'warning' | 'normal' {
     if (alert.currentStock === 0) return 'critical';
     if (alert.belowMinStock) return 'warning';
@@ -435,10 +408,18 @@ export class LowStockAlertsComponent implements OnInit {
     });
   }
 
+  // ⭐ MODIFICADO: Incluir variantId en el objeto
   adjustStock(alert: ProductStock): void {
+    console.log('🔧 Ajustando stock para:', {
+      productId: alert.productId,
+      variantId: alert.variantId,
+      currentStock: alert.currentStock,
+      isVariant: this.isVariant(alert)
+    });
+
     this.editingMovement = {
       productId: alert.productId,
-      variantId: alert.variantId || null,
+      variantId: alert.variantId || null, // ⭐ IMPORTANTE: Incluir variantId
       branchId: alert.branchId,
       product: alert.product,
       branch: {
@@ -451,6 +432,7 @@ export class LowStockAlertsComponent implements OnInit {
       date: new Date().toISOString()
     };
 
+    console.log('📤 Datos enviados al modal:', this.editingMovement);
     this.showAdjustmentModal = true;
   }
 
@@ -460,6 +442,7 @@ export class LowStockAlertsComponent implements OnInit {
   }
 
   handleAdjustmentSuccess(): void {
+    console.log('✅ Ajuste exitoso, recargando datos...');
     setTimeout(() => {
       this.showAdjustmentModal = false;
       this.editingMovement = undefined;
@@ -496,7 +479,7 @@ export class LowStockAlertsComponent implements OnInit {
           'Valor Total': item.currentStock * (item.averageCost || 0)
         }));
 
-    console.log('Exportando a Excel:', data);
+    console.log('📊 Exportando a Excel:', data);
   }
 
   refresh(): void {

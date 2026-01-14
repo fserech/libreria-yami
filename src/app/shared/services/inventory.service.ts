@@ -57,19 +57,26 @@ export class InventoryService {
 
   // ✅ CORREGIDO: URL y estructura de datos
   createAdjustment(adjustmentData: any): Observable<any> {
-    // Transformar los datos al formato esperado por el backend
-    const payload = {
-      productId: Number(adjustmentData.productId),
-      branchId: Number(adjustmentData.branchId),
-      quantity: Number(adjustmentData.quantity),
-      reason: adjustmentData.reason,
-      notes: adjustmentData.notes || '',
-      movementType: 'ADJUSTMENT'
-    };
+  // Transformar los datos al formato esperado por el backend
+  const payload = {
+    productId: Number(adjustmentData.productId),
+    variantId: adjustmentData.variantId ? Number(adjustmentData.variantId) : null,
+    branchId: Number(adjustmentData.branchId),
+    quantity: Number(adjustmentData.quantity),
+    reason: adjustmentData.reason,
+    notes: adjustmentData.notes || '',
+    movementType: 'ADJUSTMENT'
+  };
 
-    // ✅ CORREGIDO: Agregado paréntesis y URL corregida
-    return this.http.post<any>(`${this.apiUrl}/adjustments`, payload);
-  }
+  // Determinar el endpoint según si es variante o producto simple
+  const endpoint = payload.variantId
+    ? `${this.apiUrl}/adjustments/variant`
+    : `${this.apiUrl}/adjustments`;
+
+  console.log('📤 Enviando ajuste a:', endpoint, payload);
+
+  return this.http.post<any>(endpoint, payload);
+}
 
   getInventorySummary(branchId?: number): Observable<InventorySummary> {
     const params = branchId
