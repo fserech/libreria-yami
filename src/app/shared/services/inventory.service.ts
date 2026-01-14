@@ -109,4 +109,15 @@ export class InventoryService {
       { params }
     );
   }
+
+  // En inventory.service.ts
+getAllProductStock(branchId?: number): Observable<ProductStock[]> {
+  let url = `${this.apiUrl}/stock`;
+
+  if (branchId) {
+    url += `?branchId=${branchId}`;
+  }
+
+  return this.http.get<ProductStock[]>(url);
+}
 }

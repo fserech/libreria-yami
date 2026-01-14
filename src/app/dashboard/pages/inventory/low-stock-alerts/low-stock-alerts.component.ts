@@ -10,7 +10,9 @@ import {
   matFileDownloadOutline,
   matEditOutline,
   matAddShoppingCartOutline,
-  matCheckCircleOutline
+  matCheckCircleOutline,
+  matInventoryOutline,
+  matWarningOutline
 } from '@ng-icons/material-icons/outline';
 import {
   bootstrapChevronBarLeft,
@@ -46,6 +48,8 @@ import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustm
       matEditOutline,
       matAddShoppingCartOutline,
       matCheckCircleOutline,
+      matInventoryOutline,
+      matWarningOutline,
       bootstrapChevronLeft,
       bootstrapChevronRight,
       bootstrapChevronBarLeft,
@@ -56,14 +60,20 @@ import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustm
 export class LowStockAlertsComponent implements OnInit {
   Math = Math;
 
+  // NUEVA: Vista activa
+  activeView: 'alerts' | 'stock' = 'alerts';
+
   // Datos
   alerts: ProductStock[] = [];
+  allStock: ProductStock[] = []; // NUEVO: Todos los productos
   filteredAlerts: ProductStock[] = [];
+  filteredStock: ProductStock[] = []; // NUEVO: Productos filtrados
   branches: Array<{id: number, branchName: string}> = [];
 
   // Filtros
   selectedBranchId: string = '';
   selectedAlertLevel: string = 'all';
+  searchTerm: string = ''; // NUEVO: Búsqueda por nombre/SKU
 
   // UI
   loading = false;
@@ -77,7 +87,7 @@ export class LowStockAlertsComponent implements OnInit {
   // Usuario actual
   user: any;
 
-  // Modal de ajuste - CAMBIADO: ahora almacenamos el movimiento adaptado
+  // Modal de ajuste
   showAdjustmentModal = false;
   editingMovement: any;
 
@@ -94,25 +104,39 @@ export class LowStockAlertsComponent implements OnInit {
     return this.filteredAlerts.filter(a => a.currentStock > 0 && a.belowMinStock).length;
   }
 
-  // Alertas paginadas
-  get paginatedAlerts(): ProductStock[] {
+  // NUEVO: Estadísticas de existencias
+  get totalProducts(): number {
+    return this.filteredStock.length;
+  }
+
+  get totalStockValue(): number {
+    return this.filteredStock.reduce((sum, item) =>
+      sum + (item.currentStock * (item.averageCost || 0)), 0
+    );
+  }
+
+  // Alertas/Stock paginados
+  get paginatedItems(): ProductStock[] {
+    const items = this.activeView === 'alerts' ? this.filteredAlerts : this.filteredStock;
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
-    return this.filteredAlerts.slice(startIndex, endIndex);
+    return items.slice(startIndex, endIndex);
   }
 
   // Índices para mostrar
   get startIndex(): number {
-    return this.filteredAlerts.length === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
+    const totalItems = this.activeView === 'alerts' ? this.filteredAlerts.length : this.filteredStock.length;
+    return totalItems === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
   }
 
   get endIndex(): number {
+    const totalItems = this.activeView === 'alerts' ? this.filteredAlerts.length : this.filteredStock.length;
     const end = this.currentPage * this.itemsPerPage;
-    return end > this.filteredAlerts.length ? this.filteredAlerts.length : end;
+    return end > totalItems ? totalItems : end;
   }
 
   get totalItems(): number {
-    return this.filteredAlerts.length;
+    return this.activeView === 'alerts' ? this.filteredAlerts.length : this.filteredStock.length;
   }
 
   get page(): number {
@@ -127,13 +151,82 @@ export class LowStockAlertsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAlerts();
+    this.loadAllStock(); // NUEVO: Cargar todos los productos
+  }
+
+  // NUEVO: Cambiar vista
+  switchView(view: 'alerts' | 'stock'): void {
+    this.activeView = view;
+    this.currentPage = 1;
+    this.searchTerm = '';
+
+    if (view === 'alerts') {
+      this.applyFilters();
+    } else {
+      this.applyStockFilters();
+    }
+  }
+
+  // NUEVO: Cargar todas las existencias
+  loadAllStock(forceReload: boolean = false): void {
+    this.loading = true;
+    const branchId = this.selectedBranchId ? Number(this.selectedBranchId) : undefined;
+
+    this.inventoryService.getAllProductStock(branchId)
+      .subscribe({
+        next: (products: ProductStock[]) => {
+          this.allStock = products;
+          this.applyStockFilters();
+          this.loading = false;
+
+          if (forceReload) {
+            console.log('Existencias recargadas:', products.length);
+          }
+        },
+        error: (error) => {
+          console.error('Error al cargar existencias:', error);
+          this.loading = false;
+        }
+      });
+  }
+
+  // NUEVO: Aplicar filtros a existencias
+  applyStockFilters(): void {
+    this.filteredStock = this.allStock.filter(item => {
+      // Filtro por búsqueda
+      if (this.searchTerm) {
+        const searchLower = this.searchTerm.toLowerCase();
+        const productName = this.getDisplayName(item).toLowerCase();
+        const sku = this.getDisplaySKU(item).toLowerCase();
+
+        if (!productName.includes(searchLower) && !sku.includes(searchLower)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Ordenar por nombre
+    this.filteredStock.sort((a, b) =>
+      this.getDisplayName(a).localeCompare(this.getDisplayName(b))
+    );
+
+    this.totalPages = Math.ceil(this.filteredStock.length / this.itemsPerPage);
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = 1;
+    }
+  }
+
+  // NUEVO: Método para búsqueda
+  onSearchChange(): void {
+    this.applyStockFilters();
   }
 
   loadAlerts(forceReload: boolean = false): void {
     this.loading = true;
     const branchId = this.selectedBranchId ? Number(this.selectedBranchId) : undefined;
 
-    // Si es una recarga forzada, limpiar los datos actuales primero
     if (forceReload) {
       this.alerts = [];
       this.filteredAlerts = [];
@@ -160,9 +253,18 @@ export class LowStockAlertsComponent implements OnInit {
 
   private extractBranches(): void {
     const branchMap = new Map<number, string>();
+
+    // Extraer de alertas
     this.alerts.forEach(alert => {
       if (alert.branchId && alert.branchName) {
         branchMap.set(alert.branchId, alert.branchName);
+      }
+    });
+
+    // Extraer de existencias
+    this.allStock.forEach(item => {
+      if (item.branchId && item.branchName) {
+        branchMap.set(item.branchId, item.branchName);
       }
     });
 
@@ -190,13 +292,13 @@ export class LowStockAlertsComponent implements OnInit {
       return a.currentStock - b.currentStock;
     });
 
-    // Calcular páginas y resetear a página 1
     this.totalPages = Math.ceil(this.filteredAlerts.length / this.itemsPerPage);
     this.currentPage = 1;
   }
 
   onBranchChange(): void {
     this.loadAlerts();
+    this.loadAllStock();
   }
 
   onAlertLevelChange(): void {
@@ -232,27 +334,78 @@ export class LowStockAlertsComponent implements OnInit {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // Métodos de utilidad
+  // NUEVO: Obtener estado del stock
+  getStockStatus(item: ProductStock): 'critical' | 'warning' | 'good' | 'excess' {
+    if (item.currentStock === 0) return 'critical';
+    if (item.belowMinStock) return 'warning';
+    if (item.currentStock > item.maxStock) return 'excess';
+    return 'good';
+  }
+
+  // NUEVO: Clase CSS según estado
+  getStockStatusClass(item: ProductStock): string {
+    const status = this.getStockStatus(item);
+    switch (status) {
+      case 'critical': return 'text-red-600 dark:text-red-400';
+      case 'warning': return 'text-yellow-600 dark:text-yellow-400';
+      case 'excess': return 'text-orange-600 dark:text-orange-400';
+      default: return 'text-green-600 dark:text-green-400';
+    }
+  }
+
+  // ==================== MÉTODOS PARA VARIANTES ====================
+
+  isVariant(alert: ProductStock): boolean {
+    return alert.variantId != null;
+  }
+
+  getDisplayName(alert: ProductStock): string {
+    if (this.isVariant(alert) && alert.product?.variants) {
+      const variant = alert.product.variants.find(v => v.id === alert.variantId);
+      return variant?.variantName || alert.product?.productName || 'N/A';
+    }
+    return alert.product?.productName || 'N/A';
+  }
+
+  getDisplaySKU(alert: ProductStock): string {
+    if (this.isVariant(alert) && alert.product?.variants) {
+      const variant = alert.product.variants.find(v => v.id === alert.variantId);
+      return variant?.sku || 'N/A';
+    }
+    return alert.product?.sku || 'N/A';
+  }
+
+  getVariantAttributes(alert: ProductStock): string {
+    if (!this.isVariant(alert) || !alert.product?.variants) {
+      return '';
+    }
+
+    const variant = alert.product.variants.find(v => v.id === alert.variantId);
+    if (!variant?.attributes || Object.keys(variant.attributes).length === 0) {
+      return '';
+    }
+
+    return Object.entries(variant.attributes)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(' • ');
+  }
+
+  getTypeBadge(alert: ProductStock): string {
+    return this.isVariant(alert) ? 'Variante' : 'Producto simple';
+  }
+
+  getTypeBadgeClass(alert: ProductStock): string {
+    return this.isVariant(alert)
+      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+  }
+
+  // ==================== MÉTODOS ORIGINALES ====================
+
   getAlertLevel(alert: ProductStock): 'critical' | 'warning' | 'normal' {
     if (alert.currentStock === 0) return 'critical';
     if (alert.belowMinStock) return 'warning';
     return 'normal';
-  }
-
-  getAlertIcon(level: 'critical' | 'warning' | 'normal'): string {
-    switch (level) {
-      case 'critical': return '🔴';
-      case 'warning': return '🟡';
-      default: return '🟢';
-    }
-  }
-
-  getAlertLabel(level: 'critical' | 'warning' | 'normal'): string {
-    switch (level) {
-      case 'critical': return 'CRÍTICO - Stock Agotado';
-      case 'warning': return 'ADVERTENCIA - Stock Bajo';
-      default: return 'Normal';
-    }
   }
 
   getStockPercentage(alert: ProductStock): number {
@@ -260,34 +413,32 @@ export class LowStockAlertsComponent implements OnInit {
     return Math.min(100, (alert.currentStock / alert.maxStock) * 100);
   }
 
-  getDaysUntilStockout(alert: ProductStock): number {
-    if (alert.currentStock === 0) return 0;
-    const avgConsumption = 2;
-    return Math.floor(alert.currentStock / avgConsumption);
-  }
-
-  getAverageDailyConsumption(): number {
-    return 2;
-  }
-
-  // Navegación
   viewProductHistory(alert: ProductStock): void {
+    const queryParams: any = { productId: alert.productId };
+    if (alert.variantId) {
+      queryParams.variantId = alert.variantId;
+    }
+
     this.router.navigate(['/dashboard/inventory/movements'], {
-      queryParams: { productId: alert.productId }
+      queryParams
     });
   }
 
   createPurchaseOrder(alert: ProductStock): void {
+    const queryParams: any = { productId: alert.productId };
+    if (alert.variantId) {
+      queryParams.variantId = alert.variantId;
+    }
+
     this.router.navigate(['/dashboard/purchases/create'], {
-      queryParams: { productId: alert.productId }
+      queryParams
     });
   }
 
-  // MODIFICADO: Convertir ProductStock a formato de movimiento para el modal
   adjustStock(alert: ProductStock): void {
-    // Adaptamos el ProductStock al formato que espera el modal
     this.editingMovement = {
       productId: alert.productId,
+      variantId: alert.variantId || null,
       branchId: alert.branchId,
       product: alert.product,
       branch: {
@@ -295,50 +446,64 @@ export class LowStockAlertsComponent implements OnInit {
         branchName: alert.branchName
       },
       currentStock: alert.currentStock,
-      quantity: 0, // Inicializamos en 0 para que el usuario ingrese la cantidad
-      movementType: 'ADJUSTMENT', // Tipo de ajuste
+      quantity: 0,
+      movementType: 'ADJUSTMENT',
       date: new Date().toISOString()
     };
 
     this.showAdjustmentModal = true;
   }
 
-  // Cerrar modal de ajuste
   closeAdjustmentModal(): void {
     this.showAdjustmentModal = false;
     this.editingMovement = undefined;
   }
 
-  // Manejar éxito del ajuste
   handleAdjustmentSuccess(): void {
-    // Pequeño delay para asegurar que el backend procese el cambio
     setTimeout(() => {
       this.showAdjustmentModal = false;
       this.editingMovement = undefined;
-      // Recargar las alertas con forceReload = true
       this.loadAlerts(true);
+      this.loadAllStock(true);
     }, 500);
   }
 
-  // Exportar a Excel
   exportToExcel(): void {
-    const data = this.filteredAlerts.map(alert => ({
-      'Producto': alert.product?.productName || 'N/A',
-      'SKU': alert.product?.sku || 'N/A',
-      'Sucursal': alert.branchName || 'N/A',
-      'Stock Actual': alert.currentStock,
-      'Stock Mínimo': alert.minStock,
-      'Stock Máximo': alert.maxStock,
-      'Nivel': this.getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA',
-      'Costo Promedio': alert.averageCost,
-      'Última Venta': alert.lastSaleDate || 'N/A',
-      'Última Reposición': alert.lastRestockDate || 'N/A'
-    }));
+    const data = this.activeView === 'alerts'
+      ? this.filteredAlerts.map(alert => ({
+          'Tipo': this.getTypeBadge(alert),
+          'Producto': this.getDisplayName(alert),
+          'SKU': this.getDisplaySKU(alert),
+          'Atributos': this.getVariantAttributes(alert),
+          'Sucursal': alert.branchName || 'N/A',
+          'Stock Actual': alert.currentStock,
+          'Stock Mínimo': alert.minStock,
+          'Stock Máximo': alert.maxStock,
+          'Nivel': this.getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA',
+          'Costo Promedio': alert.averageCost
+        }))
+      : this.filteredStock.map(item => ({
+          'Tipo': this.getTypeBadge(item),
+          'Producto': this.getDisplayName(item),
+          'SKU': this.getDisplaySKU(item),
+          'Atributos': this.getVariantAttributes(item),
+          'Sucursal': item.branchName || 'N/A',
+          'Stock Actual': item.currentStock,
+          'Stock Mínimo': item.minStock,
+          'Stock Máximo': item.maxStock,
+          'Estado': this.getStockStatus(item).toUpperCase(),
+          'Costo Promedio': item.averageCost,
+          'Valor Total': item.currentStock * (item.averageCost || 0)
+        }));
 
     console.log('Exportando a Excel:', data);
   }
 
   refresh(): void {
-    this.loadAlerts(true);
+    if (this.activeView === 'alerts') {
+      this.loadAlerts(true);
+    } else {
+      this.loadAllStock(true);
+    }
   }
 }

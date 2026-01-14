@@ -1,5 +1,29 @@
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
 
+  <!-- PESTAÑAS DE VISTA -->
+  <div class="flex gap-2 mb-4 border-b border-slate-200 dark:border-slate-700">
+    <button
+      (click)="switchView('alerts')"
+      [class.border-b-2]="activeView === 'alerts'"
+      [class.border-indigo-600]="activeView === 'alerts'"
+      [class.text-indigo-600]="activeView === 'alerts'"
+      [class.dark:text-indigo-400]="activeView === 'alerts'"
+      class="px-4 py-3 font-medium transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">
+      <ng-icon name="matWarningOutline" size="20" class="inline mr-2"></ng-icon>
+      Alertas de Stock
+    </button>
+    <button
+      (click)="switchView('stock')"
+      [class.border-b-2]="activeView === 'stock'"
+      [class.border-indigo-600]="activeView === 'stock'"
+      [class.text-indigo-600]="activeView === 'stock'"
+      [class.dark:text-indigo-400]="activeView === 'stock'"
+      class="px-4 py-3 font-medium transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">
+      <ng-icon name="matInventoryOutline" size="20" class="inline mr-2"></ng-icon>
+      Existencias Generales
+    </button>
+  </div>
+
   <!-- FILTROS Y ACCIONES -->
   <div class="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b dark:border-slate-600 pb-2">
 
@@ -14,8 +38,9 @@
         <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.branchName }}</option>
       </select>
 
-      <!-- Niveles -->
+      <!-- Niveles (solo para alertas) -->
       <select
+        *ngIf="activeView === 'alerts'"
         [(ngModel)]="selectedAlertLevel"
         (change)="onAlertLevelChange()"
         class="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm">
@@ -23,6 +48,15 @@
         <option value="critical">🔴 Solo críticos</option>
         <option value="warning">🟡 Solo advertencias</option>
       </select>
+
+      <!-- Búsqueda (solo para existencias) -->
+      <input
+        *ngIf="activeView === 'stock'"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+        type="text"
+        placeholder="Buscar por nombre o SKU..."
+        class="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm">
 
       <!-- Selector Vista: Filas/Tarjetas -->
       <div class="flex gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
@@ -65,7 +99,6 @@
 
     <!-- MOBILE: Compacto -->
     <div class="md:hidden p-2 space-y-2">
-      <!-- Fila 1: Sucursales y Niveles -->
       <div class="grid grid-cols-2 gap-2">
         <select
           [(ngModel)]="selectedBranchId"
@@ -76,6 +109,7 @@
         </select>
 
         <select
+          *ngIf="activeView === 'alerts'"
           [(ngModel)]="selectedAlertLevel"
           (change)="onAlertLevelChange()"
           class="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">
@@ -83,9 +117,16 @@
           <option value="critical">🔴 Críticos</option>
           <option value="warning">🟡 Advertencias</option>
         </select>
+
+        <input
+          *ngIf="activeView === 'stock'"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onSearchChange()"
+          type="text"
+          placeholder="Buscar..."
+          class="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs col-span-1">
       </div>
 
-      <!-- Fila 2: Vista, Actualizar y Exportar -->
       <div class="flex gap-2">
         <div class="flex gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg flex-1">
           <button
@@ -115,8 +156,8 @@
     </div>
   </div>
 
-  <!-- ESTADÍSTICAS (Solo Desktop) -->
-  <div class="hidden md:grid grid-cols-3 gap-4 my-4">
+  <!-- ESTADÍSTICAS - ALERTAS (Solo Desktop) -->
+  <div *ngIf="activeView === 'alerts'" class="hidden md:grid grid-cols-3 gap-4 my-4">
     <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border-l-4 border-indigo-500">
       <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Total Alertas</p>
       <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ totalAlertsCount }}</p>
@@ -128,6 +169,22 @@
     <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border-l-4 border-yellow-500">
       <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Stock Bajo</p>
       <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ warningCount }}</p>
+    </div>
+  </div>
+
+  <!-- ESTADÍSTICAS - EXISTENCIAS (Solo Desktop) -->
+  <div *ngIf="activeView === 'stock'" class="hidden md:grid grid-cols-3 gap-4 my-4">
+    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border-l-4 border-blue-500">
+      <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Total Productos</p>
+      <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ totalProducts }}</p>
+    </div>
+    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border-l-4 border-green-500">
+      <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Valor Total</p>
+      <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ totalStockValue | currency }}</p>
+    </div>
+    <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border-l-4 border-purple-500">
+      <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Con Alertas</p>
+      <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ totalAlertsCount }}</p>
     </div>
   </div>
 
@@ -152,246 +209,276 @@
     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
   </div>
 
-  <!-- Sin alertas -->
-  <div *ngIf="!loading && filteredAlerts.length === 0" class="bg-white dark:bg-slate-800 rounded-xl shadow-md p-8 text-center my-4">
+  <!-- Sin resultados -->
+  <div *ngIf="!loading && paginatedItems.length === 0" class="bg-white dark:bg-slate-800 rounded-xl shadow-md p-8 text-center my-4">
     <ng-icon name="matCheckCircleOutline" size="48" class="text-slate-400 mx-auto mb-2"></ng-icon>
-    <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">¡Todo en orden!</h3>
-    <p class="text-sm text-slate-500 dark:text-slate-400">No hay productos con stock bajo</p>
+    <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">
+      {{ activeView === 'alerts' ? '¡Todo en orden!' : 'No hay productos' }}
+    </h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400">
+      {{ activeView === 'alerts' ? 'No hay productos con stock bajo' : 'No se encontraron productos con los filtros aplicados' }}
+    </p>
   </div>
 
-  <!-- VISTA TABLA (Desktop con todas las columnas separadas) -->
-  <div *ngIf="!loading && filteredAlerts.length > 0 && viewMode === 'table'" class="rounded-lg">
-    <table class="table-grid mt-4 w-full">
-      <thead>
-        <tr>
-          <th ><p>Estado</p></th>
-          <th ><p>Producto</p></th>
-          <th ><p>Sucursal</p></th>
-          <th ><p>Actual</p></th>
-          <th ><p>Mínimo</p></th>
-          <th><p>Nivel</p></th>
-          <th ><p>Acciones</p></th>
+ <!-- VISTA TABLA -->
+<div *ngIf="!loading && paginatedItems.length > 0 && viewMode === 'table'" class="rounded-lg">
+
+  <!-- TABLA DESKTOP -->
+  <table class="hidden sm:table table-grid mt-4 w-full">
+    <thead>
+      <tr>
+        <th><p>Tipo</p></th>
+        <th *ngIf="activeView === 'alerts'"><p>Estado</p></th>
+        <th><p>Producto</p></th>
+        <th><p>Sucursal</p></th>
+        <th><p>Actual</p></th>
+        <th><p>Mínimo</p></th>
+        <th><p>Máximo</p></th>
+        <th><p>Nivel</p></th>
+        <th><p>Acciones</p></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (item of paginatedItems; track $index) {
+        <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd}">
+          <!-- Tipo -->
+          <td>
+            <span class="px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="getTypeBadgeClass(item)">
+              {{ getTypeBadge(item) }}
+            </span>
+          </td>
+
+          <!-- Estado (Solo alertas) -->
+          <td *ngIf="activeView === 'alerts'">
+            @if (getAlertLevel(item) === 'critical') {
+              <span class="h-2 w-2 mr-2 bg-red-500 rounded-full inline-flex"></span>
+            }
+            @if (getAlertLevel(item) === 'warning') {
+              <span class="h-2 w-2 mr-2 bg-yellow-500 rounded-full inline-flex"></span>
+            }
+            <span class="px-2 py-1 text-xs font-bold rounded-full"
+                  [ngClass]="{'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': getAlertLevel(item) === 'critical',
+                              'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': getAlertLevel(item) === 'warning'}">
+              {{ getAlertLevel(item) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}
+            </span>
+          </td>
+
+          <!-- Producto -->
+          <td>
+            <div>
+              <p class="font-bold">{{ getDisplayName(item) }}</p>
+              <p class="text-xs text-wrap text-slate-500">SKU: {{ getDisplaySKU(item) }}</p>
+              @if (isVariant(item) && getVariantAttributes(item)) {
+                <p class="text-xs text-wrap text-blue-600 dark:text-blue-400 mt-1">
+                  {{ getVariantAttributes(item) }}
+                </p>
+              }
+            </div>
+          </td>
+
+          <!-- Sucursal -->
+          <td>
+            <span class="text-sm">{{ item.branchName || 'N/A' }}</span>
+          </td>
+
+          <!-- Stock Actual -->
+          <td class="text-center">
+            <span class="text-lg font-bold"
+                  [ngClass]="activeView === 'alerts'
+                    ? (getAlertLevel(item) === 'critical' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400')
+                    : getStockStatusClass(item)">
+              {{ item.currentStock }}
+            </span>
+          </td>
+
+          <!-- Stock Mínimo -->
+          <td class="text-center">
+            <span class="text-sm">{{ item.minStock }}</span>
+          </td>
+
+          <!-- Stock Máximo -->
+          <td class="text-center">
+            <span class="text-sm">{{ item.maxStock }}</span>
+          </td>
+
+          <!-- Nivel con barra -->
+          <td>
+            <div class="flex flex-col items-center">
+              <div class="w-24 bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                <div class="h-full rounded-full"
+                     [ngClass]="activeView === 'alerts'
+                       ? (getAlertLevel(item) === 'critical' ? 'bg-red-500' : 'bg-yellow-500')
+                       : (getStockStatus(item) === 'critical' ? 'bg-red-500' :
+                          getStockStatus(item) === 'warning' ? 'bg-yellow-500' :
+                          getStockStatus(item) === 'excess' ? 'bg-orange-500' : 'bg-green-500')"
+                     [style.width.%]="getStockPercentage(item)">
+                </div>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">{{ getStockPercentage(item) | number:'1.0-0' }}%</p>
+            </div>
+          </td>
+
+          <!-- Acciones -->
+          <td>
+            <div class="w-full c-actions flex gap-2 justify-center">
+              <button (click)="adjustStock(item)" class="btn-action" title="Ajustar Stock">
+                <ng-icon class="text-blue-500" size="20" name="matEditOutline"></ng-icon>
+              </button>
+              <button (click)="createPurchaseOrder(item)" class="btn-action" title="Crear Orden">
+                <ng-icon class="text-green-600" size="20" name="matAddShoppingCartOutline"></ng-icon>
+              </button>
+            </div>
+          </td>
         </tr>
-      </thead>
+      }
+    </tbody>
+  </table>
 
-      <tbody>
-        @for (alert of paginatedAlerts; track $index) {
-          @defer {
-            <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd}">
+  <!-- LISTA MÓVIL (sin tabla) -->
+  <div class="sm:hidden space-y-2 mt-4">
+    @for (item of paginatedItems; track $index) {
+      <div class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 shadow-sm"
+           [ngClass]="{'bg-slate-50 dark:bg-slate-900': $odd}">
 
-              <!-- Estado (Desktop) -->
-              <td class="hidden sm:table-cell">
-                @if (getAlertLevel(alert) === 'critical') {
-                  <span class="h-2 w-2 mr-2 bg-red-500 rounded-full inline-flex"></span>
-                }
-                @if (getAlertLevel(alert) === 'warning') {
-                  <span class="h-2 w-2 mr-2 bg-yellow-500 rounded-full inline-flex"></span>
-                }
-                <span class="px-2 py-1 text-xs font-bold rounded-full"
-                      [ngClass]="{'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': getAlertLevel(alert) === 'critical',
-                                  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': getAlertLevel(alert) === 'warning'}">
-                  {{ getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}
+        <div class="flex justify-between items-start mb-2">
+          <div class="flex-1">
+            <!-- Badges -->
+            <div class="flex gap-2 mb-2 flex-wrap">
+              <span class="px-2 py-0.5 text-xs font-medium rounded-full"
+                    [ngClass]="getTypeBadgeClass(item)">
+                {{ getTypeBadge(item) }}
+              </span>
+
+              @if (activeView === 'alerts') {
+                <span class="px-2 py-0.5 text-xs font-bold rounded-full flex items-center gap-1"
+                      [ngClass]="{'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': getAlertLevel(item) === 'critical',
+                                  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': getAlertLevel(item) === 'warning'}">
+                  @if (getAlertLevel(item) === 'critical') {
+                    <span class="h-2 w-2 bg-red-500 rounded-full inline-flex"></span>
+                  }
+                  @if (getAlertLevel(item) === 'warning') {
+                    <span class="h-2 w-2 bg-yellow-500 rounded-full inline-flex"></span>
+                  }
+                  {{ getAlertLevel(item) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}
                 </span>
-              </td>
+              }
 
-              <!-- Producto (Desktop) -->
-              <td class="hidden sm:table-cell">
-                <div>
-                  <p class="font-bold">{{ alert.product?.productName || 'N/A' }}</p>
-                  <p class="text-xs text-wrap text-slate-500">SKU: {{ alert.product?.sku || 'N/A' }}</p>
-                </div>
-              </td>
-
-              <!-- Sucursal (Desktop) - COLUMNA SEPARADA -->
-              <td class="hidden sm:table-cell">
-                <span class="text-sm">{{ alert.branchName || 'N/A' }}</span>
-              </td>
-
-              <!-- Stock Actual (Desktop) - COLUMNA SEPARADA -->
-              <td class="hidden sm:table-cell text-center">
-                <span class="text-lg font-bold"
-                      [ngClass]="{'text-red-600 dark:text-red-400': getAlertLevel(alert) === 'critical',
-                                  'text-yellow-600 dark:text-yellow-400': getAlertLevel(alert) === 'warning'}">
-                  {{ alert.currentStock }}
+              @if (activeView === 'stock') {
+                <span class="px-2 py-0.5 text-xs font-bold rounded-full flex items-center gap-1"
+                      [ngClass]="{'bg-red-100 text-red-700': getStockStatus(item) === 'critical',
+                                  'bg-yellow-100 text-yellow-700': getStockStatus(item) === 'warning',
+                                  'bg-orange-100 text-orange-700': getStockStatus(item) === 'excess',
+                                  'bg-green-100 text-green-700': getStockStatus(item) === 'good'}">
+                  <span class="h-2 w-2 rounded-full"
+                        [ngClass]="getStockStatus(item) === 'critical' ? 'bg-red-500' :
+                                   getStockStatus(item) === 'warning' ? 'bg-yellow-500' :
+                                   getStockStatus(item) === 'excess' ? 'bg-orange-500' : 'bg-green-500'"></span>
+                  {{ getStockStatus(item).toUpperCase() }}
                 </span>
-              </td>
+              }
+            </div>
 
-              <!-- Stock Mínimo (Desktop) - COLUMNA SEPARADA -->
-              <td class="hidden sm:table-cell text-center">
-                <span class="text-sm">{{ alert.minStock }}</span>
-              </td>
+            <!-- Nombre del producto -->
+            <p class="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">
+              {{ getDisplayName(item) }}
+            </p>
 
-              <!-- Nivel con barra de progreso (Desktop) - COLUMNA SEPARADA -->
-              <td class="hidden sm:table-cell">
-                <div class="flex flex-col items-center">
-                  <div class="w-24 bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                    <div class="h-full rounded-full"
-                         [ngClass]="{'bg-red-500': getAlertLevel(alert) === 'critical',
-                                     'bg-yellow-500': getAlertLevel(alert) === 'warning'}"
-                         [style.width.%]="getStockPercentage(alert)">
-                    </div>
-                  </div>
-                  <p class="text-xs text-slate-500 mt-1">{{ getStockPercentage(alert) | number:'1.0-0' }}%</p>
-                </div>
-              </td>
+            <!-- SKU -->
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">
+              SKU: {{ getDisplaySKU(item) }}
+            </p>
 
-              <!-- Acciones (Desktop) - COLUMNA SEPARADA -->
-              <td class="hidden sm:table-cell">
-                <div class="w-full c-actions flex gap-2 justify-center">
-                  <button (click)="adjustStock(alert)" class="btn-action" title="Ajustar Stock">
-                    <ng-icon class="text-blue-500" size="20" name="matEditOutline"></ng-icon>
-                  </button>
-                  <button (click)="createPurchaseOrder(alert)" class="btn-action" title="Crear Orden">
-                    <ng-icon class="text-green-600" size="20" name="matAddShoppingCartOutline"></ng-icon>
-                  </button>
-                </div>
-              </td>
+            <!-- Atributos de variante -->
+            @if (isVariant(item) && getVariantAttributes(item)) {
+              <p class="text-xs text-blue-600 dark:text-blue-400 mb-1">
+                {{ getVariantAttributes(item) }}
+              </p>
+            }
 
-              <!-- MOBILE: Vista compacta (una sola celda para móvil) -->
-              <td class="sm:hidden" colspan="7">
-                <div class="w-full flex justify-between p-1">
-                  <div>
-                    <p class="font-bold text-gray-400 mb-1">
-                      @if (getAlertLevel(alert) === 'critical') {
-                        <span class="h-3 w-3 bg-red-500 rounded-full inline-flex"></span>
-                      }
-                      @if (getAlertLevel(alert) === 'warning') {
-                        <span class="h-3 w-3 bg-yellow-500 rounded-full inline-flex"></span>
-                      }
-                      <b class="ml-2 text-xs">{{ getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}</b>
-                    </p>
+            <!-- Sucursal -->
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              📍 {{ item.branchName || 'N/A' }}
+            </p>
+          </div>
 
-                    <p class="font-bold text-gray-800 dark:text-gray-200">{{ alert.product?.productName || 'N/A' }}</p>
-                    <p class="text-xs text-wrap text-gray-500">SKU: {{ alert.product?.sku || 'N/A' }}</p>
-                    <p class="text-xs text-wrap text-gray-500">{{ alert.branchName || 'N/A' }}</p>
-
-                    <div class="mt-2 grid grid-cols-3 gap-1">
-                      <div class="bg-slate-50 dark:bg-slate-800 rounded p-1">
-                        <p class="text-xs text-slate-500">Actual</p>
-                        <p class="text-sm font-bold"
-                           [ngClass]="{'text-red-600': getAlertLevel(alert) === 'critical',
-                                       'text-yellow-600': getAlertLevel(alert) === 'warning'}">
-                          {{ alert.currentStock }}
-                        </p>
-                      </div>
-                      <div class="bg-slate-50 dark:bg-slate-800 rounded p-1">
-                        <p class="text-xs text-slate-500">Mín</p>
-                        <p class="text-sm font-bold">{{ alert.minStock }}</p>
-                      </div>
-                      <div class="bg-slate-50 dark:bg-slate-800 rounded p-1">
-                        <p class="text-xs text-slate-500">Nivel</p>
-                        <p class="text-sm font-bold">{{ getStockPercentage(alert) | number:'1.0-0' }}%</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-col gap-1">
-                    <button (click)="adjustStock(alert)" class="btn-action" title="Ajustar">
-                      <ng-icon class="text-blue-500" size="18" name="matEditOutline"></ng-icon>
-                    </button>
-                    <button (click)="createPurchaseOrder(alert)" class="btn-action" title="Orden">
-                      <ng-icon class="text-green-600" size="18" name="matAddShoppingCartOutline"></ng-icon>
-                    </button>
-                  </div>
-                </div>
-              </td>
-
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
-
-    <!-- PAGINATION DESKTOP -->
-    <div class="content-desktop">
-      <div class="pagination">
-        <div class="pagination-child">
-          <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{page}} de {{totalPages}}</b></p>
-          <p>Items {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
-          <button><ng-icon (click)="firstPage()" class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
-          <button><ng-icon (click)="previousPage()" class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
-          <button><ng-icon (click)="nextPage()" class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
-          <button><ng-icon (click)="lastPage()" class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- VISTA TARJETAS -->
-  <div *ngIf="!loading && filteredAlerts.length > 0 && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 my-4">
-    <div *ngFor="let alert of paginatedAlerts" class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-4 border-l-4"
-         [ngClass]="{'border-red-500': getAlertLevel(alert) === 'critical', 'border-yellow-500': getAlertLevel(alert) === 'warning'}">
-
-      <div class="flex items-center gap-2 mb-3">
-        <span class="px-2 py-1 text-xs font-bold rounded-full"
-              [ngClass]="{'bg-red-100 text-red-700': getAlertLevel(alert) === 'critical',
-                          'bg-yellow-100 text-yellow-700': getAlertLevel(alert) === 'warning'}">
-          {{ getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}
-        </span>
-      </div>
-
-      <h3 class="font-bold text-sm mb-1">{{ alert.product?.productName || 'N/A' }}</h3>
-      <p class="text-xs text-slate-500 mb-3">SKU: {{ alert.product?.sku || 'N/A' }} | {{ alert.branchName || 'N/A' }}</p>
-
-      <div class="grid grid-cols-3 gap-2 mb-3">
-        <div class="bg-slate-50 dark:bg-slate-700/50 rounded p-2">
-          <p class="text-xs text-slate-600 dark:text-slate-400">Actual</p>
-          <p class="text-xl font-bold"
-             [ngClass]="{'text-red-600': getAlertLevel(alert) === 'critical', 'text-yellow-600': getAlertLevel(alert) === 'warning'}">
-            {{ alert.currentStock }}
-          </p>
-        </div>
-        <div class="bg-slate-50 dark:bg-slate-700/50 rounded p-2">
-          <p class="text-xs text-slate-600 dark:text-slate-400">Mínimo</p>
-          <p class="text-xl font-bold">{{ alert.minStock }}</p>
-        </div>
-        <div class="bg-slate-50 dark:bg-slate-700/50 rounded p-2">
-          <p class="text-xs text-slate-600 dark:text-slate-400">Máximo</p>
-          <p class="text-xl font-bold">{{ alert.maxStock }}</p>
-        </div>
-      </div>
-
-      <div class="mb-3">
-        <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-          <div class="h-full rounded-full"
-               [ngClass]="{'bg-red-500': getAlertLevel(alert) === 'critical', 'bg-yellow-500': getAlertLevel(alert) === 'warning'}"
-               [style.width.%]="getStockPercentage(alert)">
+          <!-- Acciones (lado derecho) -->
+          <div class="flex flex-col gap-2 ml-2">
+            <button (click)="adjustStock(item)"
+                    class="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                    title="Ajustar">
+              <ng-icon class="text-indigo-600 dark:text-indigo-400" size="18" name="matEditOutline"></ng-icon>
+            </button>
+            <button (click)="createPurchaseOrder(item)"
+                    class="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
+                    title="Orden">
+              <ng-icon class="text-green-600 dark:text-green-400" size="18" name="matAddShoppingCartOutline"></ng-icon>
+            </button>
           </div>
         </div>
-        <p class="text-xs text-slate-500 mt-1">{{ getStockPercentage(alert) | number:'1.0-0' }}%</p>
-      </div>
 
-      <div class="grid grid-cols-2 gap-2">
-        <button (click)="adjustStock(alert)" class="px-3 py-2 bg-indigo-600 text-white rounded text-sm flex items-center justify-center gap-1">
-          <ng-icon name="matEditOutline" size="16"></ng-icon>
-          Ajustar
-        </button>
-        <button (click)="createPurchaseOrder(alert)" class="px-3 py-2 bg-green-600 text-white rounded text-sm flex items-center justify-center gap-1">
-          <ng-icon name="matAddShoppingCartOutline" size="16"></ng-icon>
-          Orden
-        </button>
+        <!-- Grid de Stock -->
+        <div class="grid grid-cols-4 gap-2 mt-3">
+          <div class="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Actual</p>
+            <p class="text-base font-bold"
+               [ngClass]="activeView === 'alerts'
+                 ? (getAlertLevel(item) === 'critical' ? 'text-red-600' : 'text-yellow-600')
+                 : getStockStatusClass(item)">
+              {{ item.currentStock }}
+            </p>
+          </div>
+
+          <div class="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Mín</p>
+            <p class="text-base font-bold text-slate-700 dark:text-slate-300">{{ item.minStock }}</p>
+          </div>
+
+          <div class="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Máx</p>
+            <p class="text-base font-bold text-slate-700 dark:text-slate-300">{{ item.maxStock }}</p>
+          </div>
+
+          <div class="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Nivel</p>
+            <p class="text-base font-bold text-slate-700 dark:text-slate-300">
+              {{ getStockPercentage(item) | number:'1.0-0' }}%
+            </p>
+          </div>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div class="mt-3">
+          <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+            <div class="h-full rounded-full transition-all"
+                 [ngClass]="activeView === 'alerts'
+                   ? (getAlertLevel(item) === 'critical' ? 'bg-red-500' : 'bg-yellow-500')
+                   : (getStockStatus(item) === 'critical' ? 'bg-red-500' :
+                      getStockStatus(item) === 'warning' ? 'bg-yellow-500' :
+                      getStockStatus(item) === 'excess' ? 'bg-orange-500' : 'bg-green-500')"
+                 [style.width.%]="getStockPercentage(item)">
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    }
   </div>
 
-  <!-- PAGINACIÓN MOBILE (Abajo) -->
-  <div class="content-sm" *ngIf="!loading && filteredAlerts.length > 0">
+  <!-- PAGINATION DESKTOP -->
+  <div class="content-desktop">
     <div class="pagination">
-      <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
-        <div class="flex justify-between mb-2 p-2 rounded-lg border m-1 bg-white dark:bg-slate-900 dark:border-slate-700">
-          <button class="btn-pagination"><ng-icon (click)="firstPage()" size="22" name="bootstrapChevronBarLeft"></ng-icon></button>
-          <button class="btn-pagination"><ng-icon (click)="previousPage()" size="22" name="bootstrapChevronLeft"></ng-icon></button>
-          <button class="btn-pagination"><ng-icon (click)="nextPage()" size="22" name="bootstrapChevronRight"></ng-icon></button>
-          <button class="btn-pagination"><ng-icon (click)="lastPage()" size="22" name="bootstrapChevronBarRight"></ng-icon></button>
-        </div>
-
-        <div class="flex justify-between">
-          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b>Páginas:</b> {{page}} de {{totalPages}}</p>
-          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b>Items:</b> {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
-        </div>
+      <div class="pagination-child">
+        <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{page}} de {{totalPages}}</b></p>
+        <p>Items {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+        <button><ng-icon (click)="firstPage()" class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
+        <button><ng-icon (click)="previousPage()" class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
+        <button><ng-icon (click)="nextPage()" class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
+        <button><ng-icon (click)="lastPage()" class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
       </div>
     </div>
   </div>
+</div>
 
 </div>
 
