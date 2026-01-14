@@ -436,11 +436,22 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     this.router.navigate(['dashboard/products']);
   }
 
-  isDirty(): boolean {
-    const formsAreDirty = this.productForm.dirty || this.stockForm.dirty;
-    const hasUnsavedVariants = this.productType === 'variant' && this.variantComponent?.hasVariants();
+  // ==================== CAMBIOS SIN GUARDAR ====================
 
-    return formsAreDirty || hasUnsavedVariants;
+  isDirty(): boolean {
+    // Si ya hay variantes creadas, NO mostrar mensaje de cambios sin guardar
+    if (this.productType === 'variant' && this.variantComponent?.hasVariants()) {
+      return false;
+    }
+
+    // Para productos simples o variantes sin crear, verificar formularios dirty
+    const formsAreDirty = this.productForm.dirty || this.stockForm.dirty;
+
+    // Para productos con variantes, verificar si hay cambios en el formulario de variantes
+    const hasUnsavedVariantChanges = this.productType === 'variant'
+      && this.variantComponent?.hasUnsavedChanges();
+
+    return formsAreDirty || !!hasUnsavedVariantChanges;
   }
 
   // ==================== TEMPLATE HELPERS ====================

@@ -4,7 +4,6 @@ import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Va
 import { firstValueFrom } from 'rxjs';
 
 // Services
-
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   matAddCircleOutline,
@@ -27,9 +26,6 @@ import { InputOptionsSelect } from '../../../../../shared/interfaces/input';
 import { ProductVariant } from '../../../../../shared/interfaces/product';
 import { CrudService } from '../../../../../shared/services/crud.service';
 import { ToastService } from '../../../../../shared/services/toast.service';
-
-// Constants & Interfaces
-
 
 interface VariantAttribute {
   id: number;
@@ -78,6 +74,7 @@ export class ProductVariantComponent implements OnInit, OnChanges {
   @Input() supplierOptions: InputOptionsSelect[] = [];
   @Input() initialVariants: ProductVariant[] = [];
   @Input() load: boolean = false;
+  @Input() productName: string = '';
 
   // ==================== OUTPUTS ====================
   @Output() variantsChange = new EventEmitter<ProductVariant[]>();
@@ -123,7 +120,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       this.loadCategoryAttributes(this.categoryId);
     }
 
-    // Inicializar el FormArray de proveedores
     if (this.supplierOptions.length > 0) {
       this.initSupplierFormArray();
     }
@@ -275,11 +271,29 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     this.showCustomAttrInput = false;
     this.showCustomValueInput = false;
 
+    // Auto-generar nombre de variante
+    this.autoGenerateVariantName();
+
     this.toast.success('Atributo agregado');
   }
 
   removeManualAttribute(index: number) {
     this.manualAttributes.splice(index, 1);
+    // Regenerar nombre de variante
+    this.autoGenerateVariantName();
+  }
+
+  autoGenerateVariantName() {
+    if (this.manualAttributes.length === 0) {
+      this.variantForm.patchValue({ variantName: '' });
+      return;
+    }
+
+    const baseName = this.productName || 'Producto';
+    const attrValues = this.manualAttributes.map(attr => attr.value).join(' - ');
+    const generatedName = `${baseName} - ${attrValues}`;
+
+    this.variantForm.patchValue({ variantName: generatedName });
   }
 
   // ==================== SKU GENERATION ====================
@@ -313,12 +327,15 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       return;
     }
 
+    if (this.manualAttributes.length === 0) {
+      this.toast.error('Debes agregar al menos un atributo para identificar esta variante');
+      return;
+    }
+
     const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
 
-    // Verificar que el FormArray existe y tiene elementos
     if (!supplierFormArray || supplierFormArray.length === 0) {
       this.toast.error('Error: No se han cargado los proveedores correctamente');
-      console.error('FormArray de proveedores no inicializado');
       return;
     }
 
@@ -440,7 +457,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     this.showCustomAttrInput = false;
     this.showCustomValueInput = false;
 
-    // Resetear proveedores sin perder los controles
     const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
     if (supplierFormArray && supplierFormArray.length > 0) {
       supplierFormArray.controls.forEach(control => control.setValue(false));
@@ -452,9 +468,8 @@ export class ProductVariantComponent implements OnInit, OnChanges {
   setSuppliers(supplierId: number[]) {
     const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
 
-    // Verificar que el FormArray existe
     if (!supplierFormArray || supplierFormArray.length === 0) {
-      console.error('FormArray de proveedores no inicializado al setear proveedores');
+      console.error('FormArray de proveedores no inicializado');
       return;
     }
 
@@ -474,7 +489,49 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     return [...this.variants];
   }
 
-  hasVariants(): boolean {
+   hasVariants(): boolean {
     return this.variants.length > 0;
+  }
+
+  // Método para verificar si hay cambios sin guardar
+  hasUnsavedChanges(): boolean {
+    // Si ya hay variantes creadas, no hay "cambios sin guardar" que importen
+    if (this.variants.length > 0) {
+      return false;
+    }
+
+    // Solo hay cambios sin guardar si está en proceso de crear la primera variante
+    const formHasData =
+      this.variantForm.get('sku')?.value?.trim() ||
+      this.variantForm.get('variantName')?.value?.trim() ||
+      this.variantForm.get('costPrice')?.value ||
+      this.variantForm.get('salePrice')?.value ||
+      this.manualAttributes.length > 0;
+
+    return !!formHasData;
+  }
+
+  // ==================== VARIANT DISPLAY ====================
+
+  getVariantAttributesDisplay(variant: ProductVariant): string {
+    if (!variant.attributes || Object.keys(variant.attributes).length === 0) {
+      return 'Sin atributos';
+    }
+
+    return Object.entries(variant.attributes)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ');
+  }
+
+  getStockStatusClass(variant: ProductVariant): string {
+    if (variant.currentStock === 0) return 'text-red-600 font-bold';
+    if (variant.currentStock <= variant.minStock) return 'text-orange-600 font-semibold';
+    return 'text-green-600';
+  }
+
+  getStockStatusText(variant: ProductVariant): string {
+    if (variant.currentStock === 0) return 'AGOTADO';
+    if (variant.currentStock <= variant.minStock) return 'BAJO STOCK';
+    return 'DISPONIBLE';
   }
 }

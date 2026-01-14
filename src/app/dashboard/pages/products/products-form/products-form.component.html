@@ -294,6 +294,7 @@
           [brandOptions]="brandOptions"
           [supplierOptions]="supplierOptions"
           [initialVariants]="variants"
+          [productName]="productForm.get('productName')?.value || ''"
           [load]="load"
           (variantsChange)="onVariantsChange($event)">
         </app-product-variant>

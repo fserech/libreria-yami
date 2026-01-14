@@ -1,25 +1,21 @@
 <div class="animate-fadeIn">
 
-  <!-- ATRIBUTOS DISPONIBLES (REFERENCIA) -->
-  @if (availableAttributes.length > 0) {
-    <div class="mb-6 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
-      <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-        <ng-icon name="matTuneOutline" size="18" class="inline mr-1"></ng-icon>
-        Atributos Sugeridos (puedes usar estos u otros personalizados)
-      </p>
-
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-        @for (attr of availableAttributes; track attr.id) {
-          <div class="bg-white dark:bg-slate-700 p-2 rounded border border-gray-200 dark:border-slate-600">
-            <strong>{{ attr.attributeName }}:</strong>
-            <div class="text-gray-600 dark:text-gray-400 mt-1">
-              {{ attr.attributeValues.join(', ') }}
-            </div>
-          </div>
-        }
+  <!-- INFORMACIÓN IMPORTANTE -->
+  <div class="mb-6 p-4 bg-blue-50 dark:bg-slate-800 rounded-lg border-l-4 border-blue-500">
+    <div class="flex items-start gap-3">
+      <ng-icon name="matTuneOutline" size="24" class="text-blue-600 mt-1"></ng-icon>
+      <div>
+        <p class="font-semibold text-gray-800 dark:text-gray-200 mb-1">
+          ¿Qué son los atributos?
+        </p>
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          Los atributos te ayudan a <strong>identificar cada variante específica</strong> en tu inventario.
+          Por ejemplo, si vendes "Cartulina", los atributos te permiten saber exactamente cuántas cartulinas
+          <strong>celestes</strong>, <strong>rosadas</strong>, <strong>verdes</strong> o <strong>blancas</strong> tienes en stock.
+        </p>
       </div>
     </div>
-  }
+  </div>
 
   <!-- FORMULARIO DE VARIANTE -->
   <div class="mb-6 p-4 border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-lg">
@@ -33,245 +29,259 @@
       }
     </p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 gap-6">
 
-      <!-- NOMBRE DE LA VARIANTE -->
-      <app-input
-        [form]="variantForm"
-        name="variantName"
-        icon="matDriveFileRenameOutlineOutline"
-        label="Nombre de la Variante"
-        placeholder="Ej: Cuaderno 100 hojas rayado azul"
-        helpMessage="Nombre descriptivo de esta variante"
-        errorMessage="El nombre de la variante es requerido"
-        [minlength]="1"
-        [maxlength]="100"
-        [counter]="true"
-        [load]="load">
-      </app-input>
+      <!-- PASO 1: ATRIBUTOS (LO MÁS IMPORTANTE) -->
+      <div class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-lg border-2 border-blue-300 dark:border-blue-700">
+        <p class="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
+          <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">1</span>
+          Define los Atributos (Características que identifican esta variante)
+        </p>
 
-      <!-- SKU con generador -->
-      <div class="relative">
-        <app-input
-          [form]="variantForm"
-          name="sku"
-          icon="matQrCodeOutline"
-          label="SKU (Código único)"
-          placeholder="Ej: BIC-VAR-123456"
-          helpMessage="Código único de la variante"
-          errorMessage="El SKU es requerido"
-          [minlength]="1"
-          [maxlength]="50"
-          [load]="load">
-        </app-input>
-        <button
-          type="button"
-          (click)="generateVariantSKU()"
-          class="absolute right-2 top-9 text-blue-600 hover:text-blue-800 text-xs font-semibold">
-          Generar
-        </button>
-      </div>
-
-      <!-- SECCIÓN DE ATRIBUTOS MANUALES -->
-      <div class="col-span-1 sm:col-span-2">
-        <div class="p-4 bg-blue-50 dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-slate-700">
-          <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            <ng-icon name="matTuneOutline" size="18" class="inline mr-1"></ng-icon>
-            Atributos de la Variante (Ej: Color, Tamaño, Material, etc.)
-          </p>
-
-          <!-- Formulario para agregar atributo -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-            <!-- Selector o Input para el nombre del atributo -->
-            @if (availableAttributes.length > 0) {
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nombre del atributo
-                </label>
-                <select
-                  [formControl]="attrKeyControl"
-                  (change)="onAttributeKeyChange($event)"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                  <option value="">Selecciona o escribe uno nuevo</option>
-                  @for (attr of availableAttributes; track attr.id) {
-                    <option [value]="attr.attributeName">{{ attr.attributeName }}</option>
-                  }
-                  <option value="__custom__">➕ Crear atributo personalizado</option>
-                </select>
-
-                <!-- Input oculto para atributo personalizado -->
-                @if (showCustomAttrInput) {
-                  <input
-                    type="text"
-                    [formControl]="customAttrKeyControl"
-                    placeholder="Escribe el nombre del atributo"
-                    class="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+        <!-- Formulario para agregar atributo -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+          <!-- Selector o Input para el nombre del atributo -->
+          @if (availableAttributes.length > 0) {
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tipo de característica
+              </label>
+              <select
+                [formControl]="attrKeyControl"
+                (change)="onAttributeKeyChange($event)"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                <option value="">Ej: Color, Tamaño, Material...</option>
+                @for (attr of availableAttributes; track attr.id) {
+                  <option [value]="attr.attributeName">{{ attr.attributeName }}</option>
                 }
-              </div>
-            } @else {
-              <app-input
-                [form]="variantForm"
-                name="attrKey"
-                label="Nombre del atributo"
-                placeholder="Ej: Color, Tamaño, Hojas"
-                helpMessage="Ej: Color, Tamaño, Material"
-                [load]="load">
-              </app-input>
-            }
+                <option value="__custom__">➕ Crear característica personalizada</option>
+              </select>
 
-            <!-- Selector o Input para el valor del atributo -->
-            @if (selectedAttributeValues.length > 0 && !showCustomAttrInput) {
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Valor del atributo
-                </label>
-                <select
-                  [formControl]="attrValueControl"
-                  (change)="onAttributeValueChange($event)"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                  <option value="">Selecciona un valor</option>
-                  @for (value of selectedAttributeValues; track value) {
-                    <option [value]="value">{{ value }}</option>
-                  }
-                  <option value="__custom__">➕ Escribir valor personalizado</option>
-                </select>
-
-                @if (showCustomValueInput) {
-                  <input
-                    type="text"
-                    [formControl]="customAttrValueControl"
-                    placeholder="Escribe el valor"
-                    class="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                }
-              </div>
-            } @else {
-              <app-input
-                [form]="variantForm"
-                name="attrValue"
-                label="Valor del atributo"
-                placeholder="Ej: Azul, 100 hojas, Grande"
-                helpMessage="Valor específico"
-                [load]="load">
-              </app-input>
-            }
-
-            <div class="flex items-end">
-              <button
-                type="button"
-                (click)="addManualAttribute()"
-                class="w-full btn-primary h-10 text-sm font-semibold">
-                <ng-icon name="matAddCircleOutline" size="18" class="inline mr-1"></ng-icon>
-                Agregar
-              </button>
-            </div>
-          </div>
-
-          <!-- Lista de atributos agregados -->
-          @if (manualAttributes.length > 0) {
-            <div class="space-y-2">
-              <p class="text-xs text-gray-600 dark:text-gray-400 font-semibold">Atributos agregados:</p>
-              @for (attr of manualAttributes; track $index) {
-                <div class="flex items-center justify-between bg-white dark:bg-slate-700 p-2 rounded border border-gray-200 dark:border-slate-600">
-                  <span class="text-sm">
-                    <strong class="text-gray-700 dark:text-gray-300">{{ attr.key }}:</strong>
-                    <span class="text-gray-600 dark:text-gray-400 ml-1">{{ attr.value }}</span>
-                  </span>
-                  <button
-                    type="button"
-                    (click)="removeManualAttribute($index)"
-                    class="text-red-600 hover:text-red-800">
-                    <ng-icon name="matDeleteOutline" size="18"></ng-icon>
-                  </button>
-                </div>
+              @if (showCustomAttrInput) {
+                <input
+                  type="text"
+                  [formControl]="customAttrKeyControl"
+                  placeholder="Escribe la característica (Ej: Gramaje)"
+                  class="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
               }
             </div>
           } @else {
-            <p class="text-xs text-gray-500 dark:text-gray-400 italic">
-              No hay atributos agregados. Agrega al menos uno para diferenciar esta variante.
-            </p>
+            <app-input
+              [form]="variantForm"
+              name="attrKey"
+              label="Tipo de característica"
+              placeholder="Ej: Color, Tamaño, Material"
+              helpMessage="¿Qué hace única esta variante?"
+              [load]="load">
+            </app-input>
           }
+
+          <!-- Selector o Input para el valor del atributo -->
+          @if (selectedAttributeValues.length > 0 && !showCustomAttrInput) {
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Valor específico
+              </label>
+              <select
+                [formControl]="attrValueControl"
+                (change)="onAttributeValueChange($event)"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                <option value="">Selecciona un valor</option>
+                @for (value of selectedAttributeValues; track value) {
+                  <option [value]="value">{{ value }}</option>
+                }
+                <option value="__custom__">➕ Escribir valor personalizado</option>
+              </select>
+
+              @if (showCustomValueInput) {
+                <input
+                  type="text"
+                  [formControl]="customAttrValueControl"
+                  placeholder="Escribe el valor"
+                  class="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+              }
+            </div>
+          } @else {
+            <app-input
+              [form]="variantForm"
+              name="attrValue"
+              label="Valor específico"
+              placeholder="Ej: Celeste, Grande, Plástico"
+              helpMessage="El valor concreto"
+              [load]="load">
+            </app-input>
+          }
+
+          <div class="flex items-end">
+            <button
+              type="button"
+              (click)="addManualAttribute()"
+              class="w-full btn-primary h-10 text-sm font-semibold">
+              <ng-icon name="matAddCircleOutline" size="18" class="inline mr-1"></ng-icon>
+              Agregar Atributo
+            </button>
+          </div>
         </div>
+
+        <!-- Lista de atributos agregados -->
+        @if (manualAttributes.length > 0) {
+          <div class="space-y-2">
+            <p class="text-xs text-gray-700 dark:text-gray-300 font-semibold">Atributos de esta variante:</p>
+            @for (attr of manualAttributes; track $index) {
+              <div class="flex items-center justify-between bg-white dark:bg-slate-700 p-3 rounded border-2 border-blue-200 dark:border-blue-800">
+                <span class="text-sm font-medium">
+                  <span class="text-blue-700 dark:text-blue-300">{{ attr.key }}:</span>
+                  <span class="text-gray-800 dark:text-gray-200 ml-2 font-bold">{{ attr.value }}</span>
+                </span>
+                <button
+                  type="button"
+                  (click)="removeManualAttribute($index)"
+                  class="text-red-600 hover:text-red-800">
+                  <ng-icon name="matDeleteOutline" size="18"></ng-icon>
+                </button>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
+            <p class="text-xs text-yellow-800 dark:text-yellow-300 font-semibold">
+              ⚠️ Debes agregar al menos un atributo para identificar esta variante en tu inventario
+            </p>
+          </div>
+        }
       </div>
 
-      <app-input
-        [form]="variantForm"
-        name="costPrice"
-        icon="matAttachMoneyOutline"
-        label="Precio de compra"
-        placeholder="0.00"
-        helpMessage="Precio de compra"
-        errorMessage="Requerido"
-        [load]="load">
-      </app-input>
+      <!-- PASO 2: INFORMACIÓN BÁSICA -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="col-span-1 sm:col-span-2">
+          <p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+            <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">2</span>
+            Información de la Variante
+          </p>
+        </div>
 
-      <app-input
-        [form]="variantForm"
-        name="salePrice"
-        icon="matSellOutline"
-        label="Precio de venta"
-        placeholder="0.00"
-        helpMessage="Precio de venta"
-        errorMessage="Requerido"
-        [load]="load">
-      </app-input>
-
-      <app-input
-        [form]="variantForm"
-        name="currentStock"
-        icon="matInventory2Outline"
-        label="Stock inicial"
-        placeholder="0"
-        helpMessage="Stock inicial"
-        errorMessage="Requerido"
-        [load]="load">
-      </app-input>
-
-      <app-input
-        [form]="variantForm"
-        name="minStock"
-        label="Stock mínimo"
-        placeholder="0"
-        helpMessage="Stock mínimo"
-        errorMessage="Requerido"
-        [load]="load">
-      </app-input>
-
-      <app-input
-        [form]="variantForm"
-        name="maxStock"
-        label="Stock máximo"
-        placeholder="100"
-        helpMessage="Stock máximo"
-        errorMessage="Requerido"
-        [load]="load">
-      </app-input>
-
-      <!-- PROVEEDORES -->
-      <div class="col-span-1 sm:col-span-2">
-        <app-checkbox
+        <app-input
           [form]="variantForm"
-          name="supplierId"
-          label="Proveedores"
-          placeholder="Selecciona proveedores"
-          helpMessage="Selecciona proveedores"
-          errorMessage="Requerido"
-          [labels]="supplierLabels"
+          name="variantName"
+          icon="matDriveFileRenameOutlineOutline"
+          label="Nombre completo"
+          placeholder="Se genera automáticamente"
+          helpMessage="Nombre descriptivo (se genera con los atributos)"
+          errorMessage="El nombre de la variante es requerido"
+          [minlength]="1"
+          [maxlength]="100"
+          [counter]="true"
           [load]="load">
-        </app-checkbox>
+        </app-input>
+
+        <div class="relative">
+          <app-input
+            [form]="variantForm"
+            name="sku"
+            icon="matQrCodeOutline"
+            label="SKU (Código único)"
+            placeholder="Ej: BIC-CEL-123456"
+            helpMessage="Código para identificar en el sistema"
+            errorMessage="El SKU es requerido"
+            [minlength]="1"
+            [maxlength]="50"
+            [load]="load">
+          </app-input>
+          <button
+            type="button"
+            (click)="generateVariantSKU()"
+            class="absolute right-2 top-9 text-blue-600 hover:text-blue-800 text-xs font-semibold">
+            Generar
+          </button>
+        </div>
+
+        <!-- PASO 3: PRECIOS Y STOCK -->
+        <div class="col-span-1 sm:col-span-2">
+          <p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2 mt-4">
+            <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">3</span>
+            Precios y Stock
+          </p>
+        </div>
+
+        <app-input
+          [form]="variantForm"
+          name="costPrice"
+          icon="matAttachMoneyOutline"
+          label="Precio de compra"
+          placeholder="0.00"
+          helpMessage="¿Cuánto te cuesta?"
+          errorMessage="Requerido"
+          [load]="load">
+        </app-input>
+
+        <app-input
+          [form]="variantForm"
+          name="salePrice"
+          icon="matSellOutline"
+          label="Precio de venta"
+          placeholder="0.00"
+          helpMessage="¿A cuánto lo vendes?"
+          errorMessage="Requerido"
+          [load]="load">
+        </app-input>
+
+        <app-input
+          [form]="variantForm"
+          name="currentStock"
+          icon="matInventory2Outline"
+          label="Stock inicial"
+          placeholder="0"
+          helpMessage="¿Cuántas unidades tienes?"
+          errorMessage="Requerido"
+          [load]="load">
+        </app-input>
+
+        <app-input
+          [form]="variantForm"
+          name="minStock"
+          label="Stock mínimo"
+          placeholder="0"
+          helpMessage="Alerta cuando llegue a este número"
+          errorMessage="Requerido"
+          [load]="load">
+        </app-input>
+
+        <app-input
+          [form]="variantForm"
+          name="maxStock"
+          label="Stock máximo"
+          placeholder="100"
+          helpMessage="Capacidad máxima"
+          errorMessage="Requerido"
+          [load]="load">
+        </app-input>
+
+        <div class="col-span-1 sm:col-span-2">
+          <app-checkbox
+            [form]="variantForm"
+            name="supplierId"
+            label="Proveedores"
+            placeholder="Selecciona proveedores"
+            helpMessage="¿Quién te vende esta variante?"
+            errorMessage="Requerido"
+            [labels]="supplierLabels"
+            [load]="load">
+          </app-checkbox>
+        </div>
+
+        <app-toggle
+          class="col-span-1 sm:col-span-2"
+          label="Variante Activa"
+          [form]="variantForm"
+          name="active"
+          [load]="load">
+        </app-toggle>
+
       </div>
-
-      <app-toggle
-        class="col-span-1 sm:col-span-2"
-        label="Variante Activa"
-        [form]="variantForm"
-        name="active"
-        [load]="load">
-      </app-toggle>
-
     </div>
 
     <!-- BOTONES DE VARIANTE -->
-    <div class="mt-4 flex gap-2 justify-end">
+    <div class="mt-6 flex gap-2 justify-end border-t pt-4">
       @if (editingVariantIndex >= 0) {
         <button
           type="button"
@@ -283,11 +293,13 @@
       <button
         type="button"
         (click)="addOrUpdateVariant()"
-        [disabled]="variantForm.get('sku')?.invalid || variantForm.get('variantName')?.invalid"
+        [disabled]="variantForm.get('sku')?.invalid || variantForm.get('variantName')?.invalid || manualAttributes.length === 0"
         class="btn-primary px-6 py-2 text-sm font-bold">
         @if (editingVariantIndex >= 0) {
+          <ng-icon name="matEditOutline" size="18" class="inline mr-2"></ng-icon>
           Actualizar Variante
         } @else {
+          <ng-icon name="matAddCircleOutline" size="18" class="inline mr-2"></ng-icon>
           Agregar Variante
         }
       </button>
@@ -297,7 +309,8 @@
   <!-- LISTA DE VARIANTES -->
   @if (variants.length > 0) {
     <div class="mt-6">
-      <p class="text-gray-600 dark:text-gray-300 font-semibold mb-3">
+      <p class="text-gray-600 dark:text-gray-300 font-semibold mb-3 flex items-center gap-2">
+        <ng-icon name="matInventoryOutline" size="20" class="inline"></ng-icon>
         Variantes Creadas ({{ variants.length }})
       </p>
 
@@ -307,11 +320,11 @@
             <tr>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Variante</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Atributos</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Precio Compra</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Precio Venta</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Stock</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Estado</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Características</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Precio Compra</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Precio Venta</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Stock</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Estado</th>
               <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
             </tr>
           </thead>
@@ -319,26 +332,35 @@
             @for (variant of variants; track variant.sku; let i = $index) {
               <tr class="hover:bg-gray-50 dark:hover:bg-slate-800">
                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-300 font-mono">{{ variant.sku }}</td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">{{ variant.variantName }}</td>
-                <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-500">
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400 font-medium">{{ variant.variantName }}</td>
+                <td class="px-4 py-3 text-xs">
                   @if (variant.attributes && variant.attributes | keyvalue; as attrs) {
                     @if (attrs.length > 0) {
-                      <div class="space-y-1">
+                      <div class="flex flex-wrap gap-1">
                         @for (attr of attrs; track attr.key) {
-                          <div>
-                            <span class="font-semibold">{{ attr.key }}:</span> {{ attr.value }}
-                          </div>
+                          <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full font-medium">
+                            {{ attr.key }}: <strong>{{ attr.value }}</strong>
+                          </span>
                         }
                       </div>
                     } @else {
-                      <span class="text-gray-400 italic">Sin atributos</span>
+                      <span class="text-gray-400 italic">Sin características</span>
                     }
                   }
                 </td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">Q {{ variant.costPrice }}</td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">Q {{ variant.salePrice }}</td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400">{{ variant.currentStock }}</td>
-                <td class="px-4 py-3 text-sm">
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400 text-right">Q {{ variant.costPrice | number:'1.2-2' }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400 text-right font-semibold">Q {{ variant.salePrice | number:'1.2-2' }}</td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex flex-col items-center">
+                    <span [class]="getStockStatusClass(variant)" class="text-lg font-bold">
+                      {{ variant.currentStock }}
+                    </span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ getStockStatusText(variant) }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-sm text-center">
                   @if (variant.active) {
                     <span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">Activa</span>
                   } @else {
@@ -348,12 +370,14 @@
                 <td class="px-4 py-3 text-sm text-center">
                   <button
                     (click)="editVariant(i)"
-                    class="text-blue-600 hover:text-blue-800 mr-3">
+                    class="text-blue-600 hover:text-blue-800 mr-3"
+                    title="Editar variante">
                     <ng-icon name="matEditOutline" size="18"></ng-icon>
                   </button>
                   <button
                     (click)="deleteVariant(i)"
-                    class="text-red-600 hover:text-red-800">
+                    class="text-red-600 hover:text-red-800"
+                    title="Eliminar variante">
                     <ng-icon name="matDeleteOutline" size="18"></ng-icon>
                   </button>
                 </td>
@@ -366,8 +390,8 @@
   } @else {
     <div class="text-center py-8 text-gray-500 dark:text-gray-400">
       <ng-icon name="matInventoryOutline" size="48" class="mx-auto mb-2 opacity-50"></ng-icon>
-      <p>No hay variantes agregadas</p>
-      <p class="text-sm">Completa el formulario arriba para agregar tu primera variante</p>
+      <p class="font-semibold">No hay variantes agregadas</p>
+      <p class="text-sm mt-1">Completa el formulario para agregar tu primera variante</p>
     </div>
   }
 
