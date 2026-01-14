@@ -3,17 +3,25 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { StockMovement, ProductStock, MovementFilter, MovementType } from '../../../../shared/interfaces/inventory';
 import { InventoryService } from '../../../../shared/services/inventory.service';
+import { MovementDetailModalComponent } from '../Components/movement-detail-modal/movement-detail-modal.component';
+import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustment-modal.component';
+// Importar los componentes modales
 
 
 @Component({
   selector: 'app-stock-movements',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [
+    FormsModule,
+    CommonModule,
+    MovementDetailModalComponent,  // ✅ Agregar
+    AdjustmentModalComponent       // ✅ Agregar
+  ],
   templateUrl: './stock-movements.component.html',
   styleUrl: './stock-movements.component.scss'
 })
 export class StockMovementsComponent implements OnInit {
-    Math = Math;
+  Math = Math;
 
   // Datos
   movements: StockMovement[] = [];
@@ -84,6 +92,24 @@ export class StockMovementsComponent implements OnInit {
     this.selectedMovement = movement;
   }
 
+  // ✅ NUEVO: Manejar el submit del modal de ajuste
+  handleAdjustmentSubmit(formData: any): void {
+    this.inventoryService.createAdjustment(formData)
+      .subscribe({
+        next: (response) => {
+          console.log('Ajuste creado exitosamente:', response);
+          // Mostrar mensaje de éxito (puedes usar un servicio de toast/notificación)
+          this.showAdjustmentModal = false;
+          this.loadMovements(); // Recargar la lista
+          this.loadLowStockProducts(); // Actualizar alertas de stock bajo
+        },
+        error: (error) => {
+          console.error('Error al crear ajuste:', error);
+          // Mostrar mensaje de error
+        }
+      });
+  }
+
   getMovementTypeLabel(type: MovementType): string {
     const labels: Record<MovementType, string> = {
       [MovementType.PURCHASE]: 'Compra',
@@ -117,7 +143,6 @@ export class StockMovementsComponent implements OnInit {
   }
 
   exportToExcel(): void {
-    // Implementar exportación
     this.inventoryService.exportMovements(this.filter)
       .subscribe({
         next: (blob) => {

@@ -1,0 +1,108 @@
+<div *ngIf="movement" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+  <div class="relative bg-white dark:bg-slate-800 rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+      <h3 class="text-xl font-bold text-white">Detalle del Movimiento</h3>
+      <button (click)="onClose()"
+              class="text-white hover:bg-white/20 rounded p-1 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Tipo</label>
+          <span [ngClass]="getMovementTypeClass(movement.movementType)"
+                class="inline-block px-3 py-1 rounded text-sm font-semibold">
+            {{ getMovementTypeLabel(movement.movementType) }}
+          </span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha</label>
+          <p class="font-semibold">{{ movement.dateCreated | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Producto</label>
+          <div class="bg-slate-50 dark:bg-slate-700 rounded p-3">
+            <p class="font-bold">{{ movement.product?.productName || 'N/A' }}</p>
+            <p *ngIf="movement.product?.sku" class="text-sm text-slate-600 dark:text-slate-400 mt-1">SKU: {{ movement.product.sku }}</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Cantidad</label>
+          <span [class]="isStockIncrease(movement) ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'"
+                class="inline-flex items-center gap-2 px-3 py-1 rounded font-bold">
+            {{ movement.quantity > 0 ? '+' : '' }}{{ movement.quantity }}
+          </span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Stock Anterior</label>
+          <p class="text-2xl font-bold">{{ movement.previousStock }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Stock Nuevo</label>
+          <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ movement.newStock }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Sucursal</label>
+          <p class="font-semibold">{{ movement.branchName || 'N/A' }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Usuario</label>
+          <p class="font-semibold">{{ movement.userName || 'Sistema' }}</p>
+        </div>
+
+        <div *ngIf="movement.unitCost">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Costo Unitario</label>
+          <p class="text-lg font-bold">{{ movement.unitCost | currency:'GTQ':'symbol':'1.2-2' }}</p>
+        </div>
+
+        <div *ngIf="movement.totalValue">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total</label>
+          <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ movement.totalValue | currency:'GTQ':'symbol':'1.2-2' }}</p>
+        </div>
+
+        <div *ngIf="movement.purchaseId">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Ref. Compra</label>
+          <p class="font-mono text-blue-600 dark:text-blue-400">#{{ movement.purchaseId }}</p>
+        </div>
+
+        <div *ngIf="movement.orderId">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Ref. Venta</label>
+          <p class="font-mono text-blue-600 dark:text-blue-400">#{{ movement.orderId }}</p>
+        </div>
+
+        <div *ngIf="movement.reason" class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Motivo</label>
+          <p>{{ movement.reason }}</p>
+        </div>
+
+        <div *ngIf="movement.notes" class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Notas</label>
+          <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 p-3 rounded-r">
+            <p>{{ movement.notes }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-t border-slate-200 dark:border-slate-600">
+      <button (click)="onClose()"
+              class="px-6 py-2 bg-slate-600 dark:bg-slate-500 text-white rounded hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors font-semibold">
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>

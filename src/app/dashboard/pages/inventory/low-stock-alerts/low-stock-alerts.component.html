@@ -1,1 +1,396 @@
-<p>low-stock-alerts works!</p>
+<div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
+
+  <!-- FILTROS Y ACCIONES -->
+  <div class="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b dark:border-slate-600 pb-2">
+
+    <!-- DESKTOP: Todo en una fila -->
+    <div class="hidden md:flex items-center gap-2 p-2">
+      <!-- Sucursales -->
+      <select
+        [(ngModel)]="selectedBranchId"
+        (change)="onBranchChange()"
+        class="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm">
+        <option value="">Todas las sucursales</option>
+        <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.branchName }}</option>
+      </select>
+
+      <!-- Niveles -->
+      <select
+        [(ngModel)]="selectedAlertLevel"
+        (change)="onAlertLevelChange()"
+        class="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm">
+        <option value="all">Todos los niveles</option>
+        <option value="critical">🔴 Solo críticos</option>
+        <option value="warning">🟡 Solo advertencias</option>
+      </select>
+
+      <!-- Selector Vista: Filas/Tarjetas -->
+      <div class="flex gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
+        <button
+          (click)="viewMode = 'table'"
+          [class.bg-white]="viewMode === 'table'"
+          [class.dark:bg-slate-600]="viewMode === 'table'"
+          [class.shadow]="viewMode === 'table'"
+          class="px-3 py-2 rounded-md transition-all text-sm font-medium"
+          title="Vista Filas">
+          <ng-icon name="matViewListOutline" size="20"></ng-icon>
+        </button>
+        <button
+          (click)="viewMode = 'cards'"
+          [class.bg-white]="viewMode === 'cards'"
+          [class.dark:bg-slate-600]="viewMode === 'cards'"
+          [class.shadow]="viewMode === 'cards'"
+          class="px-3 py-2 rounded-md transition-all text-sm font-medium"
+          title="Vista Tarjetas">
+          <ng-icon name="matGridViewOutline" size="20"></ng-icon>
+        </button>
+      </div>
+
+      <!-- Actualizar -->
+      <button
+        (click)="refresh()"
+        class="btn-success h-10 px-4"
+        title="Actualizar">
+        <ng-icon name="matRefreshOutline" size="20"></ng-icon>
+      </button>
+
+      <!-- Exportar -->
+      <button
+        (click)="exportToExcel()"
+        class="btn-primary h-10 px-4"
+        title="Exportar">
+        <ng-icon name="matFileDownloadOutline" size="20"></ng-icon>
+      </button>
+    </div>
+
+    <!-- MOBILE: Compacto -->
+    <div class="md:hidden p-2 space-y-2">
+      <!-- Fila 1: Sucursales y Niveles -->
+      <div class="grid grid-cols-2 gap-2">
+        <select
+          [(ngModel)]="selectedBranchId"
+          (change)="onBranchChange()"
+          class="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">
+          <option value="">Sucursales</option>
+          <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.branchName }}</option>
+        </select>
+
+        <select
+          [(ngModel)]="selectedAlertLevel"
+          (change)="onAlertLevelChange()"
+          class="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">
+          <option value="all">Niveles</option>
+          <option value="critical">🔴 Críticos</option>
+          <option value="warning">🟡 Advertencias</option>
+        </select>
+      </div>
+
+      <!-- Fila 2: Vista, Actualizar y Exportar -->
+      <div class="flex gap-2">
+        <div class="flex gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg flex-1">
+          <button
+            (click)="viewMode = 'table'"
+            [class.bg-white]="viewMode === 'table'"
+            [class.dark:bg-slate-600]="viewMode === 'table'"
+            class="flex-1 py-2 rounded-md text-xs">
+            <ng-icon name="matViewListOutline" size="18"></ng-icon>
+          </button>
+          <button
+            (click)="viewMode = 'cards'"
+            [class.bg-white]="viewMode === 'cards'"
+            [class.dark:bg-slate-600]="viewMode === 'cards'"
+            class="flex-1 py-2 rounded-md text-xs">
+            <ng-icon name="matGridViewOutline" size="18"></ng-icon>
+          </button>
+        </div>
+
+        <button (click)="refresh()" class="btn-success px-3 py-2">
+          <ng-icon name="matRefreshOutline" size="18"></ng-icon>
+        </button>
+
+        <button (click)="exportToExcel()" class="btn-primary px-3 py-2">
+          <ng-icon name="matFileDownloadOutline" size="18"></ng-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTADÍSTICAS (Solo Desktop) -->
+  <div class="hidden md:grid grid-cols-3 gap-4 my-4">
+    <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border-l-4 border-indigo-500">
+      <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Total Alertas</p>
+      <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ totalAlertsCount }}</p>
+    </div>
+    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border-l-4 border-red-500">
+      <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Stock Crítico</p>
+      <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ criticalCount }}</p>
+    </div>
+    <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border-l-4 border-yellow-500">
+      <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Stock Bajo</p>
+      <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ warningCount }}</p>
+    </div>
+  </div>
+
+  <!-- PAGINACIÓN MOBILE (Arriba) -->
+  <div class="content-sm">
+    <div class="pagination">
+      <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
+        <div class="flex justify-between">
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-xs text-start pl-2 w-48">
+            <b>Páginas:</b> {{page}} de {{totalPages}}
+          </p>
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-xs text-start pl-2 w-48">
+            <b>Items:</b> {{startIndex}} - {{endIndex}} de {{totalItems}}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex justify-center py-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+  </div>
+
+  <!-- Sin alertas -->
+  <div *ngIf="!loading && filteredAlerts.length === 0" class="bg-white dark:bg-slate-800 rounded-xl shadow-md p-8 text-center my-4">
+    <ng-icon name="matCheckCircleOutline" size="48" class="text-slate-400 mx-auto mb-2"></ng-icon>
+    <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">¡Todo en orden!</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400">No hay productos con stock bajo</p>
+  </div>
+
+  <!-- VISTA TABLA (Desktop con todas las columnas separadas) -->
+  <div *ngIf="!loading && filteredAlerts.length > 0 && viewMode === 'table'" class="rounded-lg">
+    <table class="table-grid mt-4 w-full">
+      <thead>
+        <tr>
+          <th ><p>Estado</p></th>
+          <th ><p>Producto</p></th>
+          <th ><p>Sucursal</p></th>
+          <th ><p>Actual</p></th>
+          <th ><p>Mínimo</p></th>
+          <th><p>Nivel</p></th>
+          <th ><p>Acciones</p></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (alert of paginatedAlerts; track $index) {
+          @defer {
+            <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd}">
+
+              <!-- Estado (Desktop) -->
+              <td class="hidden sm:table-cell">
+                @if (getAlertLevel(alert) === 'critical') {
+                  <span class="h-2 w-2 mr-2 bg-red-500 rounded-full inline-flex"></span>
+                }
+                @if (getAlertLevel(alert) === 'warning') {
+                  <span class="h-2 w-2 mr-2 bg-yellow-500 rounded-full inline-flex"></span>
+                }
+                <span class="px-2 py-1 text-xs font-bold rounded-full"
+                      [ngClass]="{'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': getAlertLevel(alert) === 'critical',
+                                  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': getAlertLevel(alert) === 'warning'}">
+                  {{ getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}
+                </span>
+              </td>
+
+              <!-- Producto (Desktop) -->
+              <td class="hidden sm:table-cell">
+                <div>
+                  <p class="font-bold">{{ alert.product?.productName || 'N/A' }}</p>
+                  <p class="text-xs text-wrap text-slate-500">SKU: {{ alert.product?.sku || 'N/A' }}</p>
+                </div>
+              </td>
+
+              <!-- Sucursal (Desktop) - COLUMNA SEPARADA -->
+              <td class="hidden sm:table-cell">
+                <span class="text-sm">{{ alert.branchName || 'N/A' }}</span>
+              </td>
+
+              <!-- Stock Actual (Desktop) - COLUMNA SEPARADA -->
+              <td class="hidden sm:table-cell text-center">
+                <span class="text-lg font-bold"
+                      [ngClass]="{'text-red-600 dark:text-red-400': getAlertLevel(alert) === 'critical',
+                                  'text-yellow-600 dark:text-yellow-400': getAlertLevel(alert) === 'warning'}">
+                  {{ alert.currentStock }}
+                </span>
+              </td>
+
+              <!-- Stock Mínimo (Desktop) - COLUMNA SEPARADA -->
+              <td class="hidden sm:table-cell text-center">
+                <span class="text-sm">{{ alert.minStock }}</span>
+              </td>
+
+              <!-- Nivel con barra de progreso (Desktop) - COLUMNA SEPARADA -->
+              <td class="hidden sm:table-cell">
+                <div class="flex flex-col items-center">
+                  <div class="w-24 bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div class="h-full rounded-full"
+                         [ngClass]="{'bg-red-500': getAlertLevel(alert) === 'critical',
+                                     'bg-yellow-500': getAlertLevel(alert) === 'warning'}"
+                         [style.width.%]="getStockPercentage(alert)">
+                    </div>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1">{{ getStockPercentage(alert) | number:'1.0-0' }}%</p>
+                </div>
+              </td>
+
+              <!-- Acciones (Desktop) - COLUMNA SEPARADA -->
+              <td class="hidden sm:table-cell">
+                <div class="w-full c-actions flex gap-2 justify-center">
+                  <button (click)="adjustStock(alert)" class="btn-action" title="Ajustar Stock">
+                    <ng-icon class="text-blue-500" size="20" name="matEditOutline"></ng-icon>
+                  </button>
+                  <button (click)="createPurchaseOrder(alert)" class="btn-action" title="Crear Orden">
+                    <ng-icon class="text-green-600" size="20" name="matAddShoppingCartOutline"></ng-icon>
+                  </button>
+                </div>
+              </td>
+
+              <!-- MOBILE: Vista compacta (una sola celda para móvil) -->
+              <td class="sm:hidden" colspan="7">
+                <div class="w-full flex justify-between p-1">
+                  <div>
+                    <p class="font-bold text-gray-400 mb-1">
+                      @if (getAlertLevel(alert) === 'critical') {
+                        <span class="h-3 w-3 bg-red-500 rounded-full inline-flex"></span>
+                      }
+                      @if (getAlertLevel(alert) === 'warning') {
+                        <span class="h-3 w-3 bg-yellow-500 rounded-full inline-flex"></span>
+                      }
+                      <b class="ml-2 text-xs">{{ getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}</b>
+                    </p>
+
+                    <p class="font-bold text-gray-800 dark:text-gray-200">{{ alert.product?.productName || 'N/A' }}</p>
+                    <p class="text-xs text-wrap text-gray-500">SKU: {{ alert.product?.sku || 'N/A' }}</p>
+                    <p class="text-xs text-wrap text-gray-500">{{ alert.branchName || 'N/A' }}</p>
+
+                    <div class="mt-2 grid grid-cols-3 gap-1">
+                      <div class="bg-slate-50 dark:bg-slate-800 rounded p-1">
+                        <p class="text-xs text-slate-500">Actual</p>
+                        <p class="text-sm font-bold"
+                           [ngClass]="{'text-red-600': getAlertLevel(alert) === 'critical',
+                                       'text-yellow-600': getAlertLevel(alert) === 'warning'}">
+                          {{ alert.currentStock }}
+                        </p>
+                      </div>
+                      <div class="bg-slate-50 dark:bg-slate-800 rounded p-1">
+                        <p class="text-xs text-slate-500">Mín</p>
+                        <p class="text-sm font-bold">{{ alert.minStock }}</p>
+                      </div>
+                      <div class="bg-slate-50 dark:bg-slate-800 rounded p-1">
+                        <p class="text-xs text-slate-500">Nivel</p>
+                        <p class="text-sm font-bold">{{ getStockPercentage(alert) | number:'1.0-0' }}%</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-1">
+                    <button (click)="adjustStock(alert)" class="btn-action" title="Ajustar">
+                      <ng-icon class="text-blue-500" size="18" name="matEditOutline"></ng-icon>
+                    </button>
+                    <button (click)="createPurchaseOrder(alert)" class="btn-action" title="Orden">
+                      <ng-icon class="text-green-600" size="18" name="matAddShoppingCartOutline"></ng-icon>
+                    </button>
+                  </div>
+                </div>
+              </td>
+
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+
+    <!-- PAGINATION DESKTOP -->
+    <div class="content-desktop">
+      <div class="pagination">
+        <div class="pagination-child">
+          <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{page}} de {{totalPages}}</b></p>
+          <p>Items {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+          <button><ng-icon (click)="firstPage()" class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
+          <button><ng-icon (click)="previousPage()" class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
+          <button><ng-icon (click)="nextPage()" class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
+          <button><ng-icon (click)="lastPage()" class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA TARJETAS -->
+  <div *ngIf="!loading && filteredAlerts.length > 0 && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 my-4">
+    <div *ngFor="let alert of paginatedAlerts" class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-4 border-l-4"
+         [ngClass]="{'border-red-500': getAlertLevel(alert) === 'critical', 'border-yellow-500': getAlertLevel(alert) === 'warning'}">
+
+      <div class="flex items-center gap-2 mb-3">
+        <span class="px-2 py-1 text-xs font-bold rounded-full"
+              [ngClass]="{'bg-red-100 text-red-700': getAlertLevel(alert) === 'critical',
+                          'bg-yellow-100 text-yellow-700': getAlertLevel(alert) === 'warning'}">
+          {{ getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}
+        </span>
+      </div>
+
+      <h3 class="font-bold text-sm mb-1">{{ alert.product?.productName || 'N/A' }}</h3>
+      <p class="text-xs text-slate-500 mb-3">SKU: {{ alert.product?.sku || 'N/A' }} | {{ alert.branchName || 'N/A' }}</p>
+
+      <div class="grid grid-cols-3 gap-2 mb-3">
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded p-2">
+          <p class="text-xs text-slate-600 dark:text-slate-400">Actual</p>
+          <p class="text-xl font-bold"
+             [ngClass]="{'text-red-600': getAlertLevel(alert) === 'critical', 'text-yellow-600': getAlertLevel(alert) === 'warning'}">
+            {{ alert.currentStock }}
+          </p>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded p-2">
+          <p class="text-xs text-slate-600 dark:text-slate-400">Mínimo</p>
+          <p class="text-xl font-bold">{{ alert.minStock }}</p>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded p-2">
+          <p class="text-xs text-slate-600 dark:text-slate-400">Máximo</p>
+          <p class="text-xl font-bold">{{ alert.maxStock }}</p>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+          <div class="h-full rounded-full"
+               [ngClass]="{'bg-red-500': getAlertLevel(alert) === 'critical', 'bg-yellow-500': getAlertLevel(alert) === 'warning'}"
+               [style.width.%]="getStockPercentage(alert)">
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">{{ getStockPercentage(alert) | number:'1.0-0' }}%</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button (click)="adjustStock(alert)" class="px-3 py-2 bg-indigo-600 text-white rounded text-sm flex items-center justify-center gap-1">
+          <ng-icon name="matEditOutline" size="16"></ng-icon>
+          Ajustar
+        </button>
+        <button (click)="createPurchaseOrder(alert)" class="px-3 py-2 bg-green-600 text-white rounded text-sm flex items-center justify-center gap-1">
+          <ng-icon name="matAddShoppingCartOutline" size="16"></ng-icon>
+          Orden
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGINACIÓN MOBILE (Abajo) -->
+  <div class="content-sm" *ngIf="!loading && filteredAlerts.length > 0">
+    <div class="pagination">
+      <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
+        <div class="flex justify-between mb-2 p-2 rounded-lg border m-1 bg-white dark:bg-slate-900 dark:border-slate-700">
+          <button class="btn-pagination"><ng-icon (click)="firstPage()" size="22" name="bootstrapChevronBarLeft"></ng-icon></button>
+          <button class="btn-pagination"><ng-icon (click)="previousPage()" size="22" name="bootstrapChevronLeft"></ng-icon></button>
+          <button class="btn-pagination"><ng-icon (click)="nextPage()" size="22" name="bootstrapChevronRight"></ng-icon></button>
+          <button class="btn-pagination"><ng-icon (click)="lastPage()" size="22" name="bootstrapChevronBarRight"></ng-icon></button>
+        </div>
+
+        <div class="flex justify-between">
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b>Páginas:</b> {{page}} de {{totalPages}}</p>
+          <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b>Items:</b> {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

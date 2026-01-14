@@ -1,4 +1,4 @@
-<!-- stock-movements.component.html - VERSIÓN CORREGIDA -->
+<!-- stock-movements.component.html - VERSIÓN CON COMPONENTES SEPARADOS -->
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
 
   <!-- HEADER CON TÍTULO -->
@@ -119,29 +119,6 @@
       </div>
     </div>
 
-  </div>
-
-  <!-- ALERTAS DE STOCK BAJO -->
-  <div *ngIf="lowStockProducts.length > 0" class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 my-4 rounded">
-    <div class="flex items-start">
-      <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/>
-      </svg>
-      <div class="flex-1">
-        <p class="font-semibold text-yellow-800 dark:text-yellow-200">Atención: Stock Bajo</p>
-        <p class="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-          Hay <span class="font-bold">{{ lowStockProducts.length }}</span> producto(s) que requieren reabastecimiento.
-        </p>
-        <div class="mt-2 space-y-1">
-          <div *ngFor="let stock of lowStockProducts.slice(0, 3)" class="text-sm text-yellow-800 dark:text-yellow-200">
-            • {{ stock.product?.productName || 'Producto' }} - Stock: <span class="font-bold">{{ stock.currentStock }}</span> (Mín: {{ stock.minStock }}) - {{ stock.branchName }}
-          </div>
-          <div *ngIf="lowStockProducts.length > 3" class="text-sm text-yellow-800 dark:text-yellow-200 font-semibold">
-            + {{ lowStockProducts.length - 3 }} producto(s) más
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- PAGINATION MOBILE -->
@@ -376,198 +353,15 @@
   </div>
 </div>
 
-<!-- MODAL: DETALLE DE MOVIMIENTO -->
-<div *ngIf="selectedMovement" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-  <div class="relative bg-white dark:bg-slate-800 rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
-      <h3 class="text-xl font-bold text-white">Detalle del Movimiento</h3>
-      <button (click)="selectedMovement = undefined"
-              class="text-white hover:bg-white/20 rounded p-1 transition-colors">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
+<!-- COMPONENTES MODALES -->
+<app-movement-detail-modal
+  *ngIf="selectedMovement"
+  [movement]="selectedMovement"
+  (close)="selectedMovement = undefined">
+</app-movement-detail-modal>
 
-    <!-- Body -->
-    <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Tipo</label>
-          <span [ngClass]="getMovementTypeClass(selectedMovement.movementType)"
-                class="inline-block px-3 py-1 rounded text-sm font-semibold">
-            {{ getMovementTypeLabel(selectedMovement.movementType) }}
-          </span>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Fecha</label>
-          <p class="font-semibold">{{ selectedMovement.dateCreated | date:'dd/MM/yyyy HH:mm:ss' }}</p>
-        </div>
-
-        <div class="md:col-span-2">
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Producto</label>
-          <div class="bg-slate-50 dark:bg-slate-700 rounded p-3">
-            <p class="font-bold">{{ selectedMovement.product?.productName || 'N/A' }}</p>
-            <p *ngIf="selectedMovement.product?.sku" class="text-sm text-slate-600 dark:text-slate-400 mt-1">SKU: {{ selectedMovement.product.sku }}</p>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Cantidad</label>
-          <span [class]="isStockIncrease(selectedMovement) ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'"
-                class="inline-flex items-center gap-2 px-3 py-1 rounded font-bold">
-            {{ selectedMovement.quantity > 0 ? '+' : '' }}{{ selectedMovement.quantity }}
-          </span>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Stock Anterior</label>
-          <p class="text-2xl font-bold">{{ selectedMovement.previousStock }}</p>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Stock Nuevo</label>
-          <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ selectedMovement.newStock }}</p>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Sucursal</label>
-          <p class="font-semibold">{{ selectedMovement.branchName || 'N/A' }}</p>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Usuario</label>
-          <p class="font-semibold">{{ selectedMovement.userName || 'Sistema' }}</p>
-        </div>
-
-        <div *ngIf="selectedMovement.unitCost">
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Costo Unitario</label>
-          <p class="text-lg font-bold">{{ selectedMovement.unitCost | currency:'GTQ':'symbol':'1.2-2' }}</p>
-        </div>
-
-        <div *ngIf="selectedMovement.totalValue">
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total</label>
-          <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ selectedMovement.totalValue | currency:'GTQ':'symbol':'1.2-2' }}</p>
-        </div>
-
-        <div *ngIf="selectedMovement.purchaseId">
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Ref. Compra</label>
-          <p class="font-mono text-blue-600 dark:text-blue-400">#{{ selectedMovement.purchaseId }}</p>
-        </div>
-
-        <div *ngIf="selectedMovement.orderId">
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Ref. Venta</label>
-          <p class="font-mono text-blue-600 dark:text-blue-400">#{{ selectedMovement.orderId }}</p>
-        </div>
-
-        <div *ngIf="selectedMovement.reason" class="md:col-span-2">
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Motivo</label>
-          <p>{{ selectedMovement.reason }}</p>
-        </div>
-
-        <div *ngIf="selectedMovement.notes" class="md:col-span-2">
-          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Notas</label>
-          <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 p-3 rounded-r">
-            <p>{{ selectedMovement.notes }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-t border-slate-200 dark:border-slate-600">
-      <button (click)="selectedMovement = undefined"
-              class="px-6 py-2 bg-slate-600 dark:bg-slate-500 text-white rounded hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors font-semibold">
-        Cerrar
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: AJUSTE MANUAL -->
-<div *ngIf="showAdjustmentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-  <div class="relative bg-white dark:bg-slate-800 rounded-lg shadow-2xl max-w-2xl w-full">
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between">
-      <h3 class="text-xl font-bold text-white">Ajuste Manual de Inventario</h3>
-      <button (click)="showAdjustmentModal = false"
-              class="text-white hover:bg-white/20 rounded p-1 transition-colors">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Body -->
-    <div class="p-6">
-      <form class="space-y-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Producto *</label>
-          <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-            <option value="">Seleccione un producto</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Sucursal *</label>
-          <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-            <option value="">Seleccione una sucursal</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Cantidad de Ajuste *</label>
-          <input type="number"
-                 class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                 placeholder="Ej: +10 o -5"
-                 required>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Use números positivos para aumentar y negativos para disminuir</p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Motivo *</label>
-          <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-            <option value="">Seleccione un motivo</option>
-            <option value="inventario_fisico">Inventario Físico</option>
-            <option value="producto_danado">Producto Dañado</option>
-            <option value="perdida">Pérdida/Robo</option>
-            <option value="error_sistema">Error del Sistema</option>
-            <option value="otro">Otro</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Notas Adicionales</label>
-          <textarea class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                    rows="3"
-                    placeholder="Detalles adicionales del ajuste..."></textarea>
-        </div>
-
-        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 rounded-r">
-          <div class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/>
-            </svg>
-            <p class="text-sm text-blue-800 dark:text-blue-300">Este ajuste quedará registrado en el historial de movimientos con todos los detalles proporcionados.</p>
-          </div>
-        </div>
-      </form>
-    </div>
-
-    <!-- Footer -->
-    <div class="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-t border-slate-200 dark:border-slate-600 flex gap-3 justify-end">
-      <button (click)="showAdjustmentModal = false"
-              class="px-6 py-2 bg-white dark:bg-slate-600 border-2 border-slate-300 dark:border-slate-500 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-semibold">
-        Cancelar
-      </button>
-      <button class="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg font-semibold flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-        </svg>
-        Aplicar Ajuste
-      </button>
-    </div>
-  </div>
-</div>
+<app-adjustment-modal
+  *ngIf="showAdjustmentModal"
+  (close)="showAdjustmentModal = false"
+  (submit)="handleAdjustmentSubmit($event)">
+</app-adjustment-modal>

@@ -1,7 +1,7 @@
 import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';  // ✅ Agregar RouterLink
 import { HttpClient } from '@angular/common/http';
 import {
   LucideAngularModule,
@@ -21,7 +21,6 @@ import {
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { URL_PRODUCTS } from '../../../shared/constants/endpoints';
-
 import { firstValueFrom } from 'rxjs';
 import { provideIcons } from '@ng-icons/core';
 import { matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline, matDeleteOutline, matEditOutline, matFilterAltOutline, matSearchOutline } from '@ng-icons/material-icons/outline';
@@ -30,7 +29,7 @@ import { environment } from '../../../../environments/environment';
 
 // Interfaz unificada para el inventario
 interface InventoryItem {
-  id: string; // productId-variantId o solo productId
+  id: string;
   productId: number;
   variantId?: number;
   sku: string;
@@ -49,13 +48,21 @@ interface InventoryItem {
   profit: number;
   active: boolean;
   type: 'simple' | 'variant';
-  variantInfo?: string; // Info de atributos para variantes
+  variantInfo?: string;
 }
 
 @Component({
   selector: 'app-inventory',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, HeaderComponent, RouterOutlet],
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    HeaderComponent,
+    RouterOutlet,
+    RouterLink, // ✅ Agregar
+    RouterLinkActive
+  ],
   templateUrl: './inventory.component.html',
   styleUrl: './inventory.component.scss',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
@@ -66,23 +73,20 @@ interface InventoryItem {
   })]
 })
 export default class InventoryComponent implements OnInit {
-
-
-
   inventoryItems: InventoryItem[] = [];
   filteredItems: InventoryItem[] = [];
-
   categories: any[] = [];
   brands: any[] = [];
   suppliers: any[] = [];
-
   searchTerm = '';
   selectedCategory: number | 'all' = 'all';
   selectedStatus: string = 'all';
-  selectedType: string = 'all'; // all, simple, variant
-
+  selectedType: string = 'all';
   load = false;
   viewMode: 'table' | 'grid' = 'table';
+
+  // ✅ AGREGAR: Control de tabs
+  activeTab: 'movements' | 'low-stock' | 'entries-exits' = 'movements';
 
   // KPIs
   lowStockCount = 0;
@@ -93,7 +97,6 @@ export default class InventoryComponent implements OnInit {
   averageMargin = 0;
   lowMarginCount = 0;
 
-  // Productos críticos
   criticalItems: InventoryItem[] = [];
 
   constructor(
@@ -103,7 +106,20 @@ export default class InventoryComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-
+    // ✅ AGREGAR: Detectar la ruta activa
+    this.router.events.subscribe(() => {
+      if (this.router.url.includes('/low-stock')) {
+        this.activeTab = 'low-stock';
+      } else if (this.router.url.includes('/entries-exits')) {
+        this.activeTab = 'entries-exits';
+      } else {
+        this.activeTab = 'movements';
+      }
+    });
   }
 
+  // ✅ AGREGAR: Método para cambiar tab
+  setActiveTab(tab: 'movements' | 'low-stock' | 'entries-exits') {
+    this.activeTab = tab;
+  }
 }

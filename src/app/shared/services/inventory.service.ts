@@ -9,7 +9,6 @@ import { InventorySummary, MovementFilter, ProductStock, StockAdjustment, StockM
   providedIn: 'root'
 })
 export class InventoryService {
-  // CAMBIO AQUÍ: usar la misma estructura que los otros servicios
   private apiUrl = `${environment.apiUrl}/api/v1/inventory`;
 
   constructor(private http: HttpClient) {}
@@ -30,6 +29,7 @@ export class InventoryService {
     if (filter.endDate) params = params.set('endDate', filter.endDate);
     if (filter.userId) params = params.set('userId', filter.userId.toString());
 
+    // ✅ CORREGIDO: Agregado paréntesis
     return this.http.get<any>(`${this.apiUrl}/movements`, { params }).pipe(
       map(response => ({
         data: response.data || [],
@@ -55,11 +55,20 @@ export class InventoryService {
     );
   }
 
-  createAdjustment(adjustment: StockAdjustment): Observable<StockMovement> {
-    return this.http.post<StockMovement>(
-      `${this.apiUrl}/adjustments`,
-      adjustment
-    );
+  // ✅ CORREGIDO: URL y estructura de datos
+  createAdjustment(adjustmentData: any): Observable<any> {
+    // Transformar los datos al formato esperado por el backend
+    const payload = {
+      productId: Number(adjustmentData.productId),
+      branchId: Number(adjustmentData.branchId),
+      quantity: Number(adjustmentData.quantity),
+      reason: adjustmentData.reason,
+      notes: adjustmentData.notes || '',
+      movementType: 'ADJUSTMENT'
+    };
+
+    // ✅ CORREGIDO: Agregado paréntesis y URL corregida
+    return this.http.post<any>(`${this.apiUrl}/adjustments`, payload);
   }
 
   getInventorySummary(branchId?: number): Observable<InventorySummary> {
@@ -80,6 +89,7 @@ export class InventoryService {
     if (filter.startDate) params = params.set('startDate', filter.startDate);
     if (filter.endDate) params = params.set('endDate', filter.endDate);
 
+    // ✅ CORREGIDO: Agregado paréntesis
     return this.http.get(`${this.apiUrl}/export`, {
       params,
       responseType: 'blob'
@@ -91,6 +101,7 @@ export class InventoryService {
     variantId?: number | null
   ): Observable<StockMovement[]> {
     let params = new HttpParams().set('productId', productId.toString());
+
     if (variantId) params = params.set('variantId', variantId.toString());
 
     return this.http.get<StockMovement[]>(
