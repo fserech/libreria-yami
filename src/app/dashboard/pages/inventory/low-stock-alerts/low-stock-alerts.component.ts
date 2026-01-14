@@ -22,6 +22,7 @@ import {
 import { InventoryService } from '../../../../shared/services/inventory.service';
 import { ProductStock } from '../../../../shared/interfaces/inventory';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustment-modal.component';
 
 @Component({
   selector: 'app-low-stock-alerts',
@@ -30,7 +31,8 @@ import { AuthService } from '../../../../shared/services/auth.service';
     CommonModule,
     FormsModule,
     NgIcon,
-    NgClass
+    NgClass,
+    AdjustmentModalComponent
   ],
   templateUrl: './low-stock-alerts.component.html',
   styleUrl: './low-stock-alerts.component.scss',
@@ -72,8 +74,12 @@ export class LowStockAlertsComponent implements OnInit {
   itemsPerPage = 10;
   totalPages = 0;
 
-  // Usuario actual (para roles y permisos si es necesario)
+  // Usuario actual
   user: any;
+
+  // Modal de ajuste - CAMBIADO: ahora almacenamos el movimiento adaptado
+  showAdjustmentModal = false;
+  editingMovement: any;
 
   // Estadísticas calculadas
   get totalAlertsCount(): number {
@@ -95,7 +101,7 @@ export class LowStockAlertsComponent implements OnInit {
     return this.filteredAlerts.slice(startIndex, endIndex);
   }
 
-  // Índices para mostrar (igual que categorías)
+  // Índices para mostrar
   get startIndex(): number {
     return this.filteredAlerts.length === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
   }
@@ -109,7 +115,6 @@ export class LowStockAlertsComponent implements OnInit {
     return this.filteredAlerts.length;
   }
 
-  // Variables para compatibilidad con template de categorías
   get page(): number {
     return this.currentPage;
   }
@@ -118,18 +123,21 @@ export class LowStockAlertsComponent implements OnInit {
     private inventoryService: InventoryService,
     private router: Router,
     private auth: AuthService
-  ) {
-    // Obtener usuario actual
-
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadAlerts();
   }
 
-  loadAlerts(): void {
+  loadAlerts(forceReload: boolean = false): void {
     this.loading = true;
     const branchId = this.selectedBranchId ? Number(this.selectedBranchId) : undefined;
+
+    // Si es una recarga forzada, limpiar los datos actuales primero
+    if (forceReload) {
+      this.alerts = [];
+      this.filteredAlerts = [];
+    }
 
     this.inventoryService.getLowStockProducts(branchId)
       .subscribe({
@@ -138,6 +146,10 @@ export class LowStockAlertsComponent implements OnInit {
           this.extractBranches();
           this.applyFilters();
           this.loading = false;
+
+          if (forceReload) {
+            console.log('Alertas recargadas exitosamente:', products.length);
+          }
         },
         error: (error) => {
           console.error('Error al cargar productos con stock bajo:', error);
@@ -191,7 +203,7 @@ export class LowStockAlertsComponent implements OnInit {
     this.applyFilters();
   }
 
-  // Métodos de paginación (igual que categorías)
+  // Métodos de paginación
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
@@ -271,10 +283,41 @@ export class LowStockAlertsComponent implements OnInit {
     });
   }
 
+  // MODIFICADO: Convertir ProductStock a formato de movimiento para el modal
   adjustStock(alert: ProductStock): void {
-    this.router.navigate(['/dashboard/inventory/movements'], {
-      queryParams: { adjust: true, productId: alert.productId }
-    });
+    // Adaptamos el ProductStock al formato que espera el modal
+    this.editingMovement = {
+      productId: alert.productId,
+      branchId: alert.branchId,
+      product: alert.product,
+      branch: {
+        branchId: alert.branchId,
+        branchName: alert.branchName
+      },
+      currentStock: alert.currentStock,
+      quantity: 0, // Inicializamos en 0 para que el usuario ingrese la cantidad
+      movementType: 'ADJUSTMENT', // Tipo de ajuste
+      date: new Date().toISOString()
+    };
+
+    this.showAdjustmentModal = true;
+  }
+
+  // Cerrar modal de ajuste
+  closeAdjustmentModal(): void {
+    this.showAdjustmentModal = false;
+    this.editingMovement = undefined;
+  }
+
+  // Manejar éxito del ajuste
+  handleAdjustmentSuccess(): void {
+    // Pequeño delay para asegurar que el backend procese el cambio
+    setTimeout(() => {
+      this.showAdjustmentModal = false;
+      this.editingMovement = undefined;
+      // Recargar las alertas con forceReload = true
+      this.loadAlerts(true);
+    }, 500);
   }
 
   // Exportar a Excel
@@ -292,11 +335,10 @@ export class LowStockAlertsComponent implements OnInit {
       'Última Reposición': alert.lastRestockDate || 'N/A'
     }));
 
-    // Implementar exportación real usando xlsx si es necesario
     console.log('Exportando a Excel:', data);
   }
 
   refresh(): void {
-    this.loadAlerts();
+    this.loadAlerts(true);
   }
 }

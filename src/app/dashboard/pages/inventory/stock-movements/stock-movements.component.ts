@@ -21,21 +21,18 @@ import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustm
 export class StockMovementsComponent implements OnInit {
   Math = Math;
 
-  // Datos
   movements: StockMovement[] = [];
   filteredMovements: StockMovement[] = [];
   lowStockProducts: ProductStock[] = [];
 
-  // Filtros
   filter: MovementFilter = {};
   movementTypes = Object.values(MovementType);
 
-  // UI
   loading = false;
   selectedMovement?: StockMovement;
   showAdjustmentModal = false;
+  editingMovement?: StockMovement;
 
-  // Paginación
   currentPage = 1;
   itemsPerPage = 20;
   totalItems = 0;
@@ -91,19 +88,38 @@ export class StockMovementsComponent implements OnInit {
     this.selectedMovement = movement;
   }
 
-  // ✅ MÉTODO CORREGIDO - Solo recarga datos, no duplica la llamada
+  // CAMBIO IMPORTANTE: Deshabilitar edición desde la tabla de movimientos
+  canEditMovement(movement: StockMovement): boolean {
+    // Siempre retorna false para ocultar el botón de editar en la tabla
+    return false;
+  }
+
+  editMovement(movement: StockMovement): void {
+    // Este método ya no se usa desde la tabla
+    return;
+  }
+
+  // Solo permitir crear nuevos ajustes desde el botón "Ajuste Manual"
+  createNewAdjustment(): void {
+    this.editingMovement = undefined;
+    this.showAdjustmentModal = true;
+  }
+
   handleAdjustmentSuccess(): void {
-    console.log('✅ Ajuste exitoso - Recargando datos...');
     this.showAdjustmentModal = false;
+    this.editingMovement = undefined;
     this.loadMovements();
     this.loadLowStockProducts();
   }
 
-  // ✅ NUEVO: Método para abrir el modal y refrescar sus datos
+  closeAdjustmentModal(): void {
+    this.showAdjustmentModal = false;
+    this.editingMovement = undefined;
+  }
+
   async openAdjustmentModal(): Promise<void> {
     this.showAdjustmentModal = true;
 
-    // Esperar a que el modal se renderice
     setTimeout(async () => {
       if (this.showAdjustmentModal) {
         await this.adjustmentModal?.refreshData();

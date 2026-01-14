@@ -1,4 +1,4 @@
-<!-- stock-movements.component.html - VERSIÓN CON COMPONENTES SEPARADOS -->
+<!-- stock-movements.component.html - VERSIÓN SIN EDICIÓN EN TABLA -->
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
 
   <!-- HEADER CON TÍTULO -->
@@ -31,7 +31,7 @@
         </div>
       </button>
 
-      <button (click)="showAdjustmentModal = true" type="button" class="btn-primary h-10 float-right w-36">
+      <button (click)="createNewAdjustment()" type="button" class="btn-primary h-10 float-right w-36">
         <div class="flex text-center justify-center align-middle">
           <p class="text-sm md:text-base">Ajuste Manual</p>
           <svg class="w-4 h-4 ml-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,20 +293,25 @@
                 </p>
               </div>
 
-              <button (click)="viewMovementDetail(movement)"
-                      class="p-2 h-fit bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                </svg>
-              </button>
+              <!-- Solo botón Ver Detalle en mobile -->
+              <div class="flex flex-col gap-2">
+                <button (click)="viewMovementDetail(movement)"
+                        class="p-2 h-fit bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </td>
 
-          <!-- Acciones Desktop -->
+          <!-- Solo botón Ver Detalle en Desktop - SIN BOTÓN EDITAR -->
           <td class="hidden sm:table-cell text-center">
-            <div class="w-full flex justify-center">
-              <button (click)="viewMovementDetail(movement)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+            <div class="w-full flex justify-center gap-2">
+              <button (click)="viewMovementDetail(movement)"
+                      class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                      title="Ver detalle">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -360,21 +365,11 @@
   (close)="selectedMovement = undefined">
 </app-movement-detail-modal>
 
-<!-- ✅ BOTÓN: Simplificado -->
-<button (click)="showAdjustmentModal = true" type="button" class="btn-primary h-10 float-right w-36">
-  <div class="flex text-center justify-center align-middle">
-    <p class="text-sm md:text-base">Ajuste Manual</p>
-    <svg class="w-4 h-4 ml-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-    </svg>
-  </div>
-</button>
-
-<!-- ✅ MODAL: Con [isOpen] binding -->
+<!-- Modal de Ajuste (Solo para crear nuevos) -->
 <app-adjustment-modal
   *ngIf="showAdjustmentModal"
   [isOpen]="showAdjustmentModal"
-  (close)="showAdjustmentModal = false"
+  [editingMovement]="editingMovement"
+  (close)="closeAdjustmentModal()"
   (adjustmentSuccess)="handleAdjustmentSuccess()">
 </app-adjustment-modal>
-

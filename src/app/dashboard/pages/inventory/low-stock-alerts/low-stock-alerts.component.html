@@ -394,3 +394,11 @@
   </div>
 
 </div>
+
+<app-adjustment-modal
+  *ngIf="showAdjustmentModal"
+  [isOpen]="showAdjustmentModal"
+  [editingMovement]="editingMovement"
+  (close)="closeAdjustmentModal()"
+  (adjustmentSuccess)="handleAdjustmentSuccess()">
+</app-adjustment-modal>

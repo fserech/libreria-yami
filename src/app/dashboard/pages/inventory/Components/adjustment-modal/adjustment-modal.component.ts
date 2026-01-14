@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../../environments/environment';
+import { Product } from '../../../../../shared/interfaces/product';
+import { StockMovement } from '../../../../../shared/interfaces/inventory';
+
 
 interface AdjustmentForm {
   productId: string;
@@ -11,14 +14,6 @@ interface AdjustmentForm {
   quantity: number;
   reason: string;
   notes: string;
-}
-
-interface Product {
-  id: number;
-  productName: string;
-  sku: string;
-  currentStock: number;
-  stockByBranch?: { [branchId: number]: number }; // ✅ Stock por sucursal
 }
 
 interface Branch {
@@ -36,6 +31,7 @@ interface Branch {
 })
 export class AdjustmentModalComponent implements OnInit, OnChanges {
   @Input() isOpen: boolean = false;
+  @Input() editingMovement?: any; // Puede ser StockMovement o ProductStock adaptado
   @Output() close = new EventEmitter<void>();
   @Output() adjustmentSuccess = new EventEmitter<void>();
 
@@ -47,19 +43,23 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
     notes: ''
   };
 
-  // Productos
+  isEditMode: boolean = false;
+  movementId?: number;
+
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
   selectedProduct: Product | null = null;
   productSearchTerm: string = '';
   showProductDropdown: boolean = false;
 
-  // Sucursales
   branches: Branch[] = [];
 
-  // Estados de envío
+  // Stock actual precargado desde la alerta
+  currentStockInBranch: number = 0;
+
   isSubmitting: boolean = false;
   submitError: string = '';
+  loadingStock: boolean = false;
 
   constructor(private http: HttpClient) {}
 
@@ -70,9 +70,76 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isOpen'] && changes['isOpen'].currentValue === true) {
-      console.log('🔄 Modal abierto - Recargando datos...');
       this.refreshData();
     }
+
+    if (changes['editingMovement'] && changes['editingMovement'].currentValue) {
+      this.loadMovementForEdit(changes['editingMovement'].currentValue);
+    }
+  }
+
+  async loadMovementForEdit(data: any): Promise<void> {
+    this.isEditMode = true;
+
+    // Determinar si es un movimiento adaptado desde ProductStock
+    const isFromProductStock = data.currentStock !== undefined && !data.movementType;
+
+    if (isFromProductStock) {
+      // Es un objeto adaptado desde low-stock-alerts
+      this.movementId = undefined;
+      await this.loadDataFromProductStock(data);
+    } else {
+      // Es un StockMovement real desde stock-movements
+      this.movementId = data.id;
+      await this.loadDataFromStockMovement(data);
+    }
+  }
+
+  private async loadDataFromProductStock(data: any): Promise<void> {
+    await Promise.all([
+      this.loadProducts(),
+      this.loadBranches()
+    ]);
+
+    // Pre-cargar el producto
+    const product = this.allProducts.find(p => p.id === data.productId);
+    if (product) {
+      this.selectedProduct = product;
+      this.form.productId = product.id.toString();
+      this.productSearchTerm = `${product.productName} (${product.sku})`;
+    }
+
+    // Pre-cargar la sucursal
+    this.form.branchId = data.branchId?.toString() || '';
+
+    // Usar el stock que viene directamente del objeto
+    this.currentStockInBranch = data.currentStock || 0;
+
+    // No pre-cargar cantidad, dejar en 0 para que el usuario la ingrese
+    this.form.quantity = 0;
+    this.form.reason = '';
+    this.form.notes = '';
+  }
+
+  private async loadDataFromStockMovement(movement: StockMovement): Promise<void> {
+    await Promise.all([
+      this.loadProducts(),
+      this.loadBranches()
+    ]);
+
+    const product = this.allProducts.find(p => p.id === movement.productId);
+    if (product) {
+      this.selectedProduct = product;
+      this.form.productId = product.id.toString();
+      this.productSearchTerm = `${product.productName} (${product.sku})`;
+    }
+
+    this.form.branchId = movement.branchId?.toString() || '';
+    this.currentStockInBranch = movement.newStock || movement.previousStock || 0;
+
+    this.form.quantity = movement.quantity || 0;
+    this.form.reason = movement.reason || '';
+    this.form.notes = movement.notes || '';
   }
 
   async refreshData(): Promise<void> {
@@ -80,7 +147,6 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
       this.loadProducts(),
       this.loadBranches()
     ]);
-    console.log('✅ Datos recargados:', this.allProducts.length, 'productos');
   }
 
   async loadProducts(): Promise<void> {
@@ -93,14 +159,7 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
         ? response
         : (response.content || response.data || []);
 
-      this.allProducts = productsList.map((product: any) => ({
-        id: product.id,
-        productName: product.productName,
-        sku: product.sku || '',
-        currentStock: product.currentStock || 0,
-        stockByBranch: {} // ✅ Inicializar objeto vacío
-      }));
-
+      this.allProducts = productsList;
       this.filteredProducts = this.allProducts.slice(0, 20);
 
     } catch (error) {
@@ -145,20 +204,21 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
     this.filteredProducts = this.allProducts
       .filter(product =>
         product.productName.toLowerCase().includes(searchTerm) ||
-        product.sku.toLowerCase().includes(searchTerm)
+        (product.sku && product.sku.toLowerCase().includes(searchTerm))
       )
       .slice(0, 50);
   }
 
   selectProduct(product: Product): void {
     this.selectedProduct = product;
-    this.form.productId = product.id.toString();
+    this.form.productId = product.id!.toString();
     this.productSearchTerm = `${product.productName} (${product.sku})`;
     this.showProductDropdown = false;
 
-    // ✅ Si ya hay una sucursal seleccionada, cargar el stock de esa sucursal
-    if (this.form.branchId) {
-      this.loadProductStockByBranch();
+    // Resetear el stock al cambiar de producto
+    if (!this.isEditMode) {
+      this.currentStockInBranch = 0;
+      this.form.branchId = '';
     }
   }
 
@@ -166,6 +226,8 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
     this.selectedProduct = null;
     this.form.productId = '';
     this.productSearchTerm = '';
+    this.form.quantity = 0;
+    this.currentStockInBranch = 0;
     this.filteredProducts = this.allProducts.slice(0, 20);
   }
 
@@ -182,87 +244,16 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
     }, 200);
   }
 
-  // ✅ MÉTODO CORREGIDO: Obtener stock según sucursal seleccionada
   getSelectedProductStock(): number {
-    if (!this.selectedProduct) return 0;
-
-    // Si hay una sucursal seleccionada, mostrar el stock de esa sucursal
-    if (this.form.branchId && this.selectedProduct.stockByBranch) {
-      const branchId = parseInt(this.form.branchId);
-      const branchStock = this.selectedProduct.stockByBranch[branchId];
-
-      // Si ya se cargó el stock de la sucursal, usarlo
-      if (branchStock !== undefined) {
-        return branchStock;
-      }
-    }
-
-    // Si no hay sucursal o no se ha cargado el stock específico, mostrar 0
-    return 0;
+    return this.currentStockInBranch;
   }
 
-  // ✅ NUEVO: Método para cargar stock específico por sucursal
-  async loadProductStockByBranch(): Promise<void> {
-    if (!this.form.productId || !this.form.branchId) return;
-
-    try {
-      console.log(`🔍 Cargando stock - Producto: ${this.form.productId}, Sucursal: ${this.form.branchId}`);
-
-      const response = await firstValueFrom(
-        this.http.get<any>(
-          `${environment.apiUrl}/api/v1/inventory/stock/${this.form.productId}/${this.form.branchId}`
-        )
-      );
-
-      if (this.selectedProduct) {
-        if (!this.selectedProduct.stockByBranch) {
-          this.selectedProduct.stockByBranch = {};
-        }
-
-        const branchId = parseInt(this.form.branchId);
-        const currentStock = response.currentStock ?? response.stock ?? 0;
-
-        this.selectedProduct.stockByBranch[branchId] = currentStock;
-
-        console.log(`✅ Stock cargado para sucursal ${branchId}: ${currentStock} unidades`);
-      }
-    } catch (error) {
-      console.error('❌ Error al cargar stock por sucursal:', error);
-
-      // Si el endpoint no existe, intentar con endpoint alternativo
-      try {
-        const response = await firstValueFrom(
-          this.http.get<any>(
-            `${environment.apiUrl}/api/v1/products/${this.form.productId}/stock?branchId=${this.form.branchId}`
-          )
-        );
-
-        if (this.selectedProduct) {
-          if (!this.selectedProduct.stockByBranch) {
-            this.selectedProduct.stockByBranch = {};
-          }
-
-          const branchId = parseInt(this.form.branchId);
-          const currentStock = response.currentStock ?? response.stock ?? 0;
-
-          this.selectedProduct.stockByBranch[branchId] = currentStock;
-
-          console.log(`✅ Stock cargado (método alternativo) para sucursal ${branchId}: ${currentStock} unidades`);
-        }
-      } catch (altError) {
-        console.error('❌ Error en método alternativo:', altError);
-        // Si ambos métodos fallan, dejar el stock en 0
-        if (this.selectedProduct && this.selectedProduct.stockByBranch) {
-          this.selectedProduct.stockByBranch[parseInt(this.form.branchId)] = 0;
-        }
-      }
-    }
-  }
-
-  // ✅ NUEVO: Detectar cambio de sucursal y recargar stock
   async onBranchChange(): Promise<void> {
-    if (this.selectedProduct && this.form.branchId) {
-      await this.loadProductStockByBranch();
+    this.form.quantity = 0;
+
+    // Si estamos en modo edición, mantener el stock precargado
+    if (!this.isEditMode) {
+      this.currentStockInBranch = 0;
     }
   }
 
@@ -279,46 +270,48 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
     this.submitError = '';
 
     try {
-      const response = await firstValueFrom(
-        this.http.post<any>(`${environment.apiUrl}/api/v1/inventory/adjustments`, {
-          productId: parseInt(this.form.productId),
-          branchId: parseInt(this.form.branchId),
-          quantity: this.form.quantity,
-          reason: this.form.reason,
-          notes: this.form.notes
-        })
-      );
+      let response;
 
-      console.log('✅ Ajuste creado exitosamente:', response);
-
-      // ✅ Actualizar el stock de la sucursal específica localmente
-      if (this.selectedProduct && this.selectedProduct.stockByBranch) {
-        const branchId = parseInt(this.form.branchId);
-        const newStock = response.newStock ?? response.product?.newStock ??
-                        (this.getSelectedProductStock() + this.form.quantity);
-
-        this.selectedProduct.stockByBranch[branchId] = newStock;
-
-        // Actualizar en la lista de productos
-        const productIndex = this.allProducts.findIndex(p => p.id === this.selectedProduct!.id);
-        if (productIndex !== -1 && this.allProducts[productIndex].stockByBranch) {
-          this.allProducts[productIndex].stockByBranch![branchId] = newStock;
-        }
+      if (this.isEditMode && this.movementId) {
+        // Actualizar un movimiento existente (desde stock-movements)
+        response = await firstValueFrom(
+          this.http.put<any>(`${environment.apiUrl}/api/v1/inventory/adjustments/${this.movementId}`, {
+            productId: parseInt(this.form.productId),
+            branchId: parseInt(this.form.branchId),
+            quantity: this.form.quantity,
+            reason: this.form.reason,
+            notes: this.form.notes
+          })
+        );
+      } else {
+        // Crear un nuevo ajuste
+        response = await firstValueFrom(
+          this.http.post<any>(`${environment.apiUrl}/api/v1/inventory/adjustments`, {
+            productId: parseInt(this.form.productId),
+            branchId: parseInt(this.form.branchId),
+            quantity: this.form.quantity,
+            reason: this.form.reason,
+            notes: this.form.notes
+          })
+        );
       }
 
-      // ✅ Emitir evento de éxito
+      // Actualizar el stock local
+      this.currentStockInBranch = response.newStock ??
+                                  response.product?.newStock ??
+                                  (this.currentStockInBranch + this.form.quantity);
+
       this.adjustmentSuccess.emit();
 
-      // Cerrar el modal
       setTimeout(() => {
         this.resetForm();
         this.close.emit();
-      }, 500);
+      }, 300);
 
     } catch (error: any) {
-      console.error('❌ Error al crear ajuste:', error);
+      console.error('Error al procesar ajuste:', error);
       this.submitError = error.error?.error || error.error?.message ||
-                        'Error al crear el ajuste. Por favor intente nuevamente.';
+                        'Error al procesar el ajuste. Por favor intente nuevamente.';
       this.isSubmitting = false;
     }
   }
@@ -341,7 +334,11 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
       notes: ''
     };
     this.clearProductSelection();
+    this.currentStockInBranch = 0;
     this.isSubmitting = false;
     this.submitError = '';
+    this.loadingStock = false;
+    this.isEditMode = false;
+    this.movementId = undefined;
   }
 }
