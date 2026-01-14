@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,23 +22,16 @@ import {
   matSaveOutline,
   matInfoOutline,
   matInventory2Outline,
-  matAddCircleOutline,
-  matEditOutline,
-  matDeleteOutline,
   matDriveFileRenameOutlineOutline,
   matDescriptionOutline,
   matAttachMoneyOutline,
-  matSellOutline,
   matQrCodeOutline,
   matHelpOutline,
-  matTuneOutline,
-  matInventoryOutline,
   matArrowForwardOutline,
   matCategoryOutline,
   matFilterBAndWOutline,
   matStackedBarChartOutline,
   matProductionQuantityLimitsOutline,
-
 } from '@ng-icons/material-icons/outline';
 
 // Constants & Interfaces
@@ -49,19 +42,7 @@ import { InputOptionsSelect } from '../../../../shared/interfaces/input';
 import { environment } from '../../../../../environments/environment';
 import BaseForm from '../../../../shared/classes/base-form';
 import { FormComponent } from '../../../../shared/guards/pending-changes.guard';
-
-
-interface VariantAttribute {
-  id: number;
-  attributeName: string;
-  attributeValues: string[];
-  required: boolean;
-}
-
-interface ManualAttribute {
-  key: string;
-  value: string;
-}
+import { ProductVariantComponent } from '../Components/product-variant/product-variant.component';
 
 @Component({
   selector: 'app-products-form',
@@ -75,7 +56,7 @@ interface ManualAttribute {
     CheckboxComponent,
     ToggleComponent,
     NgIconComponent,
-    SelectComponent
+    ProductVariantComponent
   ],
   templateUrl: './products-form.component.html',
   styleUrl: './products-form.component.scss',
@@ -84,17 +65,11 @@ interface ManualAttribute {
     matSaveOutline,
     matInfoOutline,
     matInventory2Outline,
-    matAddCircleOutline,
-    matEditOutline,
-    matDeleteOutline,
     matDriveFileRenameOutlineOutline,
     matDescriptionOutline,
     matAttachMoneyOutline,
-    matSellOutline,
     matQrCodeOutline,
     matHelpOutline,
-    matTuneOutline,
-    matInventoryOutline,
     matArrowForwardOutline,
     matCategoryOutline,
     matFilterBAndWOutline,
@@ -104,35 +79,24 @@ interface ManualAttribute {
 })
 export default class ProductsFormComponent extends BaseForm implements OnInit, FormComponent {
 
+  @ViewChild(ProductVariantComponent) variantComponent!: ProductVariantComponent;
+
   // ==================== FORMS ====================
   productForm: FormGroup;
   stockForm: FormGroup;
-  variantForm: FormGroup;
 
   // ==================== DATA ====================
   product: Product;
   variants: ProductVariant[] = [];
-  manualAttributes: ManualAttribute[] = [];
 
   // ==================== OPTIONS ====================
   categoryOptions: InputOptionsSelect[] = [];
   brandOptions: InputOptionsSelect[] = [];
   supplierOptions: InputOptionsSelect[] = [];
-  availableAttributes: VariantAttribute[] = [];
-  selectedAttributeValues: string[] = [];
 
   // ==================== UI STATE ====================
   activeTab: 'general' | 'variants' = 'general';
   productType: 'simple' | 'variant' = 'simple';
-  editingVariantIndex: number = -1;
-  showCustomAttrInput: boolean = false;
-  showCustomValueInput: boolean = false;
-
-  // ==================== FORM CONTROLS ====================
-  attrKeyControl = new FormControl('');
-  attrValueControl = new FormControl('');
-  customAttrKeyControl = new FormControl('');
-  customAttrValueControl = new FormControl('');
 
   get supplierLabels(): string[] {
     return this.supplierOptions.map(opt => opt.label);
@@ -174,21 +138,6 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
       minStock: [0, [Validators.required, Validators.min(0)]],
       maxStock: [100, [Validators.required, Validators.min(1)]],
       supplierId: this.fb.array([])
-    });
-
-    this.variantForm = this.fb.group({
-      sku: ['', [Validators.required, Validators.maxLength(50)]],
-      variantName: ['', [Validators.required, Validators.maxLength(100)]],
-      costPrice: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]],
-      salePrice: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]],
-      currentStock: [0, [Validators.required, Validators.min(0)]],
-      minStock: [0, [Validators.required, Validators.min(0)]],
-      maxStock: [100, [Validators.required, Validators.min(1)]],
-      supplierId: this.fb.array([]),
-      active: [true],
-      // Campos para agregar atributos manualmente
-      attrKey: [''],
-      attrValue: ['']
     });
   }
 
@@ -233,7 +182,6 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
 
       this.productForm.markAsPristine();
       this.stockForm.markAsPristine();
-      this.variantForm.markAsPristine();
 
     } catch (error) {
       console.error('Error cargando opciones:', error);
@@ -243,14 +191,10 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
 
   initSupplierFormArrays(count: number) {
     const stockSuppliers = this.stockForm.get('supplierId') as FormArray;
-    const variantSuppliers = this.variantForm.get('supplierId') as FormArray;
-
     stockSuppliers.clear();
-    variantSuppliers.clear();
 
     for (let i = 0; i < count; i++) {
       stockSuppliers.push(new FormControl(false));
-      variantSuppliers.push(new FormControl(false));
     }
   }
 
@@ -286,34 +230,16 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
         if (product.variants && product.variants.length > 0) {
           this.variants = product.variants;
         }
-
-        await this.loadCategoryAttributes(product.categoryId);
       }
 
       this.productForm.markAsPristine();
       this.stockForm.markAsPristine();
-      this.variantForm.markAsPristine();
 
     } catch (error) {
       console.error('Error al cargar producto:', error);
       this.toast.error('Error al cargar el producto');
     } finally {
       this.load = false;
-    }
-  }
-
-  async loadCategoryAttributes(categoryId: number): Promise<void> {
-    try {
-      const attributes = await firstValueFrom(
-        this.crud.http.get<VariantAttribute[]>(
-          `${environment.apiUrl}/api/v1/categories/${categoryId}/attributes`
-        )
-      );
-
-      this.availableAttributes = attributes || [];
-
-    } catch (error) {
-            this.availableAttributes = [];
     }
   }
 
@@ -328,114 +254,14 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     }
 
     this.productType = type;
-
-    if (type === 'variant' && this.productForm.get('categoryId')?.value) {
-      this.loadCategoryAttributes(Number(this.productForm.get('categoryId')?.value));
-    }
   }
 
-  async onCategoryChange() {
-    const categoryId = this.productForm.get('categoryId')?.value;
-
-    if (this.productType === 'variant' && categoryId) {
-      await this.loadCategoryAttributes(Number(categoryId));
-    }
+  onCategoryChange() {
+    // El componente hijo manejará la carga de atributos
   }
 
-  // ==================== MANUAL ATTRIBUTES ====================
-
-  onAttributeKeyChange(event: any) {
-    const value = event.target.value;
-
-    if (value === '__custom__') {
-      this.showCustomAttrInput = true;
-      this.showCustomValueInput = false;
-      this.selectedAttributeValues = [];
-      this.attrValueControl.setValue('');
-      this.customAttrKeyControl.setValue('');
-    } else if (value) {
-      this.showCustomAttrInput = false;
-      this.showCustomValueInput = false;
-      this.customAttrValueControl.setValue('');
-
-      // Buscar los valores disponibles para este atributo
-      const attribute = this.availableAttributes.find(attr => attr.attributeName === value);
-      if (attribute) {
-        this.selectedAttributeValues = attribute.attributeValues;
-      } else {
-        this.selectedAttributeValues = [];
-      }
-
-      this.attrValueControl.setValue('');
-    } else {
-      this.showCustomAttrInput = false;
-      this.showCustomValueInput = false;
-      this.selectedAttributeValues = [];
-    }
-  }
-
-  onAttributeValueChange(event: any) {
-    const value = event.target.value;
-
-    if (value === '__custom__') {
-      this.showCustomValueInput = true;
-      this.customAttrValueControl.setValue('');
-    } else {
-      this.showCustomValueInput = false;
-    }
-  }
-
-  addManualAttribute() {
-    let key = '';
-    let value = '';
-
-    // Determinar el key
-    if (this.showCustomAttrInput) {
-      key = this.customAttrKeyControl.value?.trim() || '';
-    } else if (this.availableAttributes.length > 0) {
-      key = this.attrKeyControl.value?.trim() || '';
-    } else {
-      key = this.variantForm.get('attrKey')?.value?.trim() || '';
-    }
-
-    // Determinar el value
-    if (this.showCustomValueInput) {
-      value = this.customAttrValueControl.value?.trim() || '';
-    } else if (this.selectedAttributeValues.length > 0) {
-      const selectedValue = this.attrValueControl.value;
-      value = selectedValue && selectedValue !== '__custom__' ? selectedValue.trim() : '';
-    } else {
-      value = this.variantForm.get('attrValue')?.value?.trim() || '';
-    }
-
-    if (!key || !value) {
-      this.toast.error('Ingresa tanto el nombre como el valor del atributo');
-      return;
-    }
-
-    const exists = this.manualAttributes.some(attr => attr.key.toLowerCase() === key.toLowerCase());
-    if (exists) {
-      this.toast.error('Ya existe un atributo con ese nombre');
-      return;
-    }
-
-    this.manualAttributes.push({ key, value });
-
-    // Resetear controles
-    this.attrKeyControl.setValue('');
-    this.attrValueControl.setValue('');
-    this.customAttrKeyControl.setValue('');
-    this.customAttrValueControl.setValue('');
-    this.variantForm.patchValue({ attrKey: '', attrValue: '' });
-    this.selectedAttributeValues = [];
-    this.showCustomAttrInput = false;
-    this.showCustomValueInput = false;
-
-    this.toast.success('Atributo agregado');
-  }
-
-  removeManualAttribute(index: number) {
-    this.manualAttributes.splice(index, 1);
+  onVariantsChange(variants: ProductVariant[]) {
+    this.variants = variants;
   }
 
   // ==================== SKU GENERATION ====================
@@ -449,158 +275,6 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     this.stockForm.patchValue({ sku });
   }
 
-  generateVariantSKU() {
-    const brand = this.brandOptions.find(b => b.value === this.productForm.value.brandRef)?.label || 'UNK';
-    const timestamp = Date.now().toString().slice(-6);
-
-    const attrValues = this.manualAttributes
-      .map(attr => attr.value.substring(0, 3).toUpperCase())
-      .join('-');
-
-    const sku = `${brand.substring(0, 3).toUpperCase()}-${attrValues || 'VAR'}-${timestamp}`;
-    this.variantForm.patchValue({ sku });
-  }
-
-  // ==================== VARIANT MANAGEMENT ====================
-
-  addOrUpdateVariant() {
-    const baseFieldsValid =
-      this.variantForm.get('sku')?.valid &&
-      this.variantForm.get('variantName')?.valid &&
-      this.variantForm.get('costPrice')?.valid &&
-      this.variantForm.get('salePrice')?.valid &&
-      this.variantForm.get('currentStock')?.valid &&
-      this.variantForm.get('minStock')?.valid &&
-      this.variantForm.get('maxStock')?.valid;
-
-    if (!baseFieldsValid) {
-      this.toast.error('Por favor completa todos los campos requeridos');
-      return;
-    }
-
-    const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
-    const selectedSuppliers = this.supplierOptions
-      .filter((_, index) => supplierFormArray.at(index).value)
-      .map(option => Number(option.value));
-
-    if (selectedSuppliers.length === 0) {
-      this.toast.error('Debes seleccionar al menos un proveedor');
-      return;
-    }
-
-    // Construir objeto de atributos desde manualAttributes
-    const attributes: { [key: string]: string } = {};
-    this.manualAttributes.forEach(attr => {
-      attributes[attr.key] = attr.value;
-    });
-
-    const variant: ProductVariant = {
-      id: this.editingVariantIndex >= 0 ? this.variants[this.editingVariantIndex].id : null,
-      sku: this.variantForm.value.sku.trim(),
-      variantName: this.variantForm.value.variantName.trim(),
-      costPrice: Number(this.variantForm.value.costPrice),
-      salePrice: Number(this.variantForm.value.salePrice),
-      currentStock: Number(this.variantForm.value.currentStock),
-      minStock: Number(this.variantForm.value.minStock),
-      maxStock: Number(this.variantForm.value.maxStock),
-      attributes: attributes,
-      supplierId: selectedSuppliers,
-      active: this.variantForm.value.active
-    };
-
-    console.log('Variante a agregar:', variant);
-
-    const isDuplicate = this.variants.some((v, idx) =>
-      v.sku === variant.sku && idx !== this.editingVariantIndex
-    );
-
-    if (isDuplicate) {
-      this.toast.error('El SKU ya existe en otra variante');
-      return;
-    }
-
-    if (this.editingVariantIndex >= 0) {
-      this.variants[this.editingVariantIndex] = variant;
-      this.toast.success('Variante actualizada');
-      this.editingVariantIndex = -1;
-    } else {
-      this.variants.push(variant);
-      this.toast.success('Variante agregada');
-    }
-
-    this.resetVariantForm();
-  }
-
-  editVariant(index: number) {
-    const variant = this.variants[index];
-    this.editingVariantIndex = index;
-
-    this.variantForm.patchValue({
-      sku: variant.sku,
-      variantName: variant.variantName,
-      costPrice: variant.costPrice,
-      salePrice: variant.salePrice,
-      currentStock: variant.currentStock,
-      minStock: variant.minStock,
-      maxStock: variant.maxStock,
-      active: variant.active
-    });
-
-    // Cargar atributos manuales
-    this.manualAttributes = [];
-    if (variant.attributes) {
-      Object.keys(variant.attributes).forEach(key => {
-        this.manualAttributes.push({
-          key: key,
-          value: variant.attributes[key]
-        });
-      });
-    }
-
-    this.setSuppliers(this.variantForm, variant.supplierId);
-  }
-
-  deleteVariant(index: number) {
-    if (confirm('¿Estás seguro de eliminar esta variante?')) {
-      this.variants.splice(index, 1);
-      this.toast.success('Variante eliminada');
-    }
-  }
-
-  cancelEditVariant() {
-    this.editingVariantIndex = -1;
-    this.resetVariantForm();
-  }
-
-  resetVariantForm() {
-    this.variantForm.patchValue({
-      sku: '',
-      variantName: '',
-      costPrice: '',
-      salePrice: '',
-      currentStock: 0,
-      minStock: 0,
-      maxStock: 100,
-      active: true,
-      attrKey: '',
-      attrValue: ''
-    });
-
-    this.manualAttributes = [];
-
-    // Resetear controles de atributos
-    this.attrKeyControl.setValue('');
-    this.attrValueControl.setValue('');
-    this.customAttrKeyControl.setValue('');
-    this.customAttrValueControl.setValue('');
-    this.selectedAttributeValues = [];
-    this.showCustomAttrInput = false;
-    this.showCustomValueInput = false;
-
-    const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
-    supplierFormArray.controls.forEach(control => control.setValue(false));
-  }
-
   // ==================== HELPERS ====================
 
   setSuppliers(form: FormGroup, supplierId: number[]) {
@@ -611,17 +285,9 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     });
   }
 
-  getAttributeOptions(attr: VariantAttribute): InputOptionsSelect[] {
-    return attr.attributeValues.map(value => ({
-      value: value,
-      label: value
-    }));
-  }
-
   validateStockMinMax() {
-    const form = this.productType === 'simple' ? this.stockForm : this.variantForm;
-    const maxControl = form.get('maxStock');
-    const minControl = form.get('minStock');
+    const maxControl = this.stockForm.get('maxStock');
+    const minControl = this.stockForm.get('minStock');
 
     if (maxControl?.value && minControl?.value) {
       const max = parseFloat(maxControl.value);
@@ -639,10 +305,6 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
         }
       }
     }
-  }
-
-  hasAttributes(): boolean {
-    return this.availableAttributes && this.availableAttributes.length > 0;
   }
 
   // ==================== FORM SUBMISSION ====================
@@ -737,7 +399,6 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
 
       this.productForm.markAsPristine();
       this.stockForm.markAsPristine();
-      this.variantForm.markAsPristine();
 
       this.router.navigate(['dashboard/products']);
 
@@ -776,9 +437,16 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   }
 
   isDirty(): boolean {
-    const formsAreDirty = this.productForm.dirty || this.stockForm.dirty || this.variantForm.dirty;
-    const hasUnsavedVariants = this.productType === 'variant' && this.editingVariantIndex >= 0;
+    const formsAreDirty = this.productForm.dirty || this.stockForm.dirty;
+    const hasUnsavedVariants = this.productType === 'variant' && this.variantComponent?.hasVariants();
 
     return formsAreDirty || hasUnsavedVariants;
+  }
+
+  // ==================== TEMPLATE HELPERS ====================
+
+  getCategoryIdAsNumber(): number | null {
+    const categoryId = this.productForm.get('categoryId')?.value;
+    return categoryId ? Number(categoryId) : null;
   }
 }
