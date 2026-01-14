@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -18,6 +18,7 @@ interface Product {
   productName: string;
   sku: string;
   currentStock: number;
+  stockByBranch?: { [branchId: number]: number }; // ✅ Stock por sucursal
 }
 
 interface Branch {
@@ -33,9 +34,10 @@ interface Branch {
   templateUrl: './adjustment-modal.component.html',
   styleUrls: ['./adjustment-modal.component.scss']
 })
-export class AdjustmentModalComponent implements OnInit {
+export class AdjustmentModalComponent implements OnInit, OnChanges {
+  @Input() isOpen: boolean = false;
   @Output() close = new EventEmitter<void>();
-  @Output() submit = new EventEmitter<AdjustmentForm>();
+  @Output() adjustmentSuccess = new EventEmitter<void>();
 
   form: AdjustmentForm = {
     productId: '',
@@ -55,11 +57,30 @@ export class AdjustmentModalComponent implements OnInit {
   // Sucursales
   branches: Branch[] = [];
 
+  // Estados de envío
+  isSubmitting: boolean = false;
+  submitError: string = '';
+
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
     this.loadProducts();
     this.loadBranches();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['isOpen'] && changes['isOpen'].currentValue === true) {
+      console.log('🔄 Modal abierto - Recargando datos...');
+      this.refreshData();
+    }
+  }
+
+  async refreshData(): Promise<void> {
+    await Promise.all([
+      this.loadProducts(),
+      this.loadBranches()
+    ]);
+    console.log('✅ Datos recargados:', this.allProducts.length, 'productos');
   }
 
   async loadProducts(): Promise<void> {
@@ -76,10 +97,10 @@ export class AdjustmentModalComponent implements OnInit {
         id: product.id,
         productName: product.productName,
         sku: product.sku || '',
-        currentStock: product.currentStock || 0
+        currentStock: product.currentStock || 0,
+        stockByBranch: {} // ✅ Inicializar objeto vacío
       }));
 
-      // Inicialmente mostrar los primeros 20 productos
       this.filteredProducts = this.allProducts.slice(0, 20);
 
     } catch (error) {
@@ -111,25 +132,22 @@ export class AdjustmentModalComponent implements OnInit {
     }
   }
 
-  // Búsqueda de productos
   onProductSearch(event: any): void {
     const searchTerm = event.target.value.toLowerCase().trim();
     this.productSearchTerm = searchTerm;
     this.showProductDropdown = true;
 
     if (!searchTerm) {
-      // Si no hay búsqueda, mostrar los primeros 20
       this.filteredProducts = this.allProducts.slice(0, 20);
       return;
     }
 
-    // Filtrar productos por nombre o SKU
     this.filteredProducts = this.allProducts
       .filter(product =>
         product.productName.toLowerCase().includes(searchTerm) ||
         product.sku.toLowerCase().includes(searchTerm)
       )
-      .slice(0, 50); // Limitar a 50 resultados
+      .slice(0, 50);
   }
 
   selectProduct(product: Product): void {
@@ -137,6 +155,11 @@ export class AdjustmentModalComponent implements OnInit {
     this.form.productId = product.id.toString();
     this.productSearchTerm = `${product.productName} (${product.sku})`;
     this.showProductDropdown = false;
+
+    // ✅ Si ya hay una sucursal seleccionada, cargar el stock de esa sucursal
+    if (this.form.branchId) {
+      this.loadProductStockByBranch();
+    }
   }
 
   clearProductSelection(): void {
@@ -154,24 +177,149 @@ export class AdjustmentModalComponent implements OnInit {
   }
 
   onProductInputBlur(): void {
-    // Delay para permitir click en dropdown
     setTimeout(() => {
       this.showProductDropdown = false;
     }, 200);
   }
 
+  // ✅ MÉTODO CORREGIDO: Obtener stock según sucursal seleccionada
   getSelectedProductStock(): number {
-    return this.selectedProduct?.currentStock || 0;
+    if (!this.selectedProduct) return 0;
+
+    // Si hay una sucursal seleccionada, mostrar el stock de esa sucursal
+    if (this.form.branchId && this.selectedProduct.stockByBranch) {
+      const branchId = parseInt(this.form.branchId);
+      const branchStock = this.selectedProduct.stockByBranch[branchId];
+
+      // Si ya se cargó el stock de la sucursal, usarlo
+      if (branchStock !== undefined) {
+        return branchStock;
+      }
+    }
+
+    // Si no hay sucursal o no se ha cargado el stock específico, mostrar 0
+    return 0;
+  }
+
+  // ✅ NUEVO: Método para cargar stock específico por sucursal
+  async loadProductStockByBranch(): Promise<void> {
+    if (!this.form.productId || !this.form.branchId) return;
+
+    try {
+      console.log(`🔍 Cargando stock - Producto: ${this.form.productId}, Sucursal: ${this.form.branchId}`);
+
+      const response = await firstValueFrom(
+        this.http.get<any>(
+          `${environment.apiUrl}/api/v1/inventory/stock/${this.form.productId}/${this.form.branchId}`
+        )
+      );
+
+      if (this.selectedProduct) {
+        if (!this.selectedProduct.stockByBranch) {
+          this.selectedProduct.stockByBranch = {};
+        }
+
+        const branchId = parseInt(this.form.branchId);
+        const currentStock = response.currentStock ?? response.stock ?? 0;
+
+        this.selectedProduct.stockByBranch[branchId] = currentStock;
+
+        console.log(`✅ Stock cargado para sucursal ${branchId}: ${currentStock} unidades`);
+      }
+    } catch (error) {
+      console.error('❌ Error al cargar stock por sucursal:', error);
+
+      // Si el endpoint no existe, intentar con endpoint alternativo
+      try {
+        const response = await firstValueFrom(
+          this.http.get<any>(
+            `${environment.apiUrl}/api/v1/products/${this.form.productId}/stock?branchId=${this.form.branchId}`
+          )
+        );
+
+        if (this.selectedProduct) {
+          if (!this.selectedProduct.stockByBranch) {
+            this.selectedProduct.stockByBranch = {};
+          }
+
+          const branchId = parseInt(this.form.branchId);
+          const currentStock = response.currentStock ?? response.stock ?? 0;
+
+          this.selectedProduct.stockByBranch[branchId] = currentStock;
+
+          console.log(`✅ Stock cargado (método alternativo) para sucursal ${branchId}: ${currentStock} unidades`);
+        }
+      } catch (altError) {
+        console.error('❌ Error en método alternativo:', altError);
+        // Si ambos métodos fallan, dejar el stock en 0
+        if (this.selectedProduct && this.selectedProduct.stockByBranch) {
+          this.selectedProduct.stockByBranch[parseInt(this.form.branchId)] = 0;
+        }
+      }
+    }
+  }
+
+  // ✅ NUEVO: Detectar cambio de sucursal y recargar stock
+  async onBranchChange(): Promise<void> {
+    if (this.selectedProduct && this.form.branchId) {
+      await this.loadProductStockByBranch();
+    }
   }
 
   onClose(): void {
     this.close.emit();
   }
 
-  onSubmit(): void {
-    if (this.isFormValid()) {
-      this.submit.emit(this.form);
-      this.resetForm();
+  async onSubmit(): Promise<void> {
+    if (!this.isFormValid() || this.isSubmitting) {
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.submitError = '';
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<any>(`${environment.apiUrl}/api/v1/inventory/adjustments`, {
+          productId: parseInt(this.form.productId),
+          branchId: parseInt(this.form.branchId),
+          quantity: this.form.quantity,
+          reason: this.form.reason,
+          notes: this.form.notes
+        })
+      );
+
+      console.log('✅ Ajuste creado exitosamente:', response);
+
+      // ✅ Actualizar el stock de la sucursal específica localmente
+      if (this.selectedProduct && this.selectedProduct.stockByBranch) {
+        const branchId = parseInt(this.form.branchId);
+        const newStock = response.newStock ?? response.product?.newStock ??
+                        (this.getSelectedProductStock() + this.form.quantity);
+
+        this.selectedProduct.stockByBranch[branchId] = newStock;
+
+        // Actualizar en la lista de productos
+        const productIndex = this.allProducts.findIndex(p => p.id === this.selectedProduct!.id);
+        if (productIndex !== -1 && this.allProducts[productIndex].stockByBranch) {
+          this.allProducts[productIndex].stockByBranch![branchId] = newStock;
+        }
+      }
+
+      // ✅ Emitir evento de éxito
+      this.adjustmentSuccess.emit();
+
+      // Cerrar el modal
+      setTimeout(() => {
+        this.resetForm();
+        this.close.emit();
+      }, 500);
+
+    } catch (error: any) {
+      console.error('❌ Error al crear ajuste:', error);
+      this.submitError = error.error?.error || error.error?.message ||
+                        'Error al crear el ajuste. Por favor intente nuevamente.';
+      this.isSubmitting = false;
     }
   }
 
@@ -193,5 +341,7 @@ export class AdjustmentModalComponent implements OnInit {
       notes: ''
     };
     this.clearProductSelection();
+    this.isSubmitting = false;
+    this.submitError = '';
   }
 }

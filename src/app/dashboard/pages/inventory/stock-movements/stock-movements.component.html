@@ -360,8 +360,21 @@
   (close)="selectedMovement = undefined">
 </app-movement-detail-modal>
 
+<!-- ✅ BOTÓN: Simplificado -->
+<button (click)="showAdjustmentModal = true" type="button" class="btn-primary h-10 float-right w-36">
+  <div class="flex text-center justify-center align-middle">
+    <p class="text-sm md:text-base">Ajuste Manual</p>
+    <svg class="w-4 h-4 ml-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+    </svg>
+  </div>
+</button>
+
+<!-- ✅ MODAL: Con [isOpen] binding -->
 <app-adjustment-modal
   *ngIf="showAdjustmentModal"
+  [isOpen]="showAdjustmentModal"
   (close)="showAdjustmentModal = false"
-  (submit)="handleAdjustmentSubmit($event)">
+  (adjustmentSuccess)="handleAdjustmentSuccess()">
 </app-adjustment-modal>
+

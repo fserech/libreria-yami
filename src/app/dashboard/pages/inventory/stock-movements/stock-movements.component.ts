@@ -5,8 +5,6 @@ import { StockMovement, ProductStock, MovementFilter, MovementType } from '../..
 import { InventoryService } from '../../../../shared/services/inventory.service';
 import { MovementDetailModalComponent } from '../Components/movement-detail-modal/movement-detail-modal.component';
 import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustment-modal.component';
-// Importar los componentes modales
-
 
 @Component({
   selector: 'app-stock-movements',
@@ -14,8 +12,8 @@ import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustm
   imports: [
     FormsModule,
     CommonModule,
-    MovementDetailModalComponent,  // ✅ Agregar
-    AdjustmentModalComponent       // ✅ Agregar
+    MovementDetailModalComponent,
+    AdjustmentModalComponent
   ],
   templateUrl: './stock-movements.component.html',
   styleUrl: './stock-movements.component.scss'
@@ -41,6 +39,7 @@ export class StockMovementsComponent implements OnInit {
   currentPage = 1;
   itemsPerPage = 20;
   totalItems = 0;
+  adjustmentModal: any;
 
   constructor(private inventoryService: InventoryService) {}
 
@@ -92,22 +91,24 @@ export class StockMovementsComponent implements OnInit {
     this.selectedMovement = movement;
   }
 
-  // ✅ NUEVO: Manejar el submit del modal de ajuste
-  handleAdjustmentSubmit(formData: any): void {
-    this.inventoryService.createAdjustment(formData)
-      .subscribe({
-        next: (response) => {
-          console.log('Ajuste creado exitosamente:', response);
-          // Mostrar mensaje de éxito (puedes usar un servicio de toast/notificación)
-          this.showAdjustmentModal = false;
-          this.loadMovements(); // Recargar la lista
-          this.loadLowStockProducts(); // Actualizar alertas de stock bajo
-        },
-        error: (error) => {
-          console.error('Error al crear ajuste:', error);
-          // Mostrar mensaje de error
-        }
-      });
+  // ✅ MÉTODO CORREGIDO - Solo recarga datos, no duplica la llamada
+  handleAdjustmentSuccess(): void {
+    console.log('✅ Ajuste exitoso - Recargando datos...');
+    this.showAdjustmentModal = false;
+    this.loadMovements();
+    this.loadLowStockProducts();
+  }
+
+  // ✅ NUEVO: Método para abrir el modal y refrescar sus datos
+  async openAdjustmentModal(): Promise<void> {
+    this.showAdjustmentModal = true;
+
+    // Esperar a que el modal se renderice
+    setTimeout(async () => {
+      if (this.showAdjustmentModal) {
+        await this.adjustmentModal?.refreshData();
+      }
+    }, 100);
   }
 
   getMovementTypeLabel(type: MovementType): string {
