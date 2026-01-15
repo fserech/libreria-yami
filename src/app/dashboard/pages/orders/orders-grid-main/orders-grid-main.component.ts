@@ -187,13 +187,53 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     this.crud.baseUrl = URL_ORDERS;
     let filter = '';
 
+    // Primero, agregar el filtro de rango de tiempo activo
+    const dateInit: Date = new Date();
+    const dateEnd: Date = new Date();
+
+    switch (this.activeTimeTab) {
+      case 'day':
+        dateInit.setHours(0, 0, 0, 0);
+        dateEnd.setHours(23, 59, 59, 999);
+        break;
+
+      case 'week':
+        const dayOfWeek = dateInit.getDay();
+        const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+        dateInit.setDate(dateInit.getDate() + diffToMonday);
+        dateInit.setHours(0, 0, 0, 0);
+        dateEnd.setDate(dateInit.getDate() + 6);
+        dateEnd.setHours(23, 59, 59, 999);
+        break;
+
+      case 'month':
+        dateInit.setDate(1);
+        dateInit.setHours(0, 0, 0, 0);
+        dateEnd.setMonth(dateEnd.getMonth() + 1);
+        dateEnd.setDate(0);
+        dateEnd.setHours(23, 59, 59, 999);
+        break;
+    }
+
+    // Si se proporcionan fechas específicas, usar esas en lugar del rango de tiempo
+    if(dateCreatedInit && dateCreatedEnd){
+      const init: Date = new Date(dateCreatedInit);
+      const end: Date = new Date(dateCreatedEnd);
+      init.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      filter = filter.concat(`&dateCreatedInit=${init.toISOString()}&dateCreatedEnd=${end.toISOString()}`);
+    } else {
+      // Siempre aplicar el filtro de tiempo activo (día/semana/mes)
+      filter = filter.concat(`&dateCreatedInit=${dateInit.toISOString()}&dateCreatedEnd=${dateEnd.toISOString()}`);
+    }
+
     if(id){
       filter = filter.concat(`&id=${id}`)
     }
 
     if(userId && this.auth.getUserData().role === 'ROLE_ADMIN'){
       filter = filter.concat(`&userId=${userId}`);
-    }else if(!userId && this.auth.getUserData().role === 'ROLE_USER'){
+    }else if(this.auth.getUserData().role === 'ROLE_USER'){
       filter = filter.concat(`&userId=${this.auth.getUserData().id}`);
     }
 
@@ -209,21 +249,9 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
       filter = filter.concat(`&idBranch=${idBranch}`)
     }
 
-    if(dateCreatedInit && dateCreatedEnd){
-      const init: Date = new Date(dateCreatedInit);
-      const end: Date = new Date(dateCreatedEnd);
-      init.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
-      filter = filter.concat(`&dateCreatedInit=${init.toISOString()}&dateCreatedEnd=${end.toISOString()}`);
-    } else if(!id && !clientId && !status && !idBranch) {
-      this.loadOrdersByTimeRange(this.activeTimeTab);
-      return;
-    }
-
     this.filters = filter;
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
-
   initPage(){
     this.form.reset();
     this.filters = '';
