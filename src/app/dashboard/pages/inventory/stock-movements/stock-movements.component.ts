@@ -34,7 +34,7 @@ export class StockMovementsComponent implements OnInit {
   editingMovement?: StockMovement;
 
   currentPage = 1;
-  itemsPerPage = 20;
+  itemsPerPage = 10; // ✅ Cambiado de 20 a 10
   totalItems = 0;
   adjustmentModal: any;
 
@@ -56,7 +56,6 @@ export class StockMovementsComponent implements OnInit {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading movements:', error);
           this.loading = false;
         }
       });
@@ -69,7 +68,7 @@ export class StockMovementsComponent implements OnInit {
           this.lowStockProducts = products;
         },
         error: (error) => {
-          console.error('Error loading low stock products:', error);
+          // Error silencioso
         }
       });
   }
@@ -88,18 +87,14 @@ export class StockMovementsComponent implements OnInit {
     this.selectedMovement = movement;
   }
 
-  // CAMBIO IMPORTANTE: Deshabilitar edición desde la tabla de movimientos
   canEditMovement(movement: StockMovement): boolean {
-    // Siempre retorna false para ocultar el botón de editar en la tabla
     return false;
   }
 
   editMovement(movement: StockMovement): void {
-    // Este método ya no se usa desde la tabla
     return;
   }
 
-  // Solo permitir crear nuevos ajustes desde el botón "Ajuste Manual"
   createNewAdjustment(): void {
     this.editingMovement = undefined;
     this.showAdjustmentModal = true;
@@ -170,7 +165,7 @@ export class StockMovementsComponent implements OnInit {
           a.click();
         },
         error: (error) => {
-          console.error('Error exporting:', error);
+          // Error silencioso
         }
       });
   }
@@ -179,6 +174,7 @@ export class StockMovementsComponent implements OnInit {
     if (this.currentPage * this.itemsPerPage < this.totalItems) {
       this.currentPage++;
       this.loadMovements();
+      this.scrollToTop();
     }
   }
 
@@ -186,6 +182,23 @@ export class StockMovementsComponent implements OnInit {
     if (this.currentPage > 1) {
       this.currentPage--;
       this.loadMovements();
+      this.scrollToTop();
     }
+  }
+
+  firstPage(): void {
+    this.currentPage = 1;
+    this.loadMovements();
+    this.scrollToTop();
+  }
+
+  lastPage(): void {
+    this.currentPage = Math.ceil(this.totalItems / this.itemsPerPage);
+    this.loadMovements();
+    this.scrollToTop();
+  }
+
+  private scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

@@ -25,6 +25,10 @@ import { InventoryService } from '../../../../shared/services/inventory.service'
 import { ProductStock } from '../../../../shared/interfaces/inventory';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustment-modal.component';
+import { CrudService } from '../../../../shared/services/crud.service';
+import { forkJoin } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-low-stock-alerts',
@@ -135,12 +139,111 @@ export class LowStockAlertsComponent implements OnInit {
   constructor(
     private inventoryService: InventoryService,
     private router: Router,
-    private auth: AuthService
+    private auth: AuthService,
+    private crud: CrudService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
-    this.loadAlerts();
-    this.loadAllStock();
+    // ✅ Cargar sucursales primero, luego datos
+    this.loadBranches();
+  }
+
+  /**
+   * ✅ Cargar todas las sucursales disponibles desde el backend
+   */
+  private loadBranches(): void {
+    this.loading = true;
+
+    // ✅ Cargar directamente desde el endpoint de branches
+    const branchesUrl = `${environment.apiUrl}/api/v1/branches`;
+
+    this.http.get<any[]>(branchesUrl).subscribe({
+      next: (branches) => {
+        this.branches = branches.map((b: any) => ({
+          id: b.id,
+          branchName: b.name
+        }));
+
+
+
+        // Después de cargar sucursales, cargar datos
+        this.loadInitialData();
+      },
+      error: (error) => {
+
+        this.loading = false;
+        // Intentar cargar datos de todos modos
+        this.loadInitialData();
+      }
+    });
+  }
+
+  /**
+   * ✅ Cargar datos iniciales (alertas y stock)
+   */
+  private loadInitialData(): void {
+    forkJoin({
+      alerts: this.inventoryService.getLowStockProducts(),
+      stock: this.inventoryService.getAllProductStock()
+    }).subscribe({
+      next: (results) => {
+        this.alerts = results.alerts;
+        this.allStock = results.stock;
+
+        // Sincronizar sucursales de los datos con las sucursales cargadas
+        this.syncBranchesFromData();
+
+        this.applyFilters();
+        this.applyStockFilters();
+        this.loading = false;
+
+
+      },
+      error: (error) => {
+
+        this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * ✅ Sincronizar sucursales de los datos con el catálogo
+   */
+  private syncBranchesFromData(): void {
+    const branchMap = new Map<number, string>();
+
+    // Primero agregar las sucursales ya cargadas del backend
+    this.branches.forEach(branch => {
+      branchMap.set(branch.id, branch.branchName);
+    });
+
+    // Agregar sucursales desde alertas (solo si no existen)
+    this.alerts.forEach(alert => {
+      if (alert.branchId && alert.branchName && !branchMap.has(alert.branchId)) {
+        branchMap.set(alert.branchId, alert.branchName);
+      }
+    });
+
+    // Agregar sucursales desde stock (solo si no existen)
+    this.allStock.forEach(item => {
+      if (item.branchId && item.branchName && !branchMap.has(item.branchId)) {
+        branchMap.set(item.branchId, item.branchName);
+      }
+    });
+
+    // Reconstruir array de sucursales
+    this.branches = Array.from(branchMap.entries()).map(([id, branchName]) => ({
+      id,
+      branchName
+    }));
+
+    // Ordenar por nombre
+    this.branches.sort((a, b) =>
+      a.branchName.localeCompare(b.branchName)
+    );
+
+
   }
 
   switchView(view: 'alerts' | 'stock'): void {
@@ -163,15 +266,19 @@ export class LowStockAlertsComponent implements OnInit {
       .subscribe({
         next: (products: ProductStock[]) => {
           this.allStock = products;
+
+          // ✅ Actualizar sucursales si encontramos nuevas
+          this.syncBranchesFromData();
+
           this.applyStockFilters();
           this.loading = false;
 
           if (forceReload) {
-            console.log('✅ Existencias recargadas:', products.length);
+
           }
         },
         error: (error) => {
-          console.error('❌ Error al cargar existencias:', error);
+
           this.loading = false;
         }
       });
@@ -179,12 +286,20 @@ export class LowStockAlertsComponent implements OnInit {
 
   applyStockFilters(): void {
     this.filteredStock = this.allStock.filter(item => {
+      // Filtro por búsqueda
       if (this.searchTerm) {
         const searchLower = this.searchTerm.toLowerCase();
         const productName = this.getDisplayName(item).toLowerCase();
         const sku = this.getDisplaySKU(item).toLowerCase();
 
         if (!productName.includes(searchLower) && !sku.includes(searchLower)) {
+          return false;
+        }
+      }
+
+      // ✅ Filtro por sucursal
+      if (this.selectedBranchId && this.selectedBranchId !== '') {
+        if (item.branchId !== Number(this.selectedBranchId)) {
           return false;
         }
       }
@@ -197,13 +312,18 @@ export class LowStockAlertsComponent implements OnInit {
     );
 
     this.totalPages = Math.ceil(this.filteredStock.length / this.itemsPerPage);
-    if (this.currentPage > this.totalPages) {
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
       this.currentPage = 1;
     }
   }
 
   onSearchChange(): void {
-    this.applyStockFilters();
+    this.currentPage = 1;
+    if (this.activeView === 'alerts') {
+      this.applyFilters();
+    } else {
+      this.applyStockFilters();
+    }
   }
 
   loadAlerts(forceReload: boolean = false): void {
@@ -219,53 +339,56 @@ export class LowStockAlertsComponent implements OnInit {
       .subscribe({
         next: (products: ProductStock[]) => {
           this.alerts = products;
-          this.extractBranches();
+
+          // ✅ Actualizar sucursales si encontramos nuevas
+          this.syncBranchesFromData();
+
           this.applyFilters();
           this.loading = false;
 
           if (forceReload) {
-            console.log('✅ Alertas recargadas exitosamente:', products.length);
+
           }
         },
         error: (error) => {
-          console.error('❌ Error al cargar productos con stock bajo:', error);
+
           this.loading = false;
         }
       });
   }
 
-  private extractBranches(): void {
-    const branchMap = new Map<number, string>();
-
-    this.alerts.forEach(alert => {
-      if (alert.branchId && alert.branchName) {
-        branchMap.set(alert.branchId, alert.branchName);
-      }
-    });
-
-    this.allStock.forEach(item => {
-      if (item.branchId && item.branchName) {
-        branchMap.set(item.branchId, item.branchName);
-      }
-    });
-
-    this.branches = Array.from(branchMap.entries()).map(([id, name]) => ({
-      id,
-      branchName: name
-    }));
-  }
-
   applyFilters(): void {
     this.filteredAlerts = this.alerts.filter(alert => {
+      // Filtro por nivel de alerta
       if (this.selectedAlertLevel === 'critical' && alert.currentStock > 0) {
         return false;
       }
       if (this.selectedAlertLevel === 'warning' && (alert.currentStock === 0 || !alert.belowMinStock)) {
         return false;
       }
+
+      // ✅ Filtro por búsqueda
+      if (this.searchTerm) {
+        const searchLower = this.searchTerm.toLowerCase();
+        const productName = this.getDisplayName(alert).toLowerCase();
+        const sku = this.getDisplaySKU(alert).toLowerCase();
+
+        if (!productName.includes(searchLower) && !sku.includes(searchLower)) {
+          return false;
+        }
+      }
+
+      // ✅ Filtro por sucursal
+      if (this.selectedBranchId && this.selectedBranchId !== '') {
+        if (alert.branchId !== Number(this.selectedBranchId)) {
+          return false;
+        }
+      }
+
       return true;
     });
 
+    // Ordenar: críticos primero, luego por stock
     this.filteredAlerts.sort((a, b) => {
       if (a.currentStock === 0 && b.currentStock > 0) return -1;
       if (a.currentStock > 0 && b.currentStock === 0) return 1;
@@ -273,15 +396,22 @@ export class LowStockAlertsComponent implements OnInit {
     });
 
     this.totalPages = Math.ceil(this.filteredAlerts.length / this.itemsPerPage);
-    this.currentPage = 1;
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = 1;
+    }
   }
 
   onBranchChange(): void {
+
+    this.currentPage = 1;
+
+    // Recargar ambos conjuntos de datos
     this.loadAlerts();
     this.loadAllStock();
   }
 
   onAlertLevelChange(): void {
+    this.currentPage = 1;
     this.applyFilters();
   }
 
@@ -408,18 +538,10 @@ export class LowStockAlertsComponent implements OnInit {
     });
   }
 
-  // ⭐ MODIFICADO: Incluir variantId en el objeto
   adjustStock(alert: ProductStock): void {
-    console.log('🔧 Ajustando stock para:', {
-      productId: alert.productId,
-      variantId: alert.variantId,
-      currentStock: alert.currentStock,
-      isVariant: this.isVariant(alert)
-    });
-
     this.editingMovement = {
       productId: alert.productId,
-      variantId: alert.variantId || null, // ⭐ IMPORTANTE: Incluir variantId
+      variantId: alert.variantId || null,
       branchId: alert.branchId,
       product: alert.product,
       branch: {
@@ -432,7 +554,6 @@ export class LowStockAlertsComponent implements OnInit {
       date: new Date().toISOString()
     };
 
-    console.log('📤 Datos enviados al modal:', this.editingMovement);
     this.showAdjustmentModal = true;
   }
 
@@ -442,7 +563,6 @@ export class LowStockAlertsComponent implements OnInit {
   }
 
   handleAdjustmentSuccess(): void {
-    console.log('✅ Ajuste exitoso, recargando datos...');
     setTimeout(() => {
       this.showAdjustmentModal = false;
       this.editingMovement = undefined;
@@ -479,7 +599,7 @@ export class LowStockAlertsComponent implements OnInit {
           'Valor Total': item.currentStock * (item.averageCost || 0)
         }));
 
-    console.log('📊 Exportando a Excel:', data);
+    // TODO: Implementar exportación a Excel
   }
 
   refresh(): void {
