@@ -20,7 +20,7 @@ export const ACTIONS_GRID_MAIN_ORDERS_IN_PROCESS: OptionsChatBubble[] = [
 
 export const ACTIONS_GRID_MAIN_ORDERS_FINALIZED: OptionsChatBubble[] = [
   { icon: 'matRemoveRedEyeOutline', colorIcon: 'text-blue-500', label: 'Ver', action: 'VIEW_ORDER'},
-  // { icon: 'matReceiptLongOutline', colorIcon: 'text-gray-400', label: 'Recibo', action: 'PRINT_RECEIPT'}
+  { icon: 'matReceiptLongOutline', colorIcon: 'text-gray-500', label: 'Recibo', action: 'PRINT_RECEIPT'} // ✅ DESCOMENTADO
 ];
 
 
@@ -40,3 +40,4 @@ export const ACTIONS_GRID_MAIN_PURCHASES_COMPLETED: OptionsChatBubble[] = [
   { icon: 'matRemoveRedEyeOutline', colorIcon: 'text-blue-500', label: 'Ver', action: 'VIEW_PURCHASE'},
   { icon: 'matReceiptLongOutline', colorIcon: 'text-gray-500', label: 'Factura', action: 'PRINT_INVOICE'}
 ];
+

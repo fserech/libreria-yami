@@ -1,72 +1,82 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ReportsReceiptsService {
+  // ✅ baseUrl EXISTE para ReceiptsGrid
   baseUrl: string = `${environment.apiUrl}/api/v1/reports/orders-day`;
+  // ✅ endpoint fijo para imprimir por ORDEN
+  private receiptByOrderUrl = `${environment.apiUrl}/api/v1/reports/receipt`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
-  getReceipt(typeReport: string, id_user: number, date: Date){
+  // ============================
+  // RECIBOS POR USUARIO / FECHA
+  // ============================
+  getReceipt(typeReport: string, id_user: number, date: Date): Observable<Blob> {
     const startDate = new Date(date);
     const endDate = new Date(date);
-    const headers = new HttpHeaders({
-      'Accept': 'application/pdf'
-    });
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
-    const startDateFormat = this.formatDateToISOString(startDate);
-    const endDateFormat = this.formatDateToISOString(endDate);
 
-    // ✅ NOTA: Cambia .get` por .get(
-    return this.http.get(`${this.baseUrl}?id_user=${id_user}&fecha_inicio=${startDateFormat}&fecha_fin=${endDateFormat}&typeReport=${typeReport}`, {
-      headers: headers,
-      responseType: 'blob'
-    });
-  }
-
-  getReportAllUsers(typeReport: string, date: Date){
-    const startDate = new Date(date);
-    const endDate = new Date(date);
     const headers = new HttpHeaders({
       'Accept': 'application/pdf'
     });
 
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
-    const startDateFormat = this.formatDateToISOString(startDate);
-    const endDateFormat = this.formatDateToISOString(endDate);
-
-    // ✅ NOTA: Cambia .get` por .get(
-    return this.http.get(`${this.baseUrl}?fecha_inicio=${startDateFormat}&fecha_fin=${endDateFormat}&typeReport=${typeReport}`, {
-      headers: headers,
-      responseType: 'blob'
-    });
+    return this.http.get(
+      `${this.baseUrl}?id_user=${id_user}&fecha_inicio=${this.format(startDate)}&fecha_fin=${this.format(endDate)}&typeReport=${typeReport}`,
+      {
+        headers,
+        responseType: 'blob'
+      }
+    );
   }
 
-  getReportPanel(typeReport: string, date: Date, panel: string){
+  // ============================
+  // RECIBOS PARA TODOS LOS USUARIOS
+  // (Sin parámetro id_user)
+  // ============================
+  getReportAllUsers(typeReport: string, date: Date): Observable<Blob> {
     const startDate = new Date(date);
     const endDate = new Date(date);
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/pdf'
-    });
-
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
-    const startDateFormat = this.formatDateToISOString(startDate);
-    const endDateFormat = this.formatDateToISOString(endDate);
 
-    // ✅ NOTA: Cambia .get` por .get(
-    return this.http.get(`${this.baseUrl}?fecha_Inicio=${startDateFormat}&fecha_Fin=${endDateFormat}&panel=${panel}&typeReport=${typeReport}`, {
-      headers: headers,
-      responseType: 'blob'
+    const headers = new HttpHeaders({
+      'Accept': 'application/pdf'
     });
+
+    return this.http.get(
+      `${this.baseUrl}?fecha_inicio=${this.format(startDate)}&fecha_fin=${this.format(endDate)}&typeReport=${typeReport}`,
+      {
+        headers,
+        responseType: 'blob'
+      }
+    );
   }
 
-  formatDateToISOString(date: Date): string {
+  // ============================
+  // RECIBO POR ID DE ORDEN
+  // (Orders Grid)
+  // ============================
+  getReceiptByOrderId(orderId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.receiptByOrderUrl}/${orderId}`,
+      {
+        headers: new HttpHeaders({ 'Accept': 'application/pdf' }),
+        responseType: 'blob'
+      }
+    );
+  }
+
+  // ============================
+  // UTILIDAD DE FECHA
+  // ============================
+  private format(date: Date): string {
     const year = date.getFullYear();
     const month = ('0' + (date.getMonth() + 1)).slice(-2);
     const day = ('0' + date.getDate()).slice(-2);

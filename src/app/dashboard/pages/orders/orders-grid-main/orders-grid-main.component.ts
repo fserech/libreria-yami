@@ -28,6 +28,7 @@ import { DatePickerComponent } from '../../../../shared/components/date-picker/d
 import { DatePickerSearchComponent } from '../../../../shared/components/date-picker-search/date-picker-search.component';
 import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 import { MIN_DATE, MAX_DATE } from '../../../../shared/constants/date-min-max';
+import { ReportsReceiptsService } from '../../../../shared/services/reports-receipts.service'; // ✅ IMPORTAR
 
 @Component({
   selector: 'app-orders-grid-main',
@@ -59,7 +60,9 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     private router: Router,
     public dialog: Dialog,
     private bpo: BreakpointObserver,
-    private auth: AuthService,){
+    private auth: AuthService,
+    private reportsService: ReportsReceiptsService // ✅ INYECTAR SERVICIO
+  ){
       super(crud, toast, auth, bpo);
       moment.locale('es');
       this.sortConfig.sortBy = 'dateCreated';
@@ -171,6 +174,11 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     if(option.action === 'CANCEL'){
       this.cancelOrder(option.id);
     }
+
+    // ✅✅✅ NUEVA ACCIÓN PARA IMPRIMIR RECIBO ✅✅✅
+    if(option.action === 'PRINT_RECEIPT'){
+      this.printReceipt(option.id);
+    }
   }
 
   edit(id: number){
@@ -187,7 +195,6 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     this.crud.baseUrl = URL_ORDERS;
     let filter = '';
 
-    // Primero, agregar el filtro de rango de tiempo activo
     const dateInit: Date = new Date();
     const dateEnd: Date = new Date();
 
@@ -215,7 +222,6 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
         break;
     }
 
-    // Si se proporcionan fechas específicas, usar esas en lugar del rango de tiempo
     if(dateCreatedInit && dateCreatedEnd){
       const init: Date = new Date(dateCreatedInit);
       const end: Date = new Date(dateCreatedEnd);
@@ -223,7 +229,6 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
       end.setHours(23, 59, 59, 999);
       filter = filter.concat(`&dateCreatedInit=${init.toISOString()}&dateCreatedEnd=${end.toISOString()}`);
     } else {
-      // Siempre aplicar el filtro de tiempo activo (día/semana/mes)
       filter = filter.concat(`&dateCreatedInit=${dateInit.toISOString()}&dateCreatedEnd=${dateEnd.toISOString()}`);
     }
 
@@ -252,6 +257,7 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     this.filters = filter;
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
+
   initPage(){
     this.form.reset();
     this.filters = '';
@@ -331,7 +337,65 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     this.router.navigate([`/dashboard/orders/view/${id}`]);
   }
 
-  printReceipt(id: number){}
+  // ✅✅✅ IMPLEMENTACIÓN DE printReceipt ✅✅✅
+  async printReceipt(orderId: number) {
+    console.log('=== IMPRIMIENDO RECIBO ===');
+    console.log('Order ID:', orderId);
+
+    this.load = true;
+
+    try {
+      // Obtener la orden para verificar sus datos
+      const order = this.ItemsList.find((o: any) => o.id === orderId);
+
+      if (!order) {
+        this.toast.error('No se encontró la orden');
+        this.load = false;
+        return;
+      }
+
+      console.log('Orden encontrada:', order);
+
+      // Generar el reporte usando el servicio
+      // NOTA: El backend espera order_id como parámetro
+      await firstValueFrom(
+        this.reportsService.getReceiptByOrderId(orderId)
+      )
+      .then((blob: Blob) => {
+        console.log('✅ PDF recibido, tamaño:', blob.size);
+
+        // Crear URL del blob
+        const url = window.URL.createObjectURL(blob);
+
+        // Abrir en nueva ventana para imprimir
+        const printWindow = window.open(url, '_blank');
+
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.print();
+          };
+        }
+
+        // Limpiar URL después de 1 minuto
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 60000);
+
+        this.toast.success('Recibo generado correctamente');
+        this.load = false;
+      })
+      .catch((error: any) => {
+        console.error('❌ Error al generar recibo:', error);
+        this.toast.error('Error al generar el recibo: ' + (error.message || 'Error desconocido'));
+        this.load = false;
+      });
+
+    } catch (error: any) {
+      console.error('❌ Error inesperado:', error);
+      this.toast.error('Error al procesar la solicitud');
+      this.load = false;
+    }
+  }
 
   changeDateCreated(ev:MatDatepickerInputEvent<Date>){}
 }

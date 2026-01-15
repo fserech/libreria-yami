@@ -289,6 +289,11 @@
                 }
               </button>
             </th>
+            <th>
+              <div class="w-full h-full bg-gray-200 text-gray-600 dark:bg-slate-950 dark:text-gray-100 rounded-lg p-1 text-center">
+                <p>Acciones</p>
+              </div>
+            </th>
           </tr>
         </thead>
 
@@ -322,20 +327,32 @@
                 </td>
                 <td class="rounded">{{ formatDateNotHour(order.dateDeliver) }}</td>
                 <td class="rounded">
-                  <div class="flex">
+                  <div class="flex justify-center gap-1">
+                    <!-- Ver orden -->
                     @if (order.status === 'FINALIZED' || order.status === 'PENDING' || order.status === 'CANCEL') {
-                      <button (click)="view(order.id)" class="btn-action">
-                        <ng-icon class="text-blue-500 font-bold float-end" size="20" name="matRemoveRedEyeOutline"></ng-icon>
+                      <button (click)="view(order.id)" class="btn-action" title="Ver detalle">
+                        <ng-icon class="text-blue-500 font-bold" size="20" name="matRemoveRedEyeOutline"></ng-icon>
                       </button>
                     }
+
+                    <!-- Imprimir recibo - SOLO para órdenes FINALIZADAS -->
+                    @if (order.status === 'FINALIZED') {
+                      <button (click)="printReceipt(order.id)" class="btn-action" title="Imprimir recibo">
+                        <ng-icon class="text-purple-500 font-bold" size="20" name="matReceiptLongOutline"></ng-icon>
+                      </button>
+                    }
+
+                    <!-- Finalizar orden -->
                     @if (order.status === 'PENDING') {
-                      <button (click)="finalizedOrder(order.id)" class="btn-action">
-                        <ng-icon class="text-emerald-500 font-bold float-end" size="20" name="bootstrapCheckCircleFill"></ng-icon>
+                      <button (click)="finalizedOrder(order.id)" class="btn-action" title="Finalizar venta">
+                        <ng-icon class="text-emerald-500 font-bold" size="20" name="bootstrapCheckCircleFill"></ng-icon>
                       </button>
                     }
+
+                    <!-- Cancelar orden -->
                     @if (order.status !== 'FINALIZED' && order.status !== 'CANCEL') {
-                      <button (click)="cancelOrder(order.id)" class="btn-action">
-                        <ng-icon class="text-red-500 font-bold float-end" size="20" name="bootstrapXCircle"></ng-icon>
+                      <button (click)="cancelOrder(order.id)" class="btn-action" title="Anular venta">
+                        <ng-icon class="text-red-500 font-bold" size="20" name="bootstrapXCircle"></ng-icon>
                       </button>
                     }
                   </div>
