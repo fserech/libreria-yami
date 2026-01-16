@@ -21,10 +21,12 @@ import { Product, Category } from '../../../shared/interfaces/product';
 import { Order, ProductOrder } from '../../../shared/interfaces/order';
 import { Client } from '../../../shared/interfaces/client';
 import moment from 'moment';
+import { AuthService } from '../../../shared/services/auth.service';
+import { CrudService } from '../../../shared/services/crud.service';
+import { URL_ORDERS } from '../../../shared/constants/endpoints';
 
 Chart.register(...registerables);
 
-// Interfaces locales solo para el dashboard UI
 interface Stat {
   label: string;
   value: string;
@@ -44,12 +46,11 @@ interface KPI {
   change: string;
 }
 
-// Interface para mostrar top productos (extiende ProductOrder con datos calculados)
 interface TopProductDisplay {
   name: string;
-  sales: number;      // Cantidad total vendida
-  revenue: number;    // Ingresos totales
-  trend: number;      // Tendencia vs mes anterior
+  sales: number;
+  revenue: number;
+  trend: number;
 }
 
 interface DashboardData {
@@ -103,7 +104,11 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   kpis: KPI[] = [];
   topProducts: TopProductDisplay[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private auth: AuthService,
+    private crud: CrudService
+  ) {}
 
   async ngOnInit() {
     await this.loadDashboardData();
@@ -132,26 +137,34 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
       let orders: Order[] = [];
       try {
+        // ✅ Configurar CrudService para usar el endpoint de órdenes
+        this.crud.baseUrl = URL_ORDERS;
+
         const endDate = new Date();
         const startDate = new Date();
         startDate.setMonth(startDate.getMonth() - 12);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
 
-        const url = `${environment.apiUrl}/api/v1/finalizedOrders` +
-          `?idUsers=0` +
-          `&fechaInicio=${encodeURIComponent(this.formatDateToLocalString(startDate))}` +
-          `&fechaFin=${encodeURIComponent(this.formatDateToLocalString(endDate))}`;
+        // ✅ Construir filtros igual que el grid
+        let filter = '';
+        filter += `&dateCreatedInit=${startDate.toISOString()}`;
+        filter += `&dateCreatedEnd=${endDate.toISOString()}`;
+
+        // ✅ Aplicar filtro de usuario si es ROLE_USER
+        const userData = this.auth.getUserData();
+        if (userData && userData.role === 'ROLE_USER') {
+          filter += `&userId=${userData.id}`;
+        }
 
         console.log('🔍 Consultando órdenes desde:', startDate.toLocaleDateString(), 'hasta:', endDate.toLocaleDateString());
+        console.log('👤 Usuario actual:', userData);
+        console.log('📡 Filtros aplicados:', filter);
 
-        const response: any = await firstValueFrom(this.http.post<any>(url, {}));
+        // ✅ CORREGIDO: page empieza desde 1 en el backend
+        const response: any = await this.crud.getPage('asc', 'id', 10000, 1, filter);
 
-        orders = Array.isArray(response)
-          ? response
-          : Array.isArray(response?.data)
-            ? response.data
-            : Array.isArray(response?.orders)
-              ? response.orders
-              : [];
+        orders = response?.content || [];
 
         console.log('📋 Total órdenes recibidas:', orders.length);
 
@@ -162,10 +175,18 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             return acc;
           }, {});
           console.log('📊 Órdenes por status:', statusCount);
+
+          console.log('📝 Primeras 3 órdenes:', orders.slice(0, 3).map(o => ({
+            id: o.id,
+            status: o.status,
+            totalAmount: o.totalAmount,
+            productsCount: o.products?.length || 0,
+            date: o.dateCreated
+          })));
         }
 
       } catch (e) {
-        console.warn('⚠️ Error cargando órdenes', e);
+        console.error('⚠️ Error cargando órdenes:', e);
       }
 
       const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
@@ -195,7 +216,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-
     const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
     const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
@@ -209,47 +229,43 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       return status === 'FINALIZED' || status === 'FINALIZADO';
     };
 
+    const getOrderTotal = (order: Order): number => {
+      return order.totalAmount || 0;
+    };
+
     const currentMonthOrders = orders.filter(o => {
       if (!o.dateCreated) return false;
-
       const orderDate = new Date(o.dateCreated);
-      const isCurrentMonth = orderDate.getMonth() === currentMonth &&
-                            orderDate.getFullYear() === currentYear;
-
-      return isCurrentMonth && isFinalized(o);
+      return orderDate.getMonth() === currentMonth &&
+             orderDate.getFullYear() === currentYear &&
+             isFinalized(o);
     });
 
     console.log('✅ Órdenes finalizadas del mes actual:', currentMonthOrders.length);
 
     const previousMonthOrders = orders.filter(o => {
       if (!o.dateCreated) return false;
-
       const orderDate = new Date(o.dateCreated);
-      const isLastMonth = orderDate.getMonth() === lastMonth &&
-                         orderDate.getFullYear() === lastMonthYear;
-
-      return isLastMonth && isFinalized(o);
+      return orderDate.getMonth() === lastMonth &&
+             orderDate.getFullYear() === lastMonthYear &&
+             isFinalized(o);
     });
 
     console.log('📈 Órdenes finalizadas del mes anterior:', previousMonthOrders.length);
 
-    const totalSales = currentMonthOrders.reduce((sum, o) => {
-      const orderTotal = o.totalAmount ||
-                        o.products.reduce((pSum, p) => pSum + (p.subtotal || 0), 0);
-
+    const totalSales = currentMonthOrders.reduce((sum, order) => {
+      const orderTotal = getOrderTotal(order);
       if (orderTotal > 0) {
-        console.log(`💵 Orden ${o.id}: Q${orderTotal.toFixed(2)}`);
+        console.log(`💵 Orden ${order.id}: Q${orderTotal.toFixed(2)}`);
       }
-
       return sum + orderTotal;
     }, 0);
 
     console.log('💰 Total ventas del mes actual: Q' + totalSales.toFixed(2));
 
-    const previousMonthSales = previousMonthOrders.reduce(
-      (sum, o) => sum + (o.totalAmount || o.products.reduce((pSum, p) => pSum + (p.subtotal || 0), 0)),
-      0
-    );
+    const previousMonthSales = previousMonthOrders.reduce((sum, order) => {
+      return sum + getOrderTotal(order);
+    }, 0);
 
     console.log('📊 Ventas mes anterior: Q' + previousMonthSales.toFixed(2));
 
@@ -269,7 +285,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const last12MonthsSales = orders
       .filter(o => isFinalized(o))
-      .reduce((sum, o) => sum + o.products.reduce((pSum, p) => pSum + (p.quantity || 0), 0), 0);
+      .reduce((sum, o) => {
+        if (!o.products || !Array.isArray(o.products)) return sum;
+        return sum + o.products.reduce((pSum, p) => pSum + (p.quantity || 0), 0);
+      }, 0);
 
     const totalInventoryUnits = products.reduce((sum, p) => {
       if (p.hasVariants && p.variants) {
@@ -380,6 +399,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       return status === 'FINALIZED' || status === 'FINALIZADO';
     };
 
+    const getProductSubtotal = (productOrder: ProductOrder): number => {
+      return productOrder.subtotal || 0;
+    };
+
     orders
       .filter(order => {
         if (!order.dateCreated || !isFinalized(order)) return false;
@@ -387,13 +410,17 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
       })
       .forEach(order => {
+        if (!order.products || !Array.isArray(order.products)) return;
+
         order.products.forEach((productOrder: ProductOrder) => {
           const productId = productOrder.productId || productOrder.product?.id;
           if (productId) {
             const current = productSalesMap.get(productId) || { quantity: 0, revenue: 0, lastMonthQuantity: 0 };
+            const subtotal = getProductSubtotal(productOrder);
+
             productSalesMap.set(productId, {
               quantity: current.quantity + (productOrder.quantity || 0),
-              revenue: current.revenue + (productOrder.subtotal || 0),
+              revenue: current.revenue + subtotal,
               lastMonthQuantity: current.lastMonthQuantity
             });
           }
@@ -407,6 +434,8 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         return orderDate.getMonth() === lastMonth && orderDate.getFullYear() === lastMonthYear;
       })
       .forEach(order => {
+        if (!order.products || !Array.isArray(order.products)) return;
+
         order.products.forEach((productOrder: ProductOrder) => {
           const productId = productOrder.productId || productOrder.product?.id;
           if (productId) {
@@ -434,6 +463,8 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           revenue: sales.revenue,
           trend: Number(trend.toFixed(1))
         });
+
+        console.log(`🏆 ${product.productName}: ${sales.quantity} unidades, Q${sales.revenue.toFixed(2)}`);
       }
     });
 
@@ -441,7 +472,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
-    console.log('🏆 Top 5 productos:', this.topProducts);
+    console.log('🏆 Top 5 productos por ingresos:', this.topProducts);
 
     if (this.topProducts.length === 0) {
       this.topProducts = [{
@@ -465,6 +496,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       return status === 'FINALIZED' || status === 'FINALIZADO';
     };
 
+    const getOrderTotal = (order: Order): number => {
+      return order.totalAmount || 0;
+    };
+
     orders.forEach(order => {
       if (!order.dateCreated || !isFinalized(order)) return;
 
@@ -474,8 +509,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       );
 
       if (monthIndex !== -1) {
-        const orderTotal = order.totalAmount ||
-                          order.products.reduce((sum, p) => sum + (p.subtotal || 0), 0);
+        const orderTotal = getOrderTotal(order);
         salesData[monthIndex] += orderTotal;
       }
     });
@@ -483,6 +517,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const goalsData = [15000, 15000, 16000, 16000, 18000, 20000];
 
     console.log('📈 Datos de ventas por mes:', salesData);
+    console.log('📊 Desglose por mes:');
+    months.forEach((month, index) => {
+      console.log(`  ${month.label}: Q${salesData[index].toFixed(2)}`);
+    });
 
     this.lineChart.data.labels = months.map(m => m.label);
     this.lineChart.data.datasets[0].data = salesData;
@@ -608,10 +646,44 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+          padding: {
+            bottom: 20
+          }
+        },
         plugins: {
           legend: {
             display: true,
             position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              pointStyle: 'circle',
+              padding: 12,
+              font: {
+                size: 10
+              },
+              boxWidth: 8,
+              boxHeight: 8,
+              generateLabels: function(chart) {
+                const data = chart.data;
+                if (data.labels && data.datasets.length) {
+                  return data.labels.map((label, i) => {
+                    const dataset = data.datasets[0];
+                    return {
+                      text: label as string,
+                      fillStyle: dataset.backgroundColor[i] as string,
+                      hidden: false,
+                      index: i,
+                      strokeStyle: dataset.backgroundColor[i] as string,
+                      pointStyle: 'circle'
+                    };
+                  });
+                }
+                return [];
+              }
+            },
+            maxHeight: 200,
+            align: 'center'
           },
           tooltip: {
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
