@@ -121,7 +121,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
- // SOLUCIÓN: Modificar la carga de órdenes para incluir los productos
+// SOLUCIÓN COMPLETA: Cargar productos sin perder las métricas de ventas
 
 async loadDashboardData() {
   this.loading = true;
@@ -138,6 +138,8 @@ async loadDashboardData() {
     console.log('👥 Clientes cargados:', clients.length);
 
     let orders: Order[] = [];
+    let ordersWithProducts: Order[] = [];
+
     try {
       this.crud.baseUrl = URL_ORDERS;
 
@@ -157,44 +159,52 @@ async loadDashboardData() {
       }
 
       console.log('🔍 Consultando órdenes desde:', startDate.toLocaleDateString(), 'hasta:', endDate.toLocaleDateString());
-      console.log('👤 Usuario actual:', userData);
-      console.log('📡 Filtros aplicados:', filter);
 
       const response: any = await this.crud.getPage('asc', 'id', 10000, 1, filter);
-
       orders = response?.content || [];
 
       console.log('📋 Total órdenes recibidas:', orders.length);
 
-      // DIAGNÓSTICO: Verificar si las órdenes tienen productos
+      // VERIFICAR: ¿Las órdenes tienen productos?
       if (orders.length > 0) {
         const firstOrder = orders[0];
-        console.log('🔍 DIAGNÓSTICO - Primera orden completa:', firstOrder);
-        console.log('🔍 ¿Tiene products?', firstOrder.products);
-        console.log('🔍 ¿products es array?', Array.isArray(firstOrder.products));
-        console.log('🔍 ¿Cuántos products?', firstOrder.products?.length);
+        console.log('🔍 Primera orden del listado:', {
+          id: firstOrder.id,
+          totalAmount: firstOrder.totalAmount,
+          hasProducts: !!firstOrder.products,
+          productsCount: firstOrder.products?.length
+        });
 
-        // Si products está undefined, intentar cargar las órdenes una por una
+        // Si NO tienen productos, cargarlos individualmente
         if (!firstOrder.products) {
-          console.warn('⚠️ Las órdenes no incluyen productos. Cargando órdenes individuales...');
+          console.warn('⚠️ Las órdenes no incluyen productos. Cargando detalles...');
 
-          // Cargar las primeras 20 órdenes con sus detalles completos
-          const ordersWithDetails = await Promise.all(
-            orders.slice(0, 20).map(order =>
-              firstValueFrom(this.crud.getId(order.id)).catch(err => {
-                console.error(`Error cargando orden ${order.id}:`, err);
-                return null;
-              })
-            )
+          // Cargar TODAS las órdenes con productos (no solo 20)
+          const ordersWithDetailsPromises = orders.map(order =>
+            firstValueFrom(this.crud.getId(order.id)).catch(err => {
+              console.error(`Error cargando orden ${order.id}:`, err);
+              // Retornar la orden original sin productos si falla
+              return order;
+            })
           );
 
-          orders = ordersWithDetails.filter(o => o !== null) as Order[];
+          ordersWithProducts = await Promise.all(ordersWithDetailsPromises);
 
-          console.log('📋 Órdenes con detalles cargadas:', orders.length);
-          if (orders.length > 0) {
-            console.log('🔍 Primera orden con detalles:', orders[0]);
-            console.log('🔍 Productos en primera orden:', orders[0].products);
+          console.log('✅ Órdenes con detalles cargadas:', ordersWithProducts.length);
+
+          // Verificar la primera orden cargada
+          if (ordersWithProducts.length > 0) {
+            console.log('🔍 Primera orden con detalles:', {
+              id: ordersWithProducts[0].id,
+              totalAmount: ordersWithProducts[0].totalAmount,
+              hasProducts: !!ordersWithProducts[0].products,
+              productsCount: ordersWithProducts[0].products?.length,
+              products: ordersWithProducts[0].products
+            });
           }
+        } else {
+          // Si ya tienen productos, usar las órdenes originales
+          ordersWithProducts = orders;
         }
 
         const statusCount = orders.reduce((acc: any, order) => {
@@ -203,33 +213,23 @@ async loadDashboardData() {
           return acc;
         }, {});
         console.log('📊 Órdenes por status:', statusCount);
-
-        console.log('📝 Primeras 3 órdenes:', orders.slice(0, 3).map(o => ({
-          id: o.id,
-          status: o.status,
-          totalAmount: o.totalAmount,
-          productsCount: o.products?.length || 0,
-          date: o.dateCreated,
-          products: o.products?.map(p => ({
-            productId: p.productId,
-            productName: p.product?.productName,
-            quantity: p.quantity,
-            subtotal: p.subtotal
-          }))
-        })));
       }
 
     } catch (e) {
       console.error('⚠️ Error cargando órdenes:', e);
     }
 
+    // IMPORTANTE: Usar 'orders' para métricas (tienen totalAmount)
+    // y 'ordersWithProducts' para top productos (tienen el detalle de productos)
     const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
 
     console.log('💰 Métricas calculadas:', dashboardData);
 
     this.updateStats(dashboardData, products);
     this.updateKPIs(dashboardData, orders);
-    this.calculateTopProductsFromOrders(orders, products);
+
+    // Usar ordersWithProducts que tienen el detalle de productos
+    this.calculateTopProductsFromOrders(ordersWithProducts, products);
 
     if (this.pieChart) {
       this.updatePieChartWithRealData(products, categories);
