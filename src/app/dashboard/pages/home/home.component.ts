@@ -121,96 +121,133 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
-  async loadDashboardData() {
-    this.loading = true;
+ // SOLUCIÓN: Modificar la carga de órdenes para incluir los productos
 
+async loadDashboardData() {
+  this.loading = true;
+
+  try {
+    const [products, categories, clients] = await Promise.all([
+      firstValueFrom(this.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)),
+      firstValueFrom(this.http.get<Category[]>(`${environment.apiUrl}/api/v1/categories`)),
+      firstValueFrom(this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`))
+    ]);
+
+    console.log('📦 Productos cargados:', products.length);
+    console.log('📂 Categorías cargadas:', categories.length);
+    console.log('👥 Clientes cargados:', clients.length);
+
+    let orders: Order[] = [];
     try {
-      const [products, categories, clients] = await Promise.all([
-        firstValueFrom(this.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)),
-        firstValueFrom(this.http.get<Category[]>(`${environment.apiUrl}/api/v1/categories`)),
-        firstValueFrom(this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`))
-      ]);
+      this.crud.baseUrl = URL_ORDERS;
 
-      console.log('📦 Productos cargados:', products.length);
-      console.log('📂 Categorías cargadas:', categories.length);
-      console.log('👥 Clientes cargados:', clients.length);
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 12);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
 
-      let orders: Order[] = [];
-      try {
-        // ✅ Configurar CrudService para usar el endpoint de órdenes
-        this.crud.baseUrl = URL_ORDERS;
+      let filter = '';
+      filter += `&dateCreatedInit=${startDate.toISOString()}`;
+      filter += `&dateCreatedEnd=${endDate.toISOString()}`;
 
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 12);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
+      const userData = this.auth.getUserData();
+      if (userData && userData.role === 'ROLE_USER') {
+        filter += `&userId=${userData.id}`;
+      }
 
-        // ✅ Construir filtros igual que el grid
-        let filter = '';
-        filter += `&dateCreatedInit=${startDate.toISOString()}`;
-        filter += `&dateCreatedEnd=${endDate.toISOString()}`;
+      console.log('🔍 Consultando órdenes desde:', startDate.toLocaleDateString(), 'hasta:', endDate.toLocaleDateString());
+      console.log('👤 Usuario actual:', userData);
+      console.log('📡 Filtros aplicados:', filter);
 
-        // ✅ Aplicar filtro de usuario si es ROLE_USER
-        const userData = this.auth.getUserData();
-        if (userData && userData.role === 'ROLE_USER') {
-          filter += `&userId=${userData.id}`;
+      const response: any = await this.crud.getPage('asc', 'id', 10000, 1, filter);
+
+      orders = response?.content || [];
+
+      console.log('📋 Total órdenes recibidas:', orders.length);
+
+      // DIAGNÓSTICO: Verificar si las órdenes tienen productos
+      if (orders.length > 0) {
+        const firstOrder = orders[0];
+        console.log('🔍 DIAGNÓSTICO - Primera orden completa:', firstOrder);
+        console.log('🔍 ¿Tiene products?', firstOrder.products);
+        console.log('🔍 ¿products es array?', Array.isArray(firstOrder.products));
+        console.log('🔍 ¿Cuántos products?', firstOrder.products?.length);
+
+        // Si products está undefined, intentar cargar las órdenes una por una
+        if (!firstOrder.products) {
+          console.warn('⚠️ Las órdenes no incluyen productos. Cargando órdenes individuales...');
+
+          // Cargar las primeras 20 órdenes con sus detalles completos
+          const ordersWithDetails = await Promise.all(
+            orders.slice(0, 20).map(order =>
+              firstValueFrom(this.crud.getId(order.id)).catch(err => {
+                console.error(`Error cargando orden ${order.id}:`, err);
+                return null;
+              })
+            )
+          );
+
+          orders = ordersWithDetails.filter(o => o !== null) as Order[];
+
+          console.log('📋 Órdenes con detalles cargadas:', orders.length);
+          if (orders.length > 0) {
+            console.log('🔍 Primera orden con detalles:', orders[0]);
+            console.log('🔍 Productos en primera orden:', orders[0].products);
+          }
         }
 
-        console.log('🔍 Consultando órdenes desde:', startDate.toLocaleDateString(), 'hasta:', endDate.toLocaleDateString());
-        console.log('👤 Usuario actual:', userData);
-        console.log('📡 Filtros aplicados:', filter);
+        const statusCount = orders.reduce((acc: any, order) => {
+          const status = order.status || 'SIN_STATUS';
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('📊 Órdenes por status:', statusCount);
 
-        // ✅ CORREGIDO: page empieza desde 1 en el backend
-        const response: any = await this.crud.getPage('asc', 'id', 10000, 1, filter);
-
-        orders = response?.content || [];
-
-        console.log('📋 Total órdenes recibidas:', orders.length);
-
-        if (orders.length > 0) {
-          const statusCount = orders.reduce((acc: any, order) => {
-            const status = order.status || 'SIN_STATUS';
-            acc[status] = (acc[status] || 0) + 1;
-            return acc;
-          }, {});
-          console.log('📊 Órdenes por status:', statusCount);
-
-          console.log('📝 Primeras 3 órdenes:', orders.slice(0, 3).map(o => ({
-            id: o.id,
-            status: o.status,
-            totalAmount: o.totalAmount,
-            productsCount: o.products?.length || 0,
-            date: o.dateCreated
-          })));
-        }
-
-      } catch (e) {
-        console.error('⚠️ Error cargando órdenes:', e);
+        console.log('📝 Primeras 3 órdenes:', orders.slice(0, 3).map(o => ({
+          id: o.id,
+          status: o.status,
+          totalAmount: o.totalAmount,
+          productsCount: o.products?.length || 0,
+          date: o.dateCreated,
+          products: o.products?.map(p => ({
+            productId: p.productId,
+            productName: p.product?.productName,
+            quantity: p.quantity,
+            subtotal: p.subtotal
+          }))
+        })));
       }
 
-      const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
-
-      console.log('💰 Métricas calculadas:', dashboardData);
-
-      this.updateStats(dashboardData, products);
-      this.updateKPIs(dashboardData, orders);
-      this.calculateTopProductsFromOrders(orders, products);
-
-      if (this.pieChart) {
-        this.updatePieChartWithRealData(products, categories);
-      }
-
-      if (this.lineChart) {
-        this.updateLineChartWithRealData(orders);
-      }
-
-    } catch (error) {
-      console.error('❌ Error cargando datos del dashboard:', error);
-    } finally {
-      this.loading = false;
+    } catch (e) {
+      console.error('⚠️ Error cargando órdenes:', e);
     }
+
+    const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
+
+    console.log('💰 Métricas calculadas:', dashboardData);
+
+    this.updateStats(dashboardData, products);
+    this.updateKPIs(dashboardData, orders);
+    this.calculateTopProductsFromOrders(orders, products);
+
+    if (this.pieChart) {
+      this.updatePieChartWithRealData(products, categories);
+    }
+
+    if (this.lineChart) {
+      this.updateLineChartWithRealData(orders);
+    }
+
+  } catch (error) {
+    console.error('❌ Error cargando datos del dashboard:', error);
+  } finally {
+    this.loading = false;
   }
+}
+
+// Mantén este método igual que antes
+
 
   calculateDashboardMetrics(products: Product[], orders: Order[], clients: Client[]): DashboardData {
     const now = new Date();
@@ -384,105 +421,134 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     ];
   }
 
-  calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
-    const productSalesMap = new Map<number, { quantity: number; revenue: number; lastMonthQuantity: number }>();
+// Reemplaza el método calculateTopProductsFromOrders en home.component.ts
+calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
+  console.log('🔍 Calculando productos más vendidos...');
+  console.log('📦 Total productos disponibles:', products.length);
+  console.log('📋 Total órdenes a procesar:', orders.length);
 
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  const productSalesMap = new Map<number, {
+    quantity: number;
+    revenue: number;
+    ordersCount: number;
+  }>();
 
-    const isFinalized = (order: Order): boolean => {
-      if (!order.status) return false;
-      const status = order.status.toUpperCase().trim();
-      return status === 'FINALIZED' || status === 'FINALIZADO';
-    };
+  const isFinalized = (order: Order): boolean => {
+    if (!order.status) return false;
+    const status = order.status.toUpperCase().trim();
+    return status === 'FINALIZED' || status === 'FINALIZADO';
+  };
 
-    const getProductSubtotal = (productOrder: ProductOrder): number => {
-      return productOrder.subtotal || 0;
-    };
+  const finalizedOrders = orders.filter(order => isFinalized(order));
+  console.log('✅ Total órdenes finalizadas:', finalizedOrders.length);
 
-    orders
-      .filter(order => {
-        if (!order.dateCreated || !isFinalized(order)) return false;
-        const orderDate = new Date(order.dateCreated);
-        return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
-      })
-      .forEach(order => {
-        if (!order.products || !Array.isArray(order.products)) return;
+  if (finalizedOrders.length > 0) {
+    console.log('📝 Primera orden:', {
+      id: finalizedOrders[0].id,
+      products: finalizedOrders[0].products
+    });
+  }
 
-        order.products.forEach((productOrder: ProductOrder) => {
-          const productId = productOrder.productId || productOrder.product?.id;
-          if (productId) {
-            const current = productSalesMap.get(productId) || { quantity: 0, revenue: 0, lastMonthQuantity: 0 };
-            const subtotal = getProductSubtotal(productOrder);
+  let totalProductsProcessed = 0;
 
-            productSalesMap.set(productId, {
-              quantity: current.quantity + (productOrder.quantity || 0),
-              revenue: current.revenue + subtotal,
-              lastMonthQuantity: current.lastMonthQuantity
-            });
-          }
-        });
-      });
+  finalizedOrders.forEach((order, orderIndex) => {
+    if (!order.products || !Array.isArray(order.products)) {
+      return;
+    }
 
-    orders
-      .filter(order => {
-        if (!order.dateCreated || !isFinalized(order)) return false;
-        const orderDate = new Date(order.dateCreated);
-        return orderDate.getMonth() === lastMonth && orderDate.getFullYear() === lastMonthYear;
-      })
-      .forEach(order => {
-        if (!order.products || !Array.isArray(order.products)) return;
+    order.products.forEach((productOrder: ProductOrder) => {
+      // CLAVE: Obtener el productId correctamente
+      let productId: number | undefined;
 
-        order.products.forEach((productOrder: ProductOrder) => {
-          const productId = productOrder.productId || productOrder.product?.id;
-          if (productId) {
-            const current = productSalesMap.get(productId) || { quantity: 0, revenue: 0, lastMonthQuantity: 0 };
-            productSalesMap.set(productId, {
-              ...current,
-              lastMonthQuantity: current.lastMonthQuantity + (productOrder.quantity || 0)
-            });
-          }
-        });
-      });
-
-    const topProductsData: TopProductDisplay[] = [];
-
-    productSalesMap.forEach((sales, productId) => {
-      const product = products.find(p => p.id === productId);
-      if (product && sales.quantity > 0) {
-        const trend = sales.lastMonthQuantity > 0
-          ? ((sales.quantity - sales.lastMonthQuantity) / sales.lastMonthQuantity) * 100
-          : sales.quantity > 0 ? 100 : 0;
-
-        topProductsData.push({
-          name: product.productName,
-          sales: sales.quantity,
-          revenue: sales.revenue,
-          trend: Number(trend.toFixed(1))
-        });
-
-        console.log(`🏆 ${product.productName}: ${sales.quantity} unidades, Q${sales.revenue.toFixed(2)}`);
+      // Opción 1: Campo directo productId
+      if (productOrder.productId) {
+        productId = productOrder.productId;
       }
+      // Opción 2: Dentro del objeto product
+      else if (productOrder.product?.id) {
+        productId = productOrder.product.id;
+      }
+
+      if (orderIndex === 0 && totalProductsProcessed === 0) {
+        console.log('🔍 Primer ProductOrder:', {
+          estructura_completa: productOrder,
+          tiene_productId: !!productOrder.productId,
+          tiene_product: !!productOrder.product,
+          product_id_en_objeto: productOrder.product?.id,
+          productId_final: productId,
+          quantity: productOrder.quantity,
+          subtotal: productOrder.subtotal
+        });
+      }
+
+      if (!productId) {
+        console.warn('⚠️ No se pudo obtener productId de:', productOrder);
+        return;
+      }
+
+      totalProductsProcessed++;
+
+      const current = productSalesMap.get(productId) || {
+        quantity: 0,
+        revenue: 0,
+        ordersCount: 0
+      };
+
+      productSalesMap.set(productId, {
+        quantity: current.quantity + (productOrder.quantity || 0),
+        revenue: current.revenue + (productOrder.subtotal || 0),
+        ordersCount: current.ordersCount + 1
+      });
+    });
+  });
+
+  console.log('📊 Productos procesados:', totalProductsProcessed);
+  console.log('📊 Productos únicos:', productSalesMap.size);
+  console.log('📊 IDs en mapa:', Array.from(productSalesMap.keys()));
+  console.log('📊 IDs en catálogo:', products.slice(0, 10).map(p => p.id));
+
+  const topProductsData: TopProductDisplay[] = [];
+
+  productSalesMap.forEach((sales, productId) => {
+    const product = products.find(p => p.id === productId);
+
+    if (!product) {
+      console.warn(`⚠️ Producto ${productId} no encontrado en catálogo`);
+      return;
+    }
+
+    // El trend ahora representa el número de órdenes en las que apareció
+    topProductsData.push({
+      name: product.productName,
+      sales: sales.quantity,
+      revenue: sales.revenue,
+      trend: sales.ordersCount
     });
 
-    this.topProducts = topProductsData
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
+    console.log(`✅ ${product.productName}: ${sales.quantity} unidades, Q${sales.revenue.toFixed(2)}, en ${sales.ordersCount} órdenes`);
+  });
 
-    console.log('🏆 Top 5 productos por ingresos:', this.topProducts);
+  // Ordenar por unidades vendidas
+  this.topProducts = topProductsData
+    .sort((a, b) => b.sales - a.sales)
+    .slice(0, 5);
 
-    if (this.topProducts.length === 0) {
-      this.topProducts = [{
-        name: 'Sin ventas este mes',
-        sales: 0,
-        revenue: 0,
-        trend: 0
-      }];
-    }
+  console.log('🏆 Top 5 productos:', this.topProducts);
+
+  if (this.topProducts.length === 0) {
+    console.log('⚠️ No hay productos vendidos');
+    this.topProducts = [{
+      name: 'Sin ventas registradas',
+      sales: 0,
+      revenue: 0,
+      trend: 0
+    }];
   }
+}
+
+
+
+
 
   updateLineChartWithRealData(orders: Order[]) {
     if (!this.lineChart) return;
