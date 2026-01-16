@@ -4,6 +4,13 @@
 </app-header>
 
 <div class="space-y-6 p-4">
+  <!-- Componente de Metas -->
+  <app-goals
+    [orders]="orders"
+    (goalCalculated)="onGoalCalculated($event)"
+    (goalConfigChanged)="onGoalConfigChanged($event)">
+  </app-goals>
+
   <!-- Stats Grid - Solo 3 cards -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
     @for (stat of stats; track stat.label) {
