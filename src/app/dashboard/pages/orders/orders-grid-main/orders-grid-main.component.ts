@@ -339,8 +339,7 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
 
   // ✅✅✅ IMPLEMENTACIÓN DE printReceipt ✅✅✅
   async printReceipt(orderId: number) {
-    console.log('=== IMPRIMIENDO RECIBO ===');
-    console.log('Order ID:', orderId);
+
 
     this.load = true;
 
@@ -354,7 +353,7 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
         return;
       }
 
-      console.log('Orden encontrada:', order);
+
 
       // Generar el reporte usando el servicio
       // NOTA: El backend espera order_id como parámetro
@@ -362,7 +361,7 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
         this.reportsService.getReceiptByOrderId(orderId)
       )
       .then((blob: Blob) => {
-        console.log('✅ PDF recibido, tamaño:', blob.size);
+
 
         // Crear URL del blob
         const url = window.URL.createObjectURL(blob);
