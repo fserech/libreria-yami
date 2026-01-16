@@ -1,6 +1,3 @@
-export const allowedDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const;
-export type OfferDay = typeof allowedDays[number];
-
 export interface Client {
   id?: number;
   name: string;

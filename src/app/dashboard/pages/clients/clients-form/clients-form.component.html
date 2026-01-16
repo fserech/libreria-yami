@@ -1,6 +1,4 @@
-
-<app-header headerTitle="Clientes" headerDescription="Gestión de módulo de clientes, crear, editar, activar, desactivar y eliminar productos."></app-header>
-
+<app-header headerTitle="Clientes" headerDescription="Gestión de módulo de clientes, crear, editar y eliminar clientes."></app-header>
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
   <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between">
     @if (mode==='new') {
@@ -9,7 +7,6 @@
     @if (mode === 'edit'|| mode === 'view') {
       <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID cliente: </b>{{ id }}</p>
     }
-
     <button (click)="back()" class="btn-back">
       <ng-icon class="btn-back-icon" size="20" name="matArrowBackOutline"></ng-icon>
       <p class="hidden sm:block text-sm font-bold">Regresar</p>
@@ -27,7 +24,7 @@
       icon="matDriveFileRenameOutlineOutline"
       label="Nombre Cliente"
       placeholder="Nombre Cliente"
-      helpMessage="Sólo se aceptan caracteres alfbeticos"
+      helpMessage="Sólo se aceptan caracteres alfabéticos"
       errorMessage="Error message."
       [minlength]="1"
       [maxlength]="60"
@@ -41,7 +38,7 @@
       icon="matAddLocationAltOutline"
       label="Dirección de cliente"
       placeholder="Dirección de cliente"
-      helpMessage="Sólo se aceptan caracteres alfanumericos"
+      helpMessage="Sólo se aceptan caracteres alfanuméricos"
       errorMessage="Error message."
       [minlength]="1"
       [maxlength]="60"
@@ -50,49 +47,38 @@
     </app-input>
 
     <app-input
-    [form]="form"
-    name="telephone"
-    icon="matAddIcCallOutline"
-    label="Teléfono de cliente"
-    placeholder="Teléfono de cliente"
-    helpMessage="Sólo se aceptan números enteros "
-    errorMessage="Error message."
-    [minlength]="1"
-    [maxlength]="8"
-    [counter]="true"
-    [load]="load">
+      [form]="form"
+      name="telephone"
+      icon="matAddIcCallOutline"
+      label="Teléfono de cliente"
+      placeholder="Teléfono de cliente"
+      helpMessage="Sólo se aceptan números enteros"
+      errorMessage="Error message."
+      [minlength]="8"
+      [maxlength]="8"
+      [counter]="true"
+      [load]="load">
     </app-input>
-
-    <app-select
-    [form]="form"
-    name="offerDay"
-    label="Día de visita"
-    icon="matTodayOutline"
-    placeholder="Día de visita"
-    helpMessage="Seleccione un semana."
-    errorMessage="Error message."
-    [load]="load"
-    [options]="daysOfWeek">
-    </app-select>
 
     @if (isAdmin()) {
       <app-select
-      [form]="form"
-      [load]="load"
-      [options] ="users"
-      placeholder="Vendedor de cliente"
-      name="idUser"
-      icon="matPersonOutline">
+        [form]="form"
+        [load]="load"
+        [options]="users"
+        placeholder="Vendedor de cliente"
+        name="idUser"
+        icon="matPersonOutline"
+        label="Vendedor asignado"
+        helpMessage="Seleccione el vendedor responsable">
       </app-select>
     }
-
   </div>
+
   <div class="w-full border-b dark:border-slate-700 pb-3 pt-3 flex justify-center sm:justify-end mb-2">
     @if(!load){
-    <button (click)="submit()" [disabled]="form.invalid" class="btn-primary h-10 w-36 font-bold">Guardar</button>
+      <button (click)="submit()" [disabled]="form.invalid" class="btn-primary h-10 w-36 font-bold">Guardar</button>
     } @else if(load){
       <button class="btn-primary h-10 w-36 font-bold animate-pulse"></button>
-      }
+    }
   </div>
-
 </div>
