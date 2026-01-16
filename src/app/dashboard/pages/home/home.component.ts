@@ -63,6 +63,23 @@ interface DashboardData {
   previousMonthSales: number;
 }
 
+// Interfaces para el sistema de metas
+interface GoalConfig {
+  type: 'fixed' | 'growth' | 'historical_avg' | 'progressive';
+  baseAmount?: number;
+  growthRate?: number;
+  minimumGoal?: number;
+  maximumGoal?: number;
+}
+
+interface MonthlyGoal {
+  month: number;
+  year: number;
+  amount: number;
+  label: string;
+  type: 'calculated' | 'manual';
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -104,6 +121,17 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   kpis: KPI[] = [];
   topProducts: TopProductDisplay[] = [];
 
+  // Sistema de metas dinámicas
+  private goalConfig: GoalConfig = {
+    type: 'progressive',
+    baseAmount: 15000,
+    growthRate: 5,
+    minimumGoal: 10000,
+    maximumGoal: 50000
+  };
+
+  private monthlyGoals: MonthlyGoal[] = [];
+
   constructor(
     private http: HttpClient,
     private auth: AuthService,
@@ -111,6 +139,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
+    this.loadGoalConfiguration();
     await this.loadDashboardData();
   }
 
@@ -121,133 +150,360 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
-// SOLUCIÓN COMPLETA: Cargar productos sin perder las métricas de ventas
+  // ============================================================================
+  // SISTEMA DE METAS DINÁMICAS
+  // ============================================================================
 
-async loadDashboardData() {
-  this.loading = true;
+  private loadGoalConfiguration() {
+    const savedConfig = localStorage.getItem('goalConfig');
+    if (savedConfig) {
+      try {
+        this.goalConfig = JSON.parse(savedConfig);
+        console.log('🎯 Configuración de metas cargada:', this.goalConfig);
+      } catch (e) {
+        console.warn('Error cargando configuración de metas, usando valores por defecto');
+      }
+    }
+  }
 
-  try {
-    const [products, categories, clients] = await Promise.all([
-      firstValueFrom(this.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)),
-      firstValueFrom(this.http.get<Category[]>(`${environment.apiUrl}/api/v1/categories`)),
-      firstValueFrom(this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`))
-    ]);
+  saveGoalConfiguration(config: GoalConfig) {
+    this.goalConfig = config;
+    localStorage.setItem('goalConfig', JSON.stringify(config));
+    console.log('💾 Configuración de metas guardada:', config);
+  }
 
-    console.log('📦 Productos cargados:', products.length);
-    console.log('📂 Categorías cargadas:', categories.length);
-    console.log('👥 Clientes cargados:', clients.length);
+  calculateCurrentMonthGoal(orders: Order[]): number {
+    switch (this.goalConfig.type) {
+      case 'fixed':
+        return this.goalConfig.baseAmount || 20000;
+      case 'growth':
+        return this.calculateGrowthBasedGoal();
+      case 'historical_avg':
+        return this.calculateHistoricalAverageGoal(orders);
+      case 'progressive':
+        return this.calculateProgressiveGoal(orders);
+      default:
+        return this.goalConfig.baseAmount || 20000;
+    }
+  }
 
-    let orders: Order[] = [];
-    let ordersWithProducts: Order[] = [];
+  private calculateGrowthBasedGoal(): number {
+    const now = new Date();
+    const monthsSinceStart = now.getMonth();
+    const baseAmount = this.goalConfig.baseAmount || 15000;
+    const growthRate = (this.goalConfig.growthRate || 5) / 100;
+
+    let goal = baseAmount * Math.pow(1 + growthRate, monthsSinceStart);
+    goal = Math.max(goal, this.goalConfig.minimumGoal || 10000);
+    goal = Math.min(goal, this.goalConfig.maximumGoal || 50000);
+
+    return Math.round(goal);
+  }
+
+  private calculateHistoricalAverageGoal(orders: Order[]): number {
+    const now = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    const isFinalized = (order: Order): boolean => {
+      if (!order.status) return false;
+      const status = order.status.toUpperCase().trim();
+      return status === 'FINALIZED' || status === 'FINALIZADO';
+    };
+
+    const recentOrders = orders.filter(o => {
+      if (!o.dateCreated || !isFinalized(o)) return false;
+      const orderDate = new Date(o.dateCreated);
+      return orderDate >= threeMonthsAgo && orderDate < now;
+    });
+
+    if (recentOrders.length === 0) {
+      return this.goalConfig.baseAmount || 20000;
+    }
+
+    const salesByMonth = new Map<string, number>();
+    recentOrders.forEach(order => {
+      const orderDate = new Date(order.dateCreated!);
+      const key = `${orderDate.getFullYear()}-${orderDate.getMonth()}`;
+      const current = salesByMonth.get(key) || 0;
+      salesByMonth.set(key, current + (order.totalAmount || 0));
+    });
+
+    const monthsWithSales = Array.from(salesByMonth.values());
+    const avgMonthlySales = monthsWithSales.reduce((a, b) => a + b, 0) / monthsWithSales.length;
+    const goal = avgMonthlySales * 1.1;
+
+    return Math.round(Math.max(goal, this.goalConfig.minimumGoal || 10000));
+  }
+
+  private calculateProgressiveGoal(orders: Order[]): number {
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const isFinalized = (order: Order): boolean => {
+      if (!order.status) return false;
+      const status = order.status.toUpperCase().trim();
+      return status === 'FINALIZED' || status === 'FINALIZADO';
+    };
+
+    const lastMonthOrders = orders.filter(o => {
+      if (!o.dateCreated || !isFinalized(o)) return false;
+      const orderDate = new Date(o.dateCreated);
+      return orderDate >= lastMonth && orderDate <= lastMonthEnd;
+    });
+
+    const lastMonthSales = lastMonthOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+    const savedGoals = localStorage.getItem('monthlyGoalsHistory');
+    let lastMonthGoal = this.goalConfig.baseAmount || 20000;
+
+    if (savedGoals) {
+      try {
+        const goalsHistory: MonthlyGoal[] = JSON.parse(savedGoals);
+        const lastGoal = goalsHistory.find(g =>
+          g.month === lastMonth.getMonth() && g.year === lastMonth.getFullYear()
+        );
+        if (lastGoal) {
+          lastMonthGoal = lastGoal.amount;
+        }
+      } catch (e) {
+        console.warn('Error leyendo historial de metas');
+      }
+    }
+
+    let newGoal: number;
+
+    if (lastMonthSales >= lastMonthGoal) {
+      newGoal = lastMonthGoal * 1.1;
+      console.log(`🎯 Meta cumplida! Aumentando 10%: Q${lastMonthGoal} → Q${newGoal.toFixed(2)}`);
+    } else if (lastMonthSales >= lastMonthGoal * 0.9) {
+      newGoal = lastMonthGoal;
+      console.log(`📊 Casi cumplida (${((lastMonthSales/lastMonthGoal)*100).toFixed(1)}%). Manteniendo meta: Q${lastMonthGoal}`);
+    } else {
+      newGoal = lastMonthGoal * 0.95;
+      console.log(`📉 Meta no cumplida. Ajustando -5%: Q${lastMonthGoal} → Q${newGoal.toFixed(2)}`);
+    }
+
+    newGoal = Math.max(newGoal, this.goalConfig.minimumGoal || 10000);
+    newGoal = Math.min(newGoal, this.goalConfig.maximumGoal || 50000);
+
+    return Math.round(newGoal);
+  }
+
+  calculateLast6MonthsGoals(orders: Order[]): number[] {
+    const months = this.getLast6Months();
+    const goals: number[] = [];
+
+    months.forEach((monthInfo) => {
+      const goal = this.calculateGoalForSpecificMonth(
+        monthInfo.month,
+        monthInfo.year,
+        orders
+      );
+      goals.push(goal);
+    });
+
+    return goals;
+  }
+
+  private calculateGoalForSpecificMonth(month: number, year: number, orders: Order[]): number {
+    const now = new Date();
+    const monthsAgo = (now.getFullYear() - year) * 12 + (now.getMonth() - month);
+
+    if (monthsAgo === 0) {
+      return this.calculateCurrentMonthGoal(orders);
+    }
+
+    const baseGoal = this.goalConfig.baseAmount || 15000;
+    const growthRate = (this.goalConfig.growthRate || 5) / 100;
+    const monthsSinceYearStart = month;
+
+    return Math.round(baseGoal * Math.pow(1 + growthRate, monthsSinceYearStart));
+  }
+
+  private saveCurrentMonthGoal(goalAmount: number) {
+    const now = new Date();
+    const currentGoal: MonthlyGoal = {
+      month: now.getMonth(),
+      year: now.getFullYear(),
+      label: this.getLast6Months()[5].label,
+      amount: goalAmount,
+      type: 'calculated'
+    };
+
+    let goalsHistory: MonthlyGoal[] = [];
+    const savedGoals = localStorage.getItem('monthlyGoalsHistory');
+    if (savedGoals) {
+      try {
+        goalsHistory = JSON.parse(savedGoals);
+      } catch (e) {
+        goalsHistory = [];
+      }
+    }
+
+    const existingIndex = goalsHistory.findIndex(g =>
+      g.month === currentGoal.month && g.year === currentGoal.year
+    );
+
+    if (existingIndex >= 0) {
+      goalsHistory[existingIndex] = currentGoal;
+    } else {
+      goalsHistory.push(currentGoal);
+    }
+
+    goalsHistory = goalsHistory.slice(-12);
+    localStorage.setItem('monthlyGoalsHistory', JSON.stringify(goalsHistory));
+  }
+
+  private getGoalTypeLabel(): string {
+    switch (this.goalConfig.type) {
+      case 'fixed': return 'fija';
+      case 'growth': return 'crecimiento';
+      case 'historical_avg': return 'promedio';
+      case 'progressive': return 'progresiva';
+      default: return '';
+    }
+  }
+
+  // Métodos públicos para cambiar tipo de meta
+  setFixedGoal(amount: number) {
+    this.saveGoalConfiguration({
+      type: 'fixed',
+      baseAmount: amount
+    });
+    this.loadDashboardData();
+  }
+
+  setGrowthGoal(baseAmount: number, growthRate: number) {
+    this.saveGoalConfiguration({
+      type: 'growth',
+      baseAmount: baseAmount,
+      growthRate: growthRate,
+      minimumGoal: baseAmount * 0.5,
+      maximumGoal: baseAmount * 3
+    });
+    this.loadDashboardData();
+  }
+
+  setHistoricalAverageGoal() {
+    this.saveGoalConfiguration({
+      type: 'historical_avg',
+      baseAmount: 15000,
+      minimumGoal: 10000
+    });
+    this.loadDashboardData();
+  }
+
+  setProgressiveGoal(baseAmount: number) {
+    this.saveGoalConfiguration({
+      type: 'progressive',
+      baseAmount: baseAmount,
+      minimumGoal: baseAmount * 0.6,
+      maximumGoal: baseAmount * 2
+    });
+    this.loadDashboardData();
+  }
+
+  // ============================================================================
+  // CARGA DE DATOS DEL DASHBOARD
+  // ============================================================================
+
+  async loadDashboardData() {
+    this.loading = true;
 
     try {
-      this.crud.baseUrl = URL_ORDERS;
+      const [products, categories, clients] = await Promise.all([
+        firstValueFrom(this.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)),
+        firstValueFrom(this.http.get<Category[]>(`${environment.apiUrl}/api/v1/categories`)),
+        firstValueFrom(this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`))
+      ]);
 
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 12);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
+      console.log('📦 Productos cargados:', products.length);
+      console.log('📂 Categorías cargadas:', categories.length);
+      console.log('👥 Clientes cargados:', clients.length);
 
-      let filter = '';
-      filter += `&dateCreatedInit=${startDate.toISOString()}`;
-      filter += `&dateCreatedEnd=${endDate.toISOString()}`;
+      let orders: Order[] = [];
+      let ordersWithProducts: Order[] = [];
 
-      const userData = this.auth.getUserData();
-      if (userData && userData.role === 'ROLE_USER') {
-        filter += `&userId=${userData.id}`;
-      }
+      try {
+        this.crud.baseUrl = URL_ORDERS;
 
-      console.log('🔍 Consultando órdenes desde:', startDate.toLocaleDateString(), 'hasta:', endDate.toLocaleDateString());
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 12);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
 
-      const response: any = await this.crud.getPage('asc', 'id', 10000, 1, filter);
-      orders = response?.content || [];
+        let filter = '';
+        filter += `&dateCreatedInit=${startDate.toISOString()}`;
+        filter += `&dateCreatedEnd=${endDate.toISOString()}`;
 
-      console.log('📋 Total órdenes recibidas:', orders.length);
-
-      // VERIFICAR: ¿Las órdenes tienen productos?
-      if (orders.length > 0) {
-        const firstOrder = orders[0];
-        console.log('🔍 Primera orden del listado:', {
-          id: firstOrder.id,
-          totalAmount: firstOrder.totalAmount,
-          hasProducts: !!firstOrder.products,
-          productsCount: firstOrder.products?.length
-        });
-
-        // Si NO tienen productos, cargarlos individualmente
-        if (!firstOrder.products) {
-          console.warn('⚠️ Las órdenes no incluyen productos. Cargando detalles...');
-
-          // Cargar TODAS las órdenes con productos (no solo 20)
-          const ordersWithDetailsPromises = orders.map(order =>
-            firstValueFrom(this.crud.getId(order.id)).catch(err => {
-              console.error(`Error cargando orden ${order.id}:`, err);
-              // Retornar la orden original sin productos si falla
-              return order;
-            })
-          );
-
-          ordersWithProducts = await Promise.all(ordersWithDetailsPromises);
-
-          console.log('✅ Órdenes con detalles cargadas:', ordersWithProducts.length);
-
-          // Verificar la primera orden cargada
-          if (ordersWithProducts.length > 0) {
-            console.log('🔍 Primera orden con detalles:', {
-              id: ordersWithProducts[0].id,
-              totalAmount: ordersWithProducts[0].totalAmount,
-              hasProducts: !!ordersWithProducts[0].products,
-              productsCount: ordersWithProducts[0].products?.length,
-              products: ordersWithProducts[0].products
-            });
-          }
-        } else {
-          // Si ya tienen productos, usar las órdenes originales
-          ordersWithProducts = orders;
+        const userData = this.auth.getUserData();
+        if (userData && userData.role === 'ROLE_USER') {
+          filter += `&userId=${userData.id}`;
         }
 
-        const statusCount = orders.reduce((acc: any, order) => {
-          const status = order.status || 'SIN_STATUS';
-          acc[status] = (acc[status] || 0) + 1;
-          return acc;
-        }, {});
-        console.log('📊 Órdenes por status:', statusCount);
+        console.log('🔍 Consultando órdenes desde:', startDate.toLocaleDateString(), 'hasta:', endDate.toLocaleDateString());
+
+        const response: any = await this.crud.getPage('asc', 'id', 10000, 1, filter);
+        orders = response?.content || [];
+
+        console.log('📋 Total órdenes recibidas:', orders.length);
+
+        if (orders.length > 0) {
+          const firstOrder = orders[0];
+
+          if (!firstOrder.products) {
+            console.warn('⚠️ Las órdenes no incluyen productos. Cargando detalles...');
+
+            const ordersWithDetailsPromises = orders.map(order =>
+              firstValueFrom(this.crud.getId(order.id)).catch(err => {
+                console.error(`Error cargando orden ${order.id}:`, err);
+                return order;
+              })
+            );
+
+            ordersWithProducts = await Promise.all(ordersWithDetailsPromises);
+            console.log('✅ Órdenes con detalles cargadas:', ordersWithProducts.length);
+          } else {
+            ordersWithProducts = orders;
+          }
+
+          const statusCount = orders.reduce((acc: any, order) => {
+            const status = order.status || 'SIN_STATUS';
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+          }, {});
+          console.log('📊 Órdenes por status:', statusCount);
+        }
+
+      } catch (e) {
+        console.error('⚠️ Error cargando órdenes:', e);
       }
 
-    } catch (e) {
-      console.error('⚠️ Error cargando órdenes:', e);
+      const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
+
+      console.log('💰 Métricas calculadas:', dashboardData);
+
+      this.updateStats(dashboardData, products, orders);
+      this.updateKPIs(dashboardData, orders);
+      this.calculateTopProductsFromOrders(ordersWithProducts, products);
+
+      if (this.pieChart) {
+        this.updatePieChartWithRealData(products, categories);
+      }
+
+      if (this.lineChart) {
+        this.updateLineChartWithRealData(orders);
+      }
+
+    } catch (error) {
+      console.error('❌ Error cargando datos del dashboard:', error);
+    } finally {
+      this.loading = false;
     }
-
-    // IMPORTANTE: Usar 'orders' para métricas (tienen totalAmount)
-    // y 'ordersWithProducts' para top productos (tienen el detalle de productos)
-    const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
-
-    console.log('💰 Métricas calculadas:', dashboardData);
-
-    this.updateStats(dashboardData, products);
-    this.updateKPIs(dashboardData, orders);
-
-    // Usar ordersWithProducts que tienen el detalle de productos
-    this.calculateTopProductsFromOrders(ordersWithProducts, products);
-
-    if (this.pieChart) {
-      this.updatePieChartWithRealData(products, categories);
-    }
-
-    if (this.lineChart) {
-      this.updateLineChartWithRealData(orders);
-    }
-
-  } catch (error) {
-    console.error('❌ Error cargando datos del dashboard:', error);
-  } finally {
-    this.loading = false;
   }
-}
-
-// Mantén este método igual que antes
-
 
   calculateDashboardMetrics(products: Product[], orders: Order[], clients: Client[]): DashboardData {
     const now = new Date();
@@ -255,10 +511,6 @@ async loadDashboardData() {
     const currentYear = now.getFullYear();
     const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
     const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-
-    console.log('📊 Calculando métricas del dashboard...');
-    console.log('📅 Mes actual:', currentMonth + 1, '/', currentYear);
-    console.log('📋 Total de órdenes recibidas:', orders.length);
 
     const isFinalized = (order: Order): boolean => {
       if (!order.status) return false;
@@ -278,8 +530,6 @@ async loadDashboardData() {
              isFinalized(o);
     });
 
-    console.log('✅ Órdenes finalizadas del mes actual:', currentMonthOrders.length);
-
     const previousMonthOrders = orders.filter(o => {
       if (!o.dateCreated) return false;
       const orderDate = new Date(o.dateCreated);
@@ -288,23 +538,13 @@ async loadDashboardData() {
              isFinalized(o);
     });
 
-    console.log('📈 Órdenes finalizadas del mes anterior:', previousMonthOrders.length);
-
     const totalSales = currentMonthOrders.reduce((sum, order) => {
-      const orderTotal = getOrderTotal(order);
-      if (orderTotal > 0) {
-        console.log(`💵 Orden ${order.id}: Q${orderTotal.toFixed(2)}`);
-      }
-      return sum + orderTotal;
+      return sum + getOrderTotal(order);
     }, 0);
-
-    console.log('💰 Total ventas del mes actual: Q' + totalSales.toFixed(2));
 
     const previousMonthSales = previousMonthOrders.reduce((sum, order) => {
       return sum + getOrderTotal(order);
     }, 0);
-
-    console.log('📊 Ventas mes anterior: Q' + previousMonthSales.toFixed(2));
 
     const productsWithPrices = products.filter(p =>
       p.active && (p.salePrice || 0) > 0 && (p.costPrice || 0) > 0
@@ -349,8 +589,8 @@ async loadDashboardData() {
     };
   }
 
-  updateStats(data: DashboardData, products: Product[]) {
-    const goalAmount = 20000;
+  updateStats(data: DashboardData, products: Product[], orders: Order[]) {
+    const goalAmount = this.calculateCurrentMonthGoal(orders);
     const progress = (data.totalSales / goalAmount) * 100;
 
     const salesChange = data.previousMonthSales > 0
@@ -361,6 +601,8 @@ async loadDashboardData() {
       ? `${salesChange >= 0 ? '+' : ''}${salesChange.toFixed(1)}% vs mes anterior`
       : `${data.totalOrders} órdenes`;
 
+    this.saveCurrentMonthGoal(goalAmount);
+
     this.stats = [
       {
         label: 'Ventas del Mes',
@@ -369,7 +611,7 @@ async loadDashboardData() {
         trend: salesChange >= 0 ? 'up' : 'down',
         icon: 'DollarSign',
         color: data.totalSales >= goalAmount ? 'bg-blue-500' : 'bg-orange-500',
-        subtitle: `Meta: Q${goalAmount.toLocaleString('es-GT')}`,
+        subtitle: `Meta ${this.getGoalTypeLabel()}: Q${goalAmount.toLocaleString('es-GT')}`,
         progress: Math.min(progress, 100),
       },
       {
@@ -421,134 +663,83 @@ async loadDashboardData() {
     ];
   }
 
-// Reemplaza el método calculateTopProductsFromOrders en home.component.ts
-calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
-  console.log('🔍 Calculando productos más vendidos...');
-  console.log('📦 Total productos disponibles:', products.length);
-  console.log('📋 Total órdenes a procesar:', orders.length);
+  calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
+    const productSalesMap = new Map<number, {
+      quantity: number;
+      revenue: number;
+      ordersCount: number;
+    }>();
 
-  const productSalesMap = new Map<number, {
-    quantity: number;
-    revenue: number;
-    ordersCount: number;
-  }>();
+    const isFinalized = (order: Order): boolean => {
+      if (!order.status) return false;
+      const status = order.status.toUpperCase().trim();
+      return status === 'FINALIZED' || status === 'FINALIZADO';
+    };
 
-  const isFinalized = (order: Order): boolean => {
-    if (!order.status) return false;
-    const status = order.status.toUpperCase().trim();
-    return status === 'FINALIZED' || status === 'FINALIZADO';
-  };
+    const finalizedOrders = orders.filter(order => isFinalized(order));
 
-  const finalizedOrders = orders.filter(order => isFinalized(order));
-  console.log('✅ Total órdenes finalizadas:', finalizedOrders.length);
-
-  if (finalizedOrders.length > 0) {
-    console.log('📝 Primera orden:', {
-      id: finalizedOrders[0].id,
-      products: finalizedOrders[0].products
-    });
-  }
-
-  let totalProductsProcessed = 0;
-
-  finalizedOrders.forEach((order, orderIndex) => {
-    if (!order.products || !Array.isArray(order.products)) {
-      return;
-    }
-
-    order.products.forEach((productOrder: ProductOrder) => {
-      // CLAVE: Obtener el productId correctamente
-      let productId: number | undefined;
-
-      // Opción 1: Campo directo productId
-      if (productOrder.productId) {
-        productId = productOrder.productId;
-      }
-      // Opción 2: Dentro del objeto product
-      else if (productOrder.product?.id) {
-        productId = productOrder.product.id;
-      }
-
-      if (orderIndex === 0 && totalProductsProcessed === 0) {
-        console.log('🔍 Primer ProductOrder:', {
-          estructura_completa: productOrder,
-          tiene_productId: !!productOrder.productId,
-          tiene_product: !!productOrder.product,
-          product_id_en_objeto: productOrder.product?.id,
-          productId_final: productId,
-          quantity: productOrder.quantity,
-          subtotal: productOrder.subtotal
-        });
-      }
-
-      if (!productId) {
-        console.warn('⚠️ No se pudo obtener productId de:', productOrder);
+    finalizedOrders.forEach((order) => {
+      if (!order.products || !Array.isArray(order.products)) {
         return;
       }
 
-      totalProductsProcessed++;
+      order.products.forEach((productOrder: ProductOrder) => {
+        let productId: number | undefined;
 
-      const current = productSalesMap.get(productId) || {
-        quantity: 0,
-        revenue: 0,
-        ordersCount: 0
-      };
+        if (productOrder.productId) {
+          productId = productOrder.productId;
+        } else if (productOrder.product?.id) {
+          productId = productOrder.product.id;
+        }
 
-      productSalesMap.set(productId, {
-        quantity: current.quantity + (productOrder.quantity || 0),
-        revenue: current.revenue + (productOrder.subtotal || 0),
-        ordersCount: current.ordersCount + 1
+        if (!productId) {
+          return;
+        }
+
+        const current = productSalesMap.get(productId) || {
+          quantity: 0,
+          revenue: 0,
+          ordersCount: 0
+        };
+
+        productSalesMap.set(productId, {
+          quantity: current.quantity + (productOrder.quantity || 0),
+          revenue: current.revenue + (productOrder.subtotal || 0),
+          ordersCount: current.ordersCount + 1
+        });
       });
     });
-  });
 
-  console.log('📊 Productos procesados:', totalProductsProcessed);
-  console.log('📊 Productos únicos:', productSalesMap.size);
-  console.log('📊 IDs en mapa:', Array.from(productSalesMap.keys()));
-  console.log('📊 IDs en catálogo:', products.slice(0, 10).map(p => p.id));
+    const topProductsData: TopProductDisplay[] = [];
 
-  const topProductsData: TopProductDisplay[] = [];
+    productSalesMap.forEach((sales, productId) => {
+      const product = products.find(p => p.id === productId);
 
-  productSalesMap.forEach((sales, productId) => {
-    const product = products.find(p => p.id === productId);
+      if (!product) {
+        return;
+      }
 
-    if (!product) {
-      console.warn(`⚠️ Producto ${productId} no encontrado en catálogo`);
-      return;
-    }
-
-    // El trend ahora representa el número de órdenes en las que apareció
-    topProductsData.push({
-      name: product.productName,
-      sales: sales.quantity,
-      revenue: sales.revenue,
-      trend: sales.ordersCount
+      topProductsData.push({
+        name: product.productName,
+        sales: sales.quantity,
+        revenue: sales.revenue,
+        trend: sales.ordersCount
+      });
     });
 
-    console.log(`✅ ${product.productName}: ${sales.quantity} unidades, Q${sales.revenue.toFixed(2)}, en ${sales.ordersCount} órdenes`);
-  });
+    this.topProducts = topProductsData
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5);
 
-  // Ordenar por unidades vendidas
-  this.topProducts = topProductsData
-    .sort((a, b) => b.sales - a.sales)
-    .slice(0, 5);
-
-  console.log('🏆 Top 5 productos:', this.topProducts);
-
-  if (this.topProducts.length === 0) {
-    console.log('⚠️ No hay productos vendidos');
-    this.topProducts = [{
-      name: 'Sin ventas registradas',
-      sales: 0,
-      revenue: 0,
-      trend: 0
-    }];
+    if (this.topProducts.length === 0) {
+      this.topProducts = [{
+        name: 'Sin ventas registradas',
+        sales: 0,
+        revenue: 0,
+        trend: 0
+      }];
+    }
   }
-}
-
-
-
-
 
   updateLineChartWithRealData(orders: Order[]) {
     if (!this.lineChart) return;
@@ -580,13 +771,10 @@ calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
       }
     });
 
-    const goalsData = [15000, 15000, 16000, 16000, 18000, 20000];
+    const goalsData = this.calculateLast6MonthsGoals(orders);
 
     console.log('📈 Datos de ventas por mes:', salesData);
-    console.log('📊 Desglose por mes:');
-    months.forEach((month, index) => {
-      console.log(`  ${month.label}: Q${salesData[index].toFixed(2)}`);
-    });
+    console.log('🎯 Metas por mes:', goalsData);
 
     this.lineChart.data.labels = months.map(m => m.label);
     this.lineChart.data.datasets[0].data = salesData;
