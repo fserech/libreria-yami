@@ -169,7 +169,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         if (orders.length > 0) {
           const firstOrder = orders[0];
           if (!firstOrder.products) {
-            console.warn('⚠️ Las órdenes no incluyen productos. Cargando detalles...');
+
             const ordersWithDetailsPromises = orders.map(order =>
               firstValueFrom(this.crud.getId(order.id)).catch(err => {
                 console.error(`Error cargando orden ${order.id}:`, err);
