@@ -1,11 +1,11 @@
 <app-header
-  headerTitle="Incio"
+  headerTitle="Inicio"
   headerDescription="Resumen general del sistema">
 </app-header>
 
 <div class="space-y-6 p-4">
-  <!-- Stats Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+  <!-- Stats Grid - Solo 3 cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
     @for (stat of stats; track stat.label) {
       <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
         <div class="flex items-start justify-between mb-3">
@@ -39,10 +39,10 @@
     }
   </div>
 
-  <!-- KPIs Grid -->
+  <!-- KPIs Grid - Solo 3 KPIs -->
   <div>
     <h3 class="text-xl font-bold mb-4 dark:text-white">Indicadores Clave de Desempeño (KPIs)</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       @for (kpi of kpis; track kpi.label) {
         <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
           <div class="flex items-start justify-between mb-2">
@@ -82,61 +82,6 @@
     </div>
   </div>
 
-  <!-- Inventory Alerts -->
-<div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-xl font-bold dark:text-white">Alertas de Inventario</h3>
-   <span class="text-sm text-orange-600 dark:text-orange-400 flex items-center gap-1 font-medium">
-  <lucide-icon [img]="AlertTriangle" class="w-4 h-4"></lucide-icon>
-  {{ alertCount }} productos requieren atención
-</span>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    @for (alert of inventoryAlerts; track alert.product) {
-      <div
-        class="p-4 rounded-lg border transition-colors overflow-hidden"
-        [ngClass]="getAlertClasses(alert.status)">
-
-        <div class="flex items-start justify-between gap-2 mb-2">
-          <p
-            class="text-sm font-medium dark:text-white truncate max-w-[85%]"
-            [title]="alert.product">
-            {{ alert.product }}
-          </p>
-
-          @if (alert.status === 'critical' || alert.status === 'warning') {
-            <lucide-icon
-              [img]="AlertTriangle"
-              class="w-4 h-4 flex-shrink-0"
-              [ngClass]="getAlertIconColor(alert.status)">
-            </lucide-icon>
-          } @else {
-            <span class="text-green-600 dark:text-green-400 text-xl">✓</span>
-          }
-        </div>
-
-        <div class="flex items-baseline gap-2">
-          <span class="text-xl font-bold dark:text-white">
-            {{ alert.stock }}
-          </span>
-          <span class="text-sm text-gray-600 dark:text-gray-400">
-            / {{ alert.minStock }} mín.
-          </span>
-        </div>
-
-        <div class="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-          <div
-            class="h-2 rounded-full transition-all"
-            [ngClass]="getAlertBarColor(alert.status)"
-            [style.width.%]="getStockPercentage(alert.stock, alert.minStock)">
-          </div>
-        </div>
-
-      </div>
-    }
-  </div>
-</div>
-
   <!-- Top Products Table -->
   <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
     <h3 class="text-xl font-bold mb-4 dark:text-white">Productos Más Vendidos</h3>
@@ -156,7 +101,7 @@
             <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
               <td class="py-3 px-4 dark:text-gray-200">{{ product.name }}</td>
               <td class="text-right py-3 px-4 dark:text-gray-200 font-medium">{{ product.sales }}</td>
-              <td class="text-right py-3 px-4 dark:text-gray-200 font-medium">${{ product.revenue.toLocaleString() }}</td>
+              <td class="text-right py-3 px-4 dark:text-gray-200 font-medium">Q{{ product.revenue.toLocaleString('es-GT', { minimumFractionDigits: 2 }) }}</td>
               <td class="text-right py-3 px-4">
                 <span [class]="'flex items-center justify-end gap-1 font-medium ' + (product.trend >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')">
                   @if (product.trend >= 0) {

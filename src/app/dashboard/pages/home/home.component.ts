@@ -6,7 +6,7 @@ import { Chart, registerables } from 'chart.js';
 import {
   LucideAngularModule,
   TrendingUp, TrendingDown, Package, ShoppingCart,
-  Users, DollarSign, AlertTriangle, ArrowUpRight, ArrowDownRight
+  Users, DollarSign, ArrowUpRight, ArrowDownRight
 } from 'lucide-angular';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { NavbarComponent } from '../../../shared/components/layout/navbar/navbar.component';
@@ -17,12 +17,14 @@ import { SelectComponent } from '../../../shared/components/select/select.compon
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { Product } from '../../../shared/interfaces/product';
-import { Order } from '../../../shared/interfaces/order';
+import { Product, Category } from '../../../shared/interfaces/product';
+import { Order, ProductOrder } from '../../../shared/interfaces/order';
+import { Client } from '../../../shared/interfaces/client';
 import moment from 'moment';
 
 Chart.register(...registerables);
 
+// Interfaces locales solo para el dashboard UI
 interface Stat {
   label: string;
   value: string;
@@ -42,39 +44,22 @@ interface KPI {
   change: string;
 }
 
-interface TopProduct {
+// Interface para mostrar top productos (extiende ProductOrder con datos calculados)
+interface TopProductDisplay {
   name: string;
-  sales: number;
-  revenue: number;
-  trend: number;
-}
-
-interface InventoryAlert {
-  product: string;
-  stock: number;
-  minStock: number;
-  status: 'critical' | 'warning' | 'ok';
+  sales: number;      // Cantidad total vendida
+  revenue: number;    // Ingresos totales
+  trend: number;      // Tendencia vs mes anterior
 }
 
 interface DashboardData {
   totalSales: number;
   totalProducts: number;
   totalClients: number;
-  totalStock: number;
   averageMargin: number;
   inventoryRotation: number;
-  averageTicket: number;
   totalOrders: number;
-}
-
-interface Category {
-  id: number;
-  categoryName: string;
-}
-
-interface Client {
-  id: number;
-  name: string;
+  previousMonthSales: number;
 }
 
 @Component({
@@ -104,7 +89,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private pieChart?: Chart;
 
   loading = true;
-  alertCount = 0;
 
   readonly TrendingUp = TrendingUp;
   readonly TrendingDown = TrendingDown;
@@ -112,14 +96,12 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly ShoppingCart = ShoppingCart;
   readonly Users = Users;
   readonly DollarSign = DollarSign;
-  readonly AlertTriangle = AlertTriangle;
   readonly ArrowUpRight = ArrowUpRight;
   readonly ArrowDownRight = ArrowDownRight;
 
   stats: Stat[] = [];
   kpis: KPI[] = [];
-  topProducts: TopProduct[] = [];
-  inventoryAlerts: InventoryAlert[] = [];
+  topProducts: TopProductDisplay[] = [];
 
   constructor(private http: HttpClient) {}
 
@@ -134,9 +116,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
-  // =====================================================
-  // 🔥 MÉTODO CORREGIDO (AQUÍ ESTABA EL ERROR)
-  // =====================================================
   async loadDashboardData() {
     this.loading = true;
 
@@ -147,23 +126,25 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         firstValueFrom(this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`))
       ]);
 
-      let orders: Order[] = [];
+      console.log('📦 Productos cargados:', products.length);
+      console.log('📂 Categorías cargadas:', categories.length);
+      console.log('👥 Clientes cargados:', clients.length);
 
+      let orders: Order[] = [];
       try {
         const endDate = new Date();
         const startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 6);
+        startDate.setMonth(startDate.getMonth() - 12);
 
         const url = `${environment.apiUrl}/api/v1/finalizedOrders` +
           `?idUsers=0` +
           `&fechaInicio=${encodeURIComponent(this.formatDateToLocalString(startDate))}` +
           `&fechaFin=${encodeURIComponent(this.formatDateToLocalString(endDate))}`;
 
-        const response: any = await firstValueFrom(
-          this.http.post<any>(url, {})
-        );
+        console.log('🔍 Consultando órdenes desde:', startDate.toLocaleDateString(), 'hasta:', endDate.toLocaleDateString());
 
-        // ✅ NORMALIZACIÓN DEFINITIVA
+        const response: any = await firstValueFrom(this.http.post<any>(url, {}));
+
         orders = Array.isArray(response)
           ? response
           : Array.isArray(response?.data)
@@ -172,105 +153,164 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
               ? response.orders
               : [];
 
+        console.log('📋 Total órdenes recibidas:', orders.length);
+
+        if (orders.length > 0) {
+          const statusCount = orders.reduce((acc: any, order) => {
+            const status = order.status || 'SIN_STATUS';
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+          }, {});
+          console.log('📊 Órdenes por status:', statusCount);
+        }
+
       } catch (e) {
-        console.warn('⚠️ Error cargando órdenes, usando array vacío', e);
-        orders = [];
+        console.warn('⚠️ Error cargando órdenes', e);
       }
 
       const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
+
+      console.log('💰 Métricas calculadas:', dashboardData);
+
       this.updateStats(dashboardData, products);
-      this.updateKPIs(dashboardData);
-
-      orders.length > 0
-        ? this.calculateTopProductsFromOrders(orders, products)
-        : this.calculateTopProductsSimulated(products);
-
-      this.calculateInventoryAlerts(products);
+      this.updateKPIs(dashboardData, orders);
+      this.calculateTopProductsFromOrders(orders, products);
 
       if (this.pieChart) {
         this.updatePieChartWithRealData(products, categories);
       }
 
       if (this.lineChart) {
-        orders.length > 0
-          ? this.updateLineChartWithRealData(orders)
-          : this.updateLineChartSimulated();
+        this.updateLineChartWithRealData(orders);
       }
 
     } catch (error) {
-      console.error('Error cargando datos del dashboard:', error);
+      console.error('❌ Error cargando datos del dashboard:', error);
     } finally {
       this.loading = false;
     }
   }
 
-  // =====================================================
-  // 👇 TODO LO DEMÁS QUEDA IGUAL (YA ERA CORRECTO)
-  // =====================================================
-
   calculateDashboardMetrics(products: Product[], orders: Order[], clients: Client[]): DashboardData {
     const now = new Date();
-    const month = now.getMonth();
-    const year = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
 
-    const currentMonthOrders = orders.filter(o =>
-      o.dateCreated &&
-      new Date(o.dateCreated).getMonth() === month &&
-      new Date(o.dateCreated).getFullYear() === year &&
-      o.status !== 'CANCEL'
-    );
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
-    const totalSales = currentMonthOrders.reduce(
-      (sum, o) => sum + o.products.reduce((pSum, p) => pSum + (p.subtotal || 0), 0),
+    console.log('📊 Calculando métricas del dashboard...');
+    console.log('📅 Mes actual:', currentMonth + 1, '/', currentYear);
+    console.log('📋 Total de órdenes recibidas:', orders.length);
+
+    const isFinalized = (order: Order): boolean => {
+      if (!order.status) return false;
+      const status = order.status.toUpperCase().trim();
+      return status === 'FINALIZED' || status === 'FINALIZADO';
+    };
+
+    const currentMonthOrders = orders.filter(o => {
+      if (!o.dateCreated) return false;
+
+      const orderDate = new Date(o.dateCreated);
+      const isCurrentMonth = orderDate.getMonth() === currentMonth &&
+                            orderDate.getFullYear() === currentYear;
+
+      return isCurrentMonth && isFinalized(o);
+    });
+
+    console.log('✅ Órdenes finalizadas del mes actual:', currentMonthOrders.length);
+
+    const previousMonthOrders = orders.filter(o => {
+      if (!o.dateCreated) return false;
+
+      const orderDate = new Date(o.dateCreated);
+      const isLastMonth = orderDate.getMonth() === lastMonth &&
+                         orderDate.getFullYear() === lastMonthYear;
+
+      return isLastMonth && isFinalized(o);
+    });
+
+    console.log('📈 Órdenes finalizadas del mes anterior:', previousMonthOrders.length);
+
+    const totalSales = currentMonthOrders.reduce((sum, o) => {
+      const orderTotal = o.totalAmount ||
+                        o.products.reduce((pSum, p) => pSum + (p.subtotal || 0), 0);
+
+      if (orderTotal > 0) {
+        console.log(`💵 Orden ${o.id}: Q${orderTotal.toFixed(2)}`);
+      }
+
+      return sum + orderTotal;
+    }, 0);
+
+    console.log('💰 Total ventas del mes actual: Q' + totalSales.toFixed(2));
+
+    const previousMonthSales = previousMonthOrders.reduce(
+      (sum, o) => sum + (o.totalAmount || o.products.reduce((pSum, p) => pSum + (p.subtotal || 0), 0)),
       0
     );
 
-    const totalStock = products.reduce((sum, p) =>
-      p.hasVariants && p.variants
-        ? sum + p.variants.reduce((s, v) => s + (v.currentStock || 0), 0)
-        : sum + (p.currentStock || 0), 0
+    console.log('📊 Ventas mes anterior: Q' + previousMonthSales.toFixed(2));
+
+    const productsWithPrices = products.filter(p =>
+      p.active && (p.salePrice || 0) > 0 && (p.costPrice || 0) > 0
     );
 
-    const totalMargin = products.reduce((sum, p) => {
+    const totalMargin = productsWithPrices.reduce((sum, p) => {
       const price = p.salePrice || 0;
       const cost = p.costPrice || 0;
-      return price > 0 ? sum + ((price - cost) / price) * 100 : sum;
+      return sum + ((price - cost) / price) * 100;
     }, 0);
 
-    const averageMargin = products.length ? totalMargin / products.length : 0;
-    const averageTicket = currentMonthOrders.length ? totalSales / currentMonthOrders.length : 0;
+    const averageMargin = productsWithPrices.length > 0
+      ? totalMargin / productsWithPrices.length
+      : 0;
+
+    const last12MonthsSales = orders
+      .filter(o => isFinalized(o))
+      .reduce((sum, o) => sum + o.products.reduce((pSum, p) => pSum + (p.quantity || 0), 0), 0);
+
+    const totalInventoryUnits = products.reduce((sum, p) => {
+      if (p.hasVariants && p.variants) {
+        return sum + p.variants.reduce((vSum, v) => vSum + (v.currentStock || 0), 0);
+      }
+      return sum + (p.currentStock || 0);
+    }, 0);
+
+    const inventoryRotation = totalInventoryUnits > 0
+      ? last12MonthsSales / totalInventoryUnits
+      : 0;
 
     return {
       totalSales,
+      previousMonthSales,
       totalProducts: products.filter(p => p.active).length,
       totalClients: clients.length,
-      totalStock,
       averageMargin,
-      inventoryRotation: 0,
-      averageTicket,
+      inventoryRotation,
       totalOrders: currentMonthOrders.length
     };
   }
 
   updateStats(data: DashboardData, products: Product[]) {
-    // Calcular alertas de inventario
-    const alertCount = products.filter(p => {
-      if (p.hasVariants && p.variants) {
-        return p.variants.some(v => (v.currentStock || 0) < (v.minStock || 0));
-      }
-      return (p.currentStock || 0) < (p.minStock || 0);
-    }).length;
-
-    // Calcular progreso vs meta (meta de Q20,000)
     const goalAmount = 20000;
     const progress = (data.totalSales / goalAmount) * 100;
+
+    const salesChange = data.previousMonthSales > 0
+      ? ((data.totalSales - data.previousMonthSales) / data.previousMonthSales) * 100
+      : 0;
+
+    const salesChangeText = data.previousMonthSales > 0
+      ? `${salesChange >= 0 ? '+' : ''}${salesChange.toFixed(1)}% vs mes anterior`
+      : `${data.totalOrders} órdenes`;
 
     this.stats = [
       {
         label: 'Ventas del Mes',
         value: `Q${data.totalSales.toLocaleString('es-GT', { minimumFractionDigits: 2 })}`,
-        change: data.totalOrders > 0 ? `${data.totalOrders} órdenes` : 'Sin ventas',
-        trend: data.totalSales >= goalAmount ? 'up' : 'down',
+        change: salesChangeText,
+        trend: salesChange >= 0 ? 'up' : 'down',
         icon: 'DollarSign',
         color: data.totalSales >= goalAmount ? 'bg-blue-500' : 'bg-orange-500',
         subtitle: `Meta: Q${goalAmount.toLocaleString('es-GT')}`,
@@ -279,11 +319,11 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       {
         label: 'Productos Activos',
         value: data.totalProducts.toString(),
-        change: `${products.length} total`,
+        change: `${products.length} total en catálogo`,
         trend: 'up',
         icon: 'ShoppingCart',
         color: 'bg-purple-500',
-        subtitle: 'En catálogo',
+        subtitle: 'En sistema',
         progress: 0,
       },
       {
@@ -293,110 +333,116 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         trend: 'up',
         icon: 'Users',
         color: 'bg-pink-500',
-        subtitle: 'En sistema',
+        subtitle: 'En base de datos',
         progress: 0,
-      },
-      {
-        label: 'Stock Total',
-        value: data.totalStock.toLocaleString('es-GT'),
-        change: alertCount > 0 ? `${alertCount} alertas` : 'Stock OK',
-        trend: alertCount > 0 ? 'down' : 'up',
-        icon: 'Package',
-        color: alertCount > 0 ? 'bg-orange-500' : 'bg-green-500',
-        subtitle: alertCount > 0 ? 'Requiere atención' : 'Sin alertas',
-        progress: 0,
-      },
+      }
     ];
   }
 
-  updateKPIs(data: DashboardData) {
+  updateKPIs(data: DashboardData, orders: Order[]) {
     this.kpis = [
       {
         label: 'Rotación de Inventario',
         value: `${data.inventoryRotation.toFixed(1)}x`,
         description: 'Veces por año',
         trend: data.inventoryRotation >= 4 ? 'up' : 'down',
-        change: data.inventoryRotation >= 4 ? '+0.3' : '-0.2'
-      },
-      {
-        label: 'Ticket Promedio',
-        value: `Q${data.averageTicket.toFixed(0)}`,
-        description: 'Por transacción',
-        trend: data.averageTicket > 150 ? 'up' : 'down',
-        change: data.averageTicket > 150 ? '+Q12' : '-Q5'
+        change: data.inventoryRotation >= 4 ? 'Óptima' : 'Mejorable'
       },
       {
         label: 'Margen de Ganancia',
-        value: `${data.averageMargin.toFixed(0)}%`,
-        description: 'Margen bruto',
+        value: `${data.averageMargin.toFixed(1)}%`,
+        description: 'Margen bruto promedio',
         trend: data.averageMargin >= 30 ? 'up' : 'down',
-        change: data.averageMargin >= 30 ? '+2%' : '-1%'
+        change: data.averageMargin >= 30 ? 'Saludable' : 'Bajo'
       },
       {
-        label: 'Órdenes del Mes',
+        label: 'Órdenes Completadas',
         value: `${data.totalOrders}`,
-        description: 'Completadas',
+        description: 'Este mes',
         trend: 'up',
-        change: `+${data.totalOrders}`
+        change: `Total procesadas`
       },
     ];
   }
 
   calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
-    // Crear un mapa para contar ventas por producto
-    const productSalesMap = new Map<number, { quantity: number; revenue: number }>();
+    const productSalesMap = new Map<number, { quantity: number; revenue: number; lastMonthQuantity: number }>();
 
-    // Filtrar órdenes finalizadas del mes actual
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
-    const relevantOrders = orders.filter(order => {
-      if (!order.dateCreated || order.status === 'CANCEL') return false;
-      const orderDate = new Date(order.dateCreated);
-      return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
-    });
+    const isFinalized = (order: Order): boolean => {
+      if (!order.status) return false;
+      const status = order.status.toUpperCase().trim();
+      return status === 'FINALIZED' || status === 'FINALIZADO';
+    };
 
-    // Contar ventas por producto
-    relevantOrders.forEach(order => {
-      order.products.forEach(productOrder => {
-        const productId = productOrder.productId || productOrder.product?.id;
-        if (productId) {
-          const current = productSalesMap.get(productId) || { quantity: 0, revenue: 0 };
-          productSalesMap.set(productId, {
-            quantity: current.quantity + (productOrder.quantity || 0),
-            revenue: current.revenue + (productOrder.subtotal || 0)
-          });
-        }
+    orders
+      .filter(order => {
+        if (!order.dateCreated || !isFinalized(order)) return false;
+        const orderDate = new Date(order.dateCreated);
+        return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+      })
+      .forEach(order => {
+        order.products.forEach((productOrder: ProductOrder) => {
+          const productId = productOrder.productId || productOrder.product?.id;
+          if (productId) {
+            const current = productSalesMap.get(productId) || { quantity: 0, revenue: 0, lastMonthQuantity: 0 };
+            productSalesMap.set(productId, {
+              quantity: current.quantity + (productOrder.quantity || 0),
+              revenue: current.revenue + (productOrder.subtotal || 0),
+              lastMonthQuantity: current.lastMonthQuantity
+            });
+          }
+        });
       });
-    });
 
-    // Crear array de top products
-    const topProductsData: TopProduct[] = [];
+    orders
+      .filter(order => {
+        if (!order.dateCreated || !isFinalized(order)) return false;
+        const orderDate = new Date(order.dateCreated);
+        return orderDate.getMonth() === lastMonth && orderDate.getFullYear() === lastMonthYear;
+      })
+      .forEach(order => {
+        order.products.forEach((productOrder: ProductOrder) => {
+          const productId = productOrder.productId || productOrder.product?.id;
+          if (productId) {
+            const current = productSalesMap.get(productId) || { quantity: 0, revenue: 0, lastMonthQuantity: 0 };
+            productSalesMap.set(productId, {
+              ...current,
+              lastMonthQuantity: current.lastMonthQuantity + (productOrder.quantity || 0)
+            });
+          }
+        });
+      });
+
+    const topProductsData: TopProductDisplay[] = [];
 
     productSalesMap.forEach((sales, productId) => {
       const product = products.find(p => p.id === productId);
-      if (product) {
-        // Calcular tendencia simulada (en el futuro podrías comparar con mes anterior)
-        const trend = Math.random() > 0.5 ?
-          Number((Math.random() * 20 + 5).toFixed(1)) :
-          -Number((Math.random() * 10).toFixed(1));
+      if (product && sales.quantity > 0) {
+        const trend = sales.lastMonthQuantity > 0
+          ? ((sales.quantity - sales.lastMonthQuantity) / sales.lastMonthQuantity) * 100
+          : sales.quantity > 0 ? 100 : 0;
 
         topProductsData.push({
           name: product.productName,
           sales: sales.quantity,
           revenue: sales.revenue,
-          trend: trend
+          trend: Number(trend.toFixed(1))
         });
       }
     });
 
-    // Ordenar por revenue y tomar top 5
     this.topProducts = topProductsData
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
-    // Si no hay datos, mostrar mensaje
+    console.log('🏆 Top 5 productos:', this.topProducts);
+
     if (this.topProducts.length === 0) {
       this.topProducts = [{
         name: 'Sin ventas este mes',
@@ -407,123 +453,20 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  calculateTopProductsSimulated(products: Product[]) {
-    const productsWithSales = products
-      .filter(p => p.active)
-      .map(p => {
-        const simulatedSales = Math.floor(Math.random() * 300) + 50;
-        const revenue = simulatedSales * (p.salePrice || 0);
-        const trend = (Math.random() * 30) - 5;
-
-        return {
-          name: p.productName,
-          sales: simulatedSales,
-          revenue: revenue,
-          trend: Number(trend.toFixed(1))
-        };
-      })
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-
-    this.topProducts = productsWithSales.length > 0 ? productsWithSales : [{
-      name: 'Sin productos',
-      sales: 0,
-      revenue: 0,
-      trend: 0
-    }];
-  }
-
-  updateLineChartSimulated() {
-    if (!this.lineChart) return;
-
-    const months = this.getLast6Months();
-    const salesData = [12500, 15800, 14200, 18900, 21300, 23700];
-    const goalsData = [15000, 15000, 16000, 16000, 18000, 20000];
-
-    this.lineChart.data.labels = months.map(m => m.label);
-    this.lineChart.data.datasets[0].data = salesData;
-    this.lineChart.data.datasets[1].data = goalsData;
-    this.lineChart.update();
-  }
-
-  calculateInventoryAlerts(products: Product[]) {
-    const alerts: InventoryAlert[] = [];
-
-    products.forEach(product => {
-      if (product.hasVariants && product.variants) {
-        // Productos con variantes
-        product.variants.forEach(variant => {
-          const currentStock = variant.currentStock || 0;
-          const minStock = variant.minStock || 0;
-
-          if (minStock > 0) {
-            let status: 'critical' | 'warning' | 'ok' = 'ok';
-            if (currentStock < minStock) {
-              status = 'critical';
-            } else if (currentStock < minStock * 1.2) {
-              status = 'warning';
-            }
-
-            if (status !== 'ok') {
-              alerts.push({
-                product: `${product.productName} - ${variant.variantName || variant.sku}`,
-                stock: currentStock,
-                minStock: minStock,
-                status: status
-              });
-            }
-          }
-        });
-      } else {
-        // Productos simples
-        const currentStock = product.currentStock || 0;
-        const minStock = product.minStock || 0;
-
-        if (minStock > 0) {
-          let status: 'critical' | 'warning' | 'ok' = 'ok';
-          if (currentStock < minStock) {
-            status = 'critical';
-          } else if (currentStock < minStock * 1.2) {
-            status = 'warning';
-          }
-
-          if (status !== 'ok') {
-            alerts.push({
-              product: product.productName,
-              stock: currentStock,
-              minStock: minStock,
-              status: status
-            });
-          }
-        }
-      }
-    });
-
-    // Ordenar: críticos primero, luego warnings
-    alerts.sort((a, b) => {
-      if (a.status === 'critical' && b.status !== 'critical') return -1;
-      if (a.status !== 'critical' && b.status === 'critical') return 1;
-      return 0;
-    });
-
-    this.inventoryAlerts = alerts.length > 0 ? alerts.slice(0, 6) : [
-      { product: 'Sin alertas', stock: 100, minStock: 50, status: 'ok' }
-    ];
-
-    this.alertCount = alerts.length;
-  }
-
   updateLineChartWithRealData(orders: Order[]) {
     if (!this.lineChart) return;
 
-    // Obtener últimos 6 meses
     const months = this.getLast6Months();
     const salesData = new Array(6).fill(0);
-    const goalsData = [15000, 15000, 16000, 16000, 18000, 20000]; // Metas fijas
 
-    // Calcular ventas por mes
+    const isFinalized = (order: Order): boolean => {
+      if (!order.status) return false;
+      const status = order.status.toUpperCase().trim();
+      return status === 'FINALIZED' || status === 'FINALIZADO';
+    };
+
     orders.forEach(order => {
-      if (!order.dateCreated || order.status === 'CANCEL') return;
+      if (!order.dateCreated || !isFinalized(order)) return;
 
       const orderDate = new Date(order.dateCreated);
       const monthIndex = months.findIndex(m =>
@@ -531,10 +474,15 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       );
 
       if (monthIndex !== -1) {
-        const orderTotal = order.products.reduce((sum, p) => sum + (p.subtotal || 0), 0);
+        const orderTotal = order.totalAmount ||
+                          order.products.reduce((sum, p) => sum + (p.subtotal || 0), 0);
         salesData[monthIndex] += orderTotal;
       }
     });
+
+    const goalsData = [15000, 15000, 16000, 16000, 18000, 20000];
+
+    console.log('📈 Datos de ventas por mes:', salesData);
 
     this.lineChart.data.labels = months.map(m => m.label);
     this.lineChart.data.datasets[0].data = salesData;
@@ -560,9 +508,8 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   formatDateToLocalString(date: Date): string {
-  return moment(date).format('YYYY-MM-DD HH:mm:ss');
-}
-
+    return moment(date).format('YYYY-MM-DD HH:mm:ss');
+  }
 
   createLineChart() {
     if (!this.lineChartRef) return;
@@ -573,7 +520,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         labels: [],
         datasets: [
           {
-            label: 'Ventas',
+            label: 'Ventas Reales',
             data: [],
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             borderColor: 'rgb(59, 130, 246)',
@@ -609,7 +556,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             borderWidth: 1,
             callbacks: {
               label: function(context) {
-                return context.dataset.label + ': Q' + context.parsed.y.toLocaleString('es-GT');
+                return context.dataset.label + ': Q' + context.parsed.y.toLocaleString('es-GT', { minimumFractionDigits: 2 });
               }
             }
           }
@@ -729,42 +676,11 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return icons[iconName];
   }
 
-  getStockPercentage(stock: number, minStock: number): number {
-    return Math.min((stock / minStock) * 100, 100);
-  }
-
   getProgressPercentage(sales: number): number {
     const maxSales = this.topProducts.length > 0
       ? Math.max(...this.topProducts.map(p => p.sales))
       : 1;
     return Math.min((sales / maxSales) * 100, 100);
-  }
-
-  getAlertClasses(status: string): string {
-    const classes = {
-      critical: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
-      warning: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800',
-      ok: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-    };
-    return classes[status as keyof typeof classes] || classes.ok;
-  }
-
-  getAlertBarColor(status: string): string {
-    const colors = {
-      critical: 'bg-red-600',
-      warning: 'bg-orange-600',
-      ok: 'bg-green-600'
-    };
-    return colors[status as keyof typeof colors] || colors.ok;
-  }
-
-  getAlertIconColor(status: string): string {
-    const colors = {
-      critical: 'text-red-600 dark:text-red-400',
-      warning: 'text-orange-600 dark:text-orange-400',
-      ok: 'text-green-600 dark:text-green-400'
-    };
-    return colors[status as keyof typeof colors] || colors.ok;
   }
 
   ngOnDestroy() {
