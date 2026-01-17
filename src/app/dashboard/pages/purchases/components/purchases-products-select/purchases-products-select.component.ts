@@ -2,6 +2,7 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { Dialog } from '@angular/cdk/dialog';
 import { firstValueFrom } from 'rxjs';
 import { CrudService } from '../../../../../shared/services/crud.service';
 import { ToastService } from '../../../../../shared/services/toast.service';
@@ -18,11 +19,14 @@ import {
 import { Product, ProductVariant } from '../../../../../shared/interfaces/product';
 import { environment } from '../../../../../../environments/environment';
 import { SelectProductQuantityDialogComponent } from '../select-product-quantity-dialog/select-product-quantity-dialog.component';
+import { PurchasesProductsSelectListDialogComponent } from '../purchases-products-select-list-dialog/purchases-products-select-list-dialog.component';
 import { getProductCostPrice } from '../../../../../shared/utils/product-utils';
+import { ProductPurchaseSelect } from '../../../../../shared/interfaces/purchase';
 
 interface ProductPurchase {
   product: Product;
   quantity: number;
+  variantId?: number | null;
 }
 
 @Component({
@@ -46,8 +50,7 @@ interface ProductPurchase {
   })]
 })
 export class PurchasesProductsSelectComponent implements OnInit {
-  // ✅ Outputs corregidos
-  @Output() changes = new EventEmitter<ProductPurchase[]>();
+  @Output() changes = new EventEmitter<ProductPurchaseSelect[]>();
   @Output() finalized = new EventEmitter<boolean>();
 
   products: Product[] = [];
@@ -57,13 +60,14 @@ export class PurchasesProductsSelectComponent implements OnInit {
   expandedProducts: Set<number> = new Set();
   load = false;
 
-  // ⭐ HACER DISPONIBLE LA FUNCIÓN EN EL TEMPLATE
+  // Hacer disponible la función en el template
   getProductCostPrice = getProductCostPrice;
 
   constructor(
     private crud: CrudService,
     private toast: ToastService,
-    private dialog: MatDialog
+    private matDialog: MatDialog,
+    private dialog: Dialog
   ) {}
 
   async ngOnInit() {
@@ -135,51 +139,107 @@ export class PurchasesProductsSelectComponent implements OnInit {
       hasVariants: false
     };
 
-    this.openQuantityDialog(variantProduct);
+    this.openQuantityDialog(variantProduct, variant.id);
   }
 
-  openQuantityDialog(product: Product) {
-    const dialogRef = this.dialog.open(SelectProductQuantityDialogComponent, {
+  openQuantityDialog(product: Product, variantId?: number) {
+    const dialogRef = this.matDialog.open(SelectProductQuantityDialogComponent, {
       width: '500px',
       maxWidth: '95vw',
       data: {
         product,
         title: 'Cantidad a comprar',
-        isPurchase: true // Es una compra
+        isPurchase: true
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // ⭐ El resultado incluye el precio personalizado
-        this.addProductToPurchase(result.product, result.quantity);
+        this.addProductToPurchase(result.product, result.quantity, variantId);
       }
     });
   }
 
-  addProductToPurchase(product: Product, quantity: number) {
-    const existingProduct = this.selectedProducts.find(p => p.product.id === product.id);
+  addProductToPurchase(product: Product, quantity: number, variantId?: number) {
+    const existingProduct = this.selectedProducts.find(p =>
+      p.product.id === product.id &&
+      (variantId ? p.variantId === variantId : !p.variantId)
+    );
 
     if (existingProduct) {
       existingProduct.quantity += quantity;
-      // Actualizar el producto con el nuevo precio si cambió
       existingProduct.product = product;
     } else {
-      this.selectedProducts.push({ product, quantity });
+      this.selectedProducts.push({ product, quantity, variantId: variantId || null });
     }
 
-    // ✅ Emitir evento de cambio
-    this.changes.emit(this.selectedProducts);
+    this.emitChanges();
     this.toast.success(`${product.productName} agregado a la compra`);
   }
 
   removeProduct(index: number) {
     this.selectedProducts.splice(index, 1);
-    // ✅ Emitir evento de cambio
-    this.changes.emit(this.selectedProducts);
+    this.emitChanges();
   }
 
-  // ✅ Método para finalizar selección
+  /**
+   * Emite los cambios en el formato esperado por el componente padre
+   */
+  private emitChanges() {
+    const productsSelect: ProductPurchaseSelect[] = this.selectedProducts.map(item => ({
+      product: item.product,
+      quantity: item.quantity,
+      variantId: item.variantId || null
+    }));
+    this.changes.emit(productsSelect);
+  }
+
+  /**
+   * Abre el diálogo para ver/editar la lista de productos seleccionados
+   */
+  openProductListDialog() {
+    if (this.selectedProducts.length === 0) {
+      this.toast.info('No hay productos seleccionados');
+      return;
+    }
+
+    const productsSelect: ProductPurchaseSelect[] = this.selectedProducts.map(item => ({
+      product: item.product,
+      quantity: item.quantity,
+      variantId: item.variantId || null
+    }));
+
+    const dialogRef = this.dialog.open(PurchasesProductsSelectListDialogComponent, {
+      width: '800px',
+      maxWidth: '95vw',
+      data: {
+        title: 'Productos Seleccionados',
+        products: productsSelect
+      }
+    });
+
+    dialogRef.closed.subscribe(result => {
+      if (result === true) {
+        // El usuario presionó "Limpiar todo"
+        this.selectedProducts = [];
+        this.emitChanges();
+        this.toast.success('Lista de productos limpiada');
+      } else if (Array.isArray(result)) {
+        // El usuario modificó la lista y presionó "Confirmar"
+        this.selectedProducts = result.map(item => ({
+          product: item.product,
+          quantity: item.quantity,
+          variantId: item.variantId || null
+        }));
+        this.emitChanges();
+        this.toast.success('Lista de productos actualizada');
+      }
+    });
+  }
+
+  /**
+   * Finaliza la selección de productos
+   */
   finalizeSelection() {
     if (this.selectedProducts.length > 0) {
       this.finalized.emit(true);

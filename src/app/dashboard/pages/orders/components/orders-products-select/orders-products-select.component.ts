@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { Dialog } from '@angular/cdk/dialog';
 import { firstValueFrom } from 'rxjs';
 import { CrudService } from '../../../../../shared/services/crud.service';
 import { ToastService } from '../../../../../shared/services/toast.service';
@@ -13,12 +14,20 @@ import {
   matAttachMoneyOutline,
   matCheckCircleOutline,
   matCancelOutline,
+  matExpandMoreOutline,
 } from '@ng-icons/material-icons/outline';
 import { Product, ProductVariant } from '../../../../../shared/interfaces/product';
 import { environment } from '../../../../../../environments/environment';
 import { SelectProductQuantityDialogComponent } from '../select-product-quantity-dialog/select-product-quantity-dialog.component';
+import { OrdersProductsSelectListDialogComponent } from '../orders-products-select-list-dialog/orders-products-select-list-dialog.component';
 import { getProductCostPrice } from '../../../../../shared/utils/product-utils';
 import { ProductOrderSelect } from '../../../../../shared/interfaces/order';
+
+interface ProductOrder {
+  product: Product;
+  quantity: number;
+  variantId?: number | null;
+}
 
 @Component({
   selector: 'app-orders-products-select',
@@ -37,17 +46,18 @@ import { ProductOrderSelect } from '../../../../../shared/interfaces/order';
     matAttachMoneyOutline,
     matCheckCircleOutline,
     matCancelOutline,
+    matExpandMoreOutline,
   })]
 })
 export class OrdersProductsSelectComponent implements OnInit {
-  // ✅ Outputs que coinciden con el HTML del padre
   @Output() changes = new EventEmitter<ProductOrderSelect[]>();
   @Output() finalized = new EventEmitter<boolean>();
 
   products: Product[] = [];
   filteredProducts: Product[] = [];
   searchTerm: string = '';
-  selectedProducts: ProductOrderSelect[] = [];
+  selectedProducts: ProductOrder[] = [];
+  expandedProducts: Set<number> = new Set();
   load = false;
 
   // Hacer disponible la función en el template
@@ -56,7 +66,8 @@ export class OrdersProductsSelectComponent implements OnInit {
   constructor(
     private crud: CrudService,
     private toast: ToastService,
-    private dialog: MatDialog
+    private matDialog: MatDialog,
+    private dialog: Dialog
   ) {}
 
   async ngOnInit() {
@@ -95,17 +106,29 @@ export class OrdersProductsSelectComponent implements OnInit {
     );
   }
 
+  toggleProductExpansion(productId: number) {
+    if (this.expandedProducts.has(productId)) {
+      this.expandedProducts.delete(productId);
+    } else {
+      this.expandedProducts.add(productId);
+    }
+  }
+
+  isProductExpanded(productId: number): boolean {
+    return this.expandedProducts.has(productId);
+  }
+
   selectProduct(product: Product) {
     if (product.hasVariants && product.variants && product.variants.length > 0) {
-      this.selectVariant(product);
+      this.toggleProductExpansion(product.id!);
     } else {
       this.openQuantityDialog(product);
     }
   }
 
-  selectVariant(product: Product) {
-    // Convertir variantes a productos individuales
-    const variantProducts: Product[] = (product.variants || []).map(variant => ({
+  selectVariant(product: Product, variant: ProductVariant) {
+    // Crear un producto temporal con los datos de la variante
+    const variantProduct: Product = {
       ...product,
       id: product.id,
       productName: `${product.productName} - ${variant.variantName}`,
@@ -114,17 +137,15 @@ export class OrdersProductsSelectComponent implements OnInit {
       costPrice: getProductCostPrice(variant),
       currentStock: variant.currentStock,
       hasVariants: false
-    }));
+    };
 
-    // Mostrar selector de variantes
-    if (variantProducts.length > 0) {
-      this.openQuantityDialog(variantProducts[0]);
-    }
+    this.openQuantityDialog(variantProduct, variant.id);
   }
 
-  openQuantityDialog(product: Product) {
-    const dialogRef = this.dialog.open(SelectProductQuantityDialogComponent, {
-      width: '400px',
+  openQuantityDialog(product: Product, variantId?: number) {
+    const dialogRef = this.matDialog.open(SelectProductQuantityDialogComponent, {
+      width: '500px',
+      maxWidth: '95vw',
       data: {
         product,
         title: 'Cantidad a vender',
@@ -134,32 +155,91 @@ export class OrdersProductsSelectComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.addProductToOrder(result.product, result.quantity);
+        this.addProductToOrder(result.product, result.quantity, variantId);
       }
     });
   }
 
-  addProductToOrder(product: Product, quantity: number) {
-    const existingProduct = this.selectedProducts.find(p => p.product.id === product.id);
+  addProductToOrder(product: Product, quantity: number, variantId?: number) {
+    const existingProduct = this.selectedProducts.find(p =>
+      p.product.id === product.id &&
+      (variantId ? p.variantId === variantId : !p.variantId)
+    );
 
     if (existingProduct) {
       existingProduct.quantity += quantity;
+      existingProduct.product = product;
     } else {
-      this.selectedProducts.push({ product, quantity });
+      this.selectedProducts.push({ product, quantity, variantId: variantId || null });
     }
 
-    // ✅ Emitir evento de cambio
-    this.changes.emit(this.selectedProducts);
+    this.emitChanges();
     this.toast.success(`${product.productName} agregado a la orden`);
   }
 
   removeProduct(index: number) {
     this.selectedProducts.splice(index, 1);
-    // ✅ Emitir evento de cambio
-    this.changes.emit(this.selectedProducts);
+    this.emitChanges();
   }
 
-  // ✅ Método para finalizar selección (llamado desde el padre o un botón)
+  /**
+   * Emite los cambios en el formato esperado por el componente padre
+   */
+  private emitChanges() {
+    const productsSelect: ProductOrderSelect[] = this.selectedProducts.map(item => ({
+      product: item.product,
+      quantity: item.quantity,
+      variantId: item.variantId || null
+    }));
+    this.changes.emit(productsSelect);
+  }
+
+  /**
+   * Abre el diálogo para ver/editar la lista de productos seleccionados
+   */
+  openProductListDialog() {
+    if (this.selectedProducts.length === 0) {
+      this.toast.info('No hay productos seleccionados');
+      return;
+    }
+
+    const productsSelect: ProductOrderSelect[] = this.selectedProducts.map(item => ({
+      product: item.product,
+      quantity: item.quantity,
+      variantId: item.variantId || null
+    }));
+
+    const dialogRef = this.dialog.open(OrdersProductsSelectListDialogComponent, {
+      width: '800px',
+      maxWidth: '95vw',
+      data: {
+        title: 'Productos Seleccionados',
+        products: productsSelect
+      }
+    });
+
+    dialogRef.closed.subscribe(result => {
+      if (result === true) {
+        // El usuario presionó "Limpiar todo"
+        this.selectedProducts = [];
+        this.emitChanges();
+        this.toast.success('Lista de productos limpiada');
+      } else if (Array.isArray(result)) {
+        // El usuario modificó la lista y presionó "Confirmar"
+        this.selectedProducts = result.map(item => ({
+          product: item.product,
+          quantity: item.quantity,
+          variantId: item.variantId || null
+        }));
+        this.emitChanges();
+        this.toast.success('Lista de productos actualizada');
+      }
+    });
+  }
+
+  /**
+   * Finaliza la selección de productos
+   */
   finalizeSelection() {
     if (this.selectedProducts.length > 0) {
       this.finalized.emit(true);
@@ -167,6 +247,20 @@ export class OrdersProductsSelectComponent implements OnInit {
       this.toast.info('Selecciona al menos 1 producto.');
       this.finalized.emit(false);
     }
+  }
+
+  getVariantPriceRange(product: Product): string {
+    if (!product.variants || product.variants.length === 0) return 'N/A';
+
+    const prices = product.variants.map(v => v.salePrice || 0);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    if (minPrice === maxPrice) {
+      return `Q${minPrice.toFixed(2)}`;
+    }
+
+    return `Q${minPrice.toFixed(2)} - Q${maxPrice.toFixed(2)}`;
   }
 
   getStockStatus(product: Product): string {

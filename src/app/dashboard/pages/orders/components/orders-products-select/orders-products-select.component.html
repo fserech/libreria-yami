@@ -20,12 +20,14 @@
       </div>
 
       @if (selectedProducts.length > 0) {
-        <div class="flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-          <ng-icon name="matAddShoppingCartOutline" size="20" class="text-green-600 dark:text-green-400 mr-2"></ng-icon>
-          <span class="font-semibold text-green-700 dark:text-green-300">
-            {{ selectedProducts.length }} producto(s) seleccionado(s)
-          </span>
-        </div>
+        <button
+          (click)="openProductListDialog()"
+          class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700
+                 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg
+                 transition-colors shadow-md hover:shadow-lg font-semibold whitespace-nowrap">
+          <ng-icon name="matAddShoppingCartOutline" size="20"></ng-icon>
+          <span>{{ selectedProducts.length }} producto(s)</span>
+        </button>
       }
     </div>
   </div>
@@ -138,14 +140,29 @@
           <!-- PRODUCTO CON VARIANTES -->
           @if (product.hasVariants && product.variants) {
             <div class="flex flex-col gap-3">
-              <div class="flex items-start gap-2 mb-2">
-                <h3 class="font-bold text-gray-900 dark:text-white text-base">
-                  {{ product.productName }}
-                </h3>
-                <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300
-                             rounded-full text-xs font-medium whitespace-nowrap">
-                  {{ product.variants.length }} variante(s)
-                </span>
+              <!-- HEADER DEL PRODUCTO -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-start gap-2 mb-2">
+                  <h3 class="font-bold text-gray-900 dark:text-white text-base">
+                    {{ product.productName }}
+                  </h3>
+                  <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300
+                               rounded-full text-xs font-medium whitespace-nowrap">
+                    {{ product.variants.length }} variante(s)
+                  </span>
+                </div>
+
+                <!-- BOTÓN PARA EXPANDIR/CONTRAER -->
+                <button
+                  (click)="toggleProductExpansion(product.id!)"
+                  class="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                  <ng-icon
+                    name="matExpandMoreOutline"
+                    size="24"
+                    class="text-gray-600 dark:text-gray-400 transition-transform"
+                    [class.rotate-180]="isProductExpanded(product.id!)">
+                  </ng-icon>
+                </button>
               </div>
 
               @if (product.productDesc) {
@@ -154,74 +171,84 @@
                 </p>
               }
 
-              <!-- LISTA DE VARIANTES -->
-              <div class="pl-4 border-l-4 border-purple-300 dark:border-purple-700 space-y-2">
-                @for (variant of product.variants; track variant.id) {
-                  <div class="p-3 bg-gray-50 dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700"
-                       [ngClass]="{'opacity-60': (variant.currentStock ?? 0) === 0}">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div class="flex-1">
-                        <p class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-1">
-                          {{ variant.variantName }}
-                        </p>
+              <!-- RANGO DE PRECIOS -->
+              <div class="flex gap-3 text-sm">
+                <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                  <ng-icon name="matAttachMoneyOutline" size="16" class="inline"></ng-icon>
+                  Precio: {{ getVariantPriceRange(product) }}
+                </span>
+              </div>
 
-                        <!-- Atributos de la variante -->
-                        @if (variant.attributes) {
-                          <div class="flex flex-wrap gap-1 mb-2">
-                            @for (attr of variant.attributes | keyvalue; track attr.key) {
-                              <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-xs">
-                                {{ attr.key }}: <strong>{{ attr.value }}</strong>
+              <!-- LISTA DE VARIANTES (EXPANDIBLE) -->
+              @if (isProductExpanded(product.id!)) {
+                <div class="pl-4 border-l-4 border-purple-300 dark:border-purple-700 space-y-2 mt-2">
+                  @for (variant of product.variants; track variant.id) {
+                    <div class="p-3 bg-gray-50 dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700"
+                         [ngClass]="{'opacity-60': (variant.currentStock ?? 0) === 0}">
+                      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div class="flex-1">
+                          <p class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-1">
+                            {{ variant.variantName }}
+                          </p>
+
+                          <!-- Atributos de la variante -->
+                          @if (variant.attributes) {
+                            <div class="flex flex-wrap gap-1 mb-2">
+                              @for (attr of variant.attributes | keyvalue; track attr.key) {
+                                <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-xs">
+                                  {{ attr.key }}: <strong>{{ attr.value }}</strong>
+                                </span>
+                              }
+                            </div>
+                          }
+
+                          <div class="flex flex-wrap gap-3 text-xs">
+                            @if (variant.sku) {
+                              <span class="text-gray-500 dark:text-gray-400 font-mono">
+                                SKU: {{ variant.sku }}
                               </span>
                             }
+
+                            <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                              Venta: Q {{ variant.salePrice?.toFixed(2) ?? '0.00' }}
+                            </span>
+
+                            @if (variant.costPrice !== undefined && variant.costPrice !== null) {
+                              <span class="text-gray-600 dark:text-gray-400">
+                                Costo: Q {{ getProductCostPrice(variant).toFixed(2) }}
+                              </span>
+                            }
+
+                            <span [ngClass]="(variant.currentStock ?? 0) > 0 ?
+                                            'text-green-600 dark:text-green-400' :
+                                            'text-red-600 dark:text-red-400'">
+                              Stock: {{ variant.currentStock ?? 0 }}
+                            </span>
                           </div>
-                        }
-
-                        <div class="flex flex-wrap gap-3 text-xs">
-                          @if (variant.sku) {
-                            <span class="text-gray-500 dark:text-gray-400 font-mono">
-                              SKU: {{ variant.sku }}
-                            </span>
-                          }
-
-                          <span class="font-semibold text-emerald-600 dark:text-emerald-400">
-                            Venta: Q {{ variant.salePrice?.toFixed(2) ?? '0.00' }}
-                          </span>
-
-                          @if (variant.costPrice !== undefined && variant.costPrice !== null) {
-                            <span class="text-gray-600 dark:text-gray-400">
-                              Costo: Q {{ getProductCostPrice(variant).toFixed(2) }}
-                            </span>
-                          }
-
-                          <span [ngClass]="(variant.currentStock ?? 0) > 0 ?
-                                          'text-green-600 dark:text-green-400' :
-                                          'text-red-600 dark:text-red-400'">
-                            Stock: {{ variant.currentStock ?? 0 }}
-                          </span>
                         </div>
-                      </div>
 
-                      @if ((variant.currentStock ?? 0) > 0) {
-                        <button
-                          (click)="selectVariant(product)"
-                          class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg
-                                 text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1">
-                          <ng-icon name="matAddShoppingCartOutline" size="16"></ng-icon>
-                          Agregar
-                        </button>
-                      } @else {
-                        <button
-                          disabled
-                          class="px-3 py-1.5 bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-400
-                                 rounded-lg text-xs font-semibold cursor-not-allowed whitespace-nowrap flex items-center gap-1">
-                          <ng-icon name="matCancelOutline" size="16"></ng-icon>
-                          Sin stock
-                        </button>
-                      }
+                        @if ((variant.currentStock ?? 0) > 0) {
+                          <button
+                            (click)="selectVariant(product, variant)"
+                            class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg
+                                   text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1">
+                            <ng-icon name="matAddShoppingCartOutline" size="16"></ng-icon>
+                            Agregar
+                          </button>
+                        } @else {
+                          <button
+                            disabled
+                            class="px-3 py-1.5 bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-400
+                                   rounded-lg text-xs font-semibold cursor-not-allowed whitespace-nowrap flex items-center gap-1">
+                            <ng-icon name="matCancelOutline" size="16"></ng-icon>
+                            Sin stock
+                          </button>
+                        }
+                      </div>
                     </div>
-                  </div>
-                }
-              </div>
+                  }
+                </div>
+              }
             </div>
           }
         </div>
