@@ -1,5 +1,8 @@
 <!-- HEADER -->
-<app-header headerTitle="Productos" headerDescription="Gestión de módulo de productos, crear, editar, activar, desactivar y eliminar productos."></app-header>
+<app-header
+  headerTitle="Productos"
+  headerDescription="Gestión de módulo de productos, crear, editar, activar, desactivar y eliminar productos.">
+</app-header>
 
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
 
@@ -10,7 +13,9 @@
         <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo Producto</p>
       }
       @if (mode === 'edit' || mode === 'view') {
-        <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID producto: </b>{{ id }}</p>
+        <p class="text-gray-500 dark:text-gray-300 text-base">
+          <b>ID producto: </b>{{ id }}
+        </p>
       }
     </div>
 
@@ -43,7 +48,9 @@
         <ng-icon name="matInventory2Outline" size="18" class="inline mr-2"></ng-icon>
         Stock y Precios
         @if (productType === 'variant' && variants.length > 0) {
-          <span class="ml-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">{{ variants.length }}</span>
+          <span class="ml-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+            {{ variants.length }}
+          </span>
         }
       </button>
     </nav>
@@ -92,33 +99,59 @@
       <!-- FORMULARIO DE INFORMACIÓN GENERAL -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
+        <!-- NOMBRE BASE DEL PRODUCTO -->
         <app-input
           [form]="productForm"
-          name="productName"
+          name="baseProductName"
           icon="matDriveFileRenameOutlineOutline"
-          label="Nombre del producto"
-          placeholder="Ej: ACUARELA, CUADERNO UNIVERSITARIO"
-          helpMessage="Nombre del producto (puede incluir o no la marca)"
-          errorMessage="El nombre es requerido"
+          label="Nombre base del producto"
+          placeholder="Ej: CRAYÓN, CUADERNO, REGLA"
+          helpMessage="Nombre genérico del producto (sin marca)"
+          errorMessage="El nombre base es requerido"
           [minlength]="1"
           [maxlength]="100"
           [counter]="true"
-          [load]="load">
+          [load]="load"
+          (changes)="updateProductName()">
         </app-input>
 
+        <!-- MARCA -->
         <app-select
           [form]="productForm"
           name="brandRef"
-           icon="matFilterBAndWOutline"
+          icon="matFilterBAndWOutline"
           label="Marca"
           placeholder="Selecciona una marca"
           helpMessage="Marca del producto"
           errorMessage="La marca es requerida"
           [required]="true"
           [load]="load"
-          [options]="brandOptions">
+          [options]="brandOptions"
+          (changes)="updateProductName()">
         </app-select>
 
+        <!-- NOMBRE COMPLETO GENERADO -->
+        <div class="col-span-1 sm:col-span-2 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-lg border-2 border-blue-200 dark:border-slate-600">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 mt-1">
+              <ng-icon name="matCheckCircleOutline" size="24" class="text-blue-600 dark:text-blue-400"></ng-icon>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Nombre completo del producto:
+              </p>
+              <p class="text-xl font-bold text-blue-700 dark:text-blue-300 mb-1">
+                {{ getFullProductName() || 'Completa los campos arriba' }}
+              </p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">
+                <ng-icon name="matInfoOutline" size="14" class="inline mr-1"></ng-icon>
+                Este será el nombre que aparecerá en todo el sistema
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CATEGORÍA -->
         <app-select
           [form]="productForm"
           name="categoryId"
@@ -133,6 +166,7 @@
           (changes)="onCategoryChange()">
         </app-select>
 
+        <!-- DESCRIPCIÓN -->
         <app-input
           [form]="productForm"
           name="productDesc"
@@ -147,6 +181,7 @@
           [load]="load">
         </app-input>
 
+        <!-- ESTADO ACTIVO -->
         <app-toggle
           class="col-span-1 sm:col-span-2"
           label="Producto Activo"
@@ -191,7 +226,7 @@
                 name="sku"
                 icon="matQrCodeOutline"
                 label="SKU (Código único)"
-                placeholder="Ej: FAB-LAP-123456"
+                placeholder="Ej: TUC-CRA-123456"
                 helpMessage="Código único del producto"
                 errorMessage="El SKU es requerido"
                 [minlength]="1"
@@ -206,19 +241,163 @@
               </button>
             </div>
 
+            <!-- MARGEN DESEADO -->
             <app-input
               [form]="stockForm"
-              name="costPrice"
-              icon="matAttachMoneyOutline"
-              label="Precio de compra"
-              placeholder="0.00"
-              helpMessage="Precio al que compras el producto"
-              errorMessage="El precio de compra es requerido"
+              name="desiredMargin"
+              icon="matPercentOutline"
+              label="Margen de ganancia deseado (%)"
+              placeholder="Ej: 35.00"
+              helpMessage="Porcentaje de ganancia sobre el costo (0-100)"
+              errorMessage="Debe ser un número entre 0 y 100"
               [minlength]="1"
-              [maxlength]="10"
+              [maxlength]="6"
+              [counter]="true"
+              [load]="load"
+              (changes)="calculateSuggestedPrice()">
+            </app-input>
+
+            <!-- STOCK INICIAL -->
+            <app-input
+              [form]="stockForm"
+              name="currentStock"
+              icon="matInventory2Outline"
+              label="Stock inicial"
+              placeholder="0"
+              helpMessage="Cantidad inicial en inventario"
+              errorMessage="El stock inicial es requerido"
               [load]="load">
             </app-input>
 
+            <!-- STOCK MÍNIMO -->
+            <app-input
+              [form]="stockForm"
+              name="minStock"
+              icon="matStackedBarChartOutline"
+              label="Stock mínimo"
+              placeholder="0"
+              helpMessage="Alerta cuando llegue a este nivel"
+              errorMessage="El stock mínimo es requerido"
+              [load]="load"
+              (changes)="validateStockMinMax()">
+            </app-input>
+
+            <!-- STOCK MÁXIMO -->
+            <app-input
+              [form]="stockForm"
+              name="maxStock"
+              icon="matStackedBarChartOutline"
+              label="Stock máximo"
+              placeholder="100"
+              helpMessage="Capacidad máxima de almacenamiento"
+              errorMessage="El stock máximo es requerido"
+              [load]="load"
+              (changes)="validateStockMinMax()">
+            </app-input>
+
+          </div>
+
+          <!-- ⭐ NUEVA SECCIÓN: PRECIOS POR PROVEEDOR -->
+          <div class="mt-6 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-4">
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <ng-icon name="matAttachMoneyOutline" size="18" class="inline mr-1"></ng-icon>
+                Precios por Proveedor
+              </p>
+              <button
+                type="button"
+                (click)="addSupplierPrice()"
+                class="text-sm text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1">
+                <ng-icon name="matAddOutline" size="16"></ng-icon>
+                Agregar Proveedor
+              </button>
+            </div>
+
+            <!-- Lista de precios por proveedor -->
+            @if (supplierPrices.length === 0) {
+              <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                No hay proveedores configurados. Haz clic en "Agregar Proveedor" para comenzar.
+              </p>
+            }
+
+            @for (supplierPrice of supplierPrices; track supplierPrice.supplierId || $index) {
+              <div class="mb-3 p-3 bg-white dark:bg-slate-900 rounded border border-gray-200 dark:border-slate-600">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                  <!-- Selector de Proveedor -->
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Proveedor
+                    </label>
+                    <select
+                      [(ngModel)]="supplierPrice.supplierId"
+                      (ngModelChange)="onSupplierChange(supplierPrice)"
+                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-gray-200">
+                      <option [value]="0">Selecciona un proveedor</option>
+                      @for (supplier of supplierOptions; track supplier.value) {
+                        <option [value]="supplier.value">{{ supplier.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- Precio de Compra -->
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Precio de Compra
+                    </label>
+                    <input
+                      type="number"
+                      [(ngModel)]="supplierPrice.costPrice"
+                      (ngModelChange)="calculateSuggestedPrice()"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-gray-200">
+                  </div>
+
+                  <!-- Acciones -->
+                  <div class="flex items-end gap-2">
+                    <button
+                      type="button"
+                      (click)="setPreferredSupplier(supplierPrice)"
+                      [class]="supplierPrice.isPreferred
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'"
+                      class="px-3 py-2 text-xs font-semibold rounded hover:opacity-80 transition-opacity">
+                      {{ supplierPrice.isPreferred ? '⭐ Preferido' : 'Marcar preferido' }}
+                    </button>
+                    <button
+                      type="button"
+                      (click)="removeSupplierPrice(supplierPrice)"
+                      class="px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                      Eliminar
+                    </button>
+                  </div>
+
+                </div>
+
+                <!-- Info adicional -->
+                @if (supplierPrice.lastPurchaseDate) {
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Última compra: {{ supplierPrice.lastPurchaseDate | date }} - Q{{ supplierPrice.lastPurchasePrice }}
+                  </p>
+                }
+              </div>
+            }
+
+            <!-- Info del mejor precio -->
+            @if (getBestSupplierPrice()) {
+              <div class="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                <p class="text-xs text-green-800 dark:text-green-300">
+                  <ng-icon name="matCheckCircleOutline" size="14" class="inline mr-1"></ng-icon>
+                  <b>Mejor precio:</b> {{ getBestSupplierPrice()?.supplierName }} - Q{{ getBestSupplierPrice()?.costPrice?.toFixed(2) }}
+                </p>
+              </div>
+            }
+          </div>
+
+          <!-- PRECIO DE VENTA -->
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <app-input
               [form]="stockForm"
               name="salePrice"
@@ -232,56 +411,29 @@
               [load]="load">
             </app-input>
 
-            <app-input
-              [form]="stockForm"
-              name="currentStock"
-              icon="matInventory2Outline"
-              label="Stock inicial"
-              placeholder="0"
-              helpMessage="Cantidad inicial en inventario"
-              errorMessage="El stock inicial es requerido"
-              [load]="load">
-            </app-input>
+            <!-- INFO: PRECIO SUGERIDO -->
+            @if (suggestedSalePrice > 0) {
+              <div class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                <div class="flex-1">
+                  <p class="text-sm text-green-800 dark:text-green-300">
+                    <ng-icon name="matLightbulbOutline" size="16" class="inline mr-1"></ng-icon>
+                    <b>Precio sugerido:</b> Q{{ suggestedSalePrice.toFixed(2) }}
+                  </p>
+                  <p class="text-xs text-green-700 dark:text-green-400 mt-1">
+                    Basado en mejor precio: Q{{ getBestCostPrice().toFixed(2) }} + Margen: {{ stockForm.get('desiredMargin')?.value }}%
+                  </p>
+                </div>
+              </div>
+            }
+          </div>
 
-            <app-input
-              [form]="stockForm"
-              name="minStock"
-               icon="matStackedBarChartOutline"
-              label="Stock mínimo"
-              placeholder="0"
-              helpMessage="Alerta cuando llegue a este nivel"
-              errorMessage="El stock mínimo es requerido"
-              [load]="load"
-              (changes)="validateStockMinMax()">
-            </app-input>
-
-            <app-input
-              [form]="stockForm"
-              name="maxStock"
-              icon="matStackedBarChartOutline"
-              label="Stock máximo"
-              placeholder="100"
-              helpMessage="Capacidad máxima de almacenamiento"
-              errorMessage="El stock máximo es requerido"
-              [load]="load"
-              (changes)="validateStockMinMax()">
-            </app-input>
-
-            <!-- PROVEEDORES -->
-            <div class="col-span-1 sm:col-span-2">
-              <app-checkbox
-                [form]="stockForm"
-                name="supplierId"
-                icon="matProductionQuantityLimitsOutline"
-                label="Proveedores"
-                placeholder="Selecciona proveedores"
-                helpMessage="Selecciona uno o más proveedores"
-                errorMessage="Debes seleccionar al menos un proveedor"
-                [labels]="supplierLabels"
-                [load]="load">
-              </app-checkbox>
-            </div>
-
+          <!-- INFO ADICIONAL -->
+          <div class="mt-4 p-4 bg-blue-50 dark:bg-slate-800 rounded border border-blue-200 dark:border-slate-700">
+            <p class="text-sm text-blue-800 dark:text-blue-300">
+              <ng-icon name="matInfoOutline" size="16" class="inline mr-1"></ng-icon>
+              <b>Nota importante:</b> Los precios de compra se actualizarán automáticamente cuando registres nuevas compras.
+              El sistema usará el precio del proveedor seleccionado en cada transacción.
+            </p>
           </div>
         </div>
       }
@@ -294,7 +446,7 @@
           [brandOptions]="brandOptions"
           [supplierOptions]="supplierOptions"
           [initialVariants]="variants"
-          [productName]="productForm.get('productName')?.value || ''"
+          [productName]="getFullProductName()"
           [load]="load"
           (variantsChange)="onVariantsChange($event)">
         </app-product-variant>

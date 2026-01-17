@@ -1,33 +1,208 @@
-<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
-<div class="w-full p-3 border-b">
-<div class="w-full grid grid-cols-1 sm:grid-cols-1">
-  @if (product) {
-    <h1 class="text-center">
-      <p>
-        <b>Q {{ product?.salePrice?.toFixed(2) ?? '0.00' }}</b>
-      </p>
-    </h1>
-    <br>
-  }
-  <app-input
-    [form]="form"
-    name="quantity"
-    icon="matFilter2Outline"
-    label="Cantidad"
-    placeholder="Cantidad"
-    helpMessage="Sólo se aceptan números enteros"
-    errorMessage="Error message."
-    [counter]="true"
-    [minlength]="1"
-    [maxlength]="5">
-  </app-input>
-</div>
-  <div class="flex justify-center align-middle">
-    <button (click)="close()" [disabled]="load" class="btn-danger h-12 w-48 font-bold">
+<div class="flex flex-col gap-4 p-4">
+  <!-- HEADER -->
+  <div class="border-b pb-3 dark:border-slate-700">
+    <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+      {{ data.title }}
+    </h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+      {{ data.product.productName }}
+    </p>
+  </div>
+
+  <!-- INFO DEL PRODUCTO -->
+  <div class="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 space-y-2">
+    <div class="flex justify-between text-sm">
+      <span class="text-gray-600 dark:text-gray-400">SKU:</span>
+      <span class="font-semibold text-gray-900 dark:text-white">{{ data.product.sku || 'N/A' }}</span>
+    </div>
+
+    @if (!data.isPurchase) {
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-600 dark:text-gray-400">Stock disponible:</span>
+        <span class="font-semibold" [ngClass]="maxStock > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+          {{ maxStock }}
+        </span>
+      </div>
+    }
+
+    <!-- ⭐ PRECIO DE COSTO DEL PROVEEDOR -->
+    <div class="flex justify-between text-sm border-t pt-2 dark:border-slate-700">
+      <span class="text-gray-600 dark:text-gray-400">
+        <ng-icon name="matInfoOutline" size="16" class="inline mr-1"></ng-icon>
+        Precio costo (proveedor):
+      </span>
+      <span class="font-bold text-blue-600 dark:text-blue-400">
+        Q {{ costPrice.toFixed(2) }}
+      </span>
+    </div>
+
+    <div class="flex justify-between text-sm">
+      <span class="text-gray-600 dark:text-gray-400">Precio venta sugerido:</span>
+      <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+        Q {{ data.product.salePrice?.toFixed(2) || '0.00' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <form [formGroup]="form" class="space-y-4">
+
+    <!-- CANTIDAD -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Cantidad
+      </label>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="decrementQuantity()"
+          [disabled]="quantity <= 1"
+          class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600
+                 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-bold text-gray-700 dark:text-gray-300">
+          -
+        </button>
+
+        <input
+          type="number"
+          formControlName="quantity"
+          min="1"
+          [max]="data.isPurchase ? 999999 : maxStock"
+          class="flex-1 text-center px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg
+                 bg-white dark:bg-slate-800 text-gray-900 dark:text-white font-semibold text-lg
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+        <button
+          type="button"
+          (click)="incrementQuantity()"
+          [disabled]="!data.isPurchase && quantity >= maxStock"
+          class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600
+                 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-bold text-gray-700 dark:text-gray-300">
+          +
+        </button>
+      </div>
+
+      @if (form.get('quantity')?.invalid && form.get('quantity')?.touched) {
+        <p class="text-red-500 text-xs mt-1">
+          @if (form.get('quantity')?.hasError('max')) {
+            Stock insuficiente. Máximo: {{ maxStock }}
+          }
+          @if (form.get('quantity')?.hasError('min')) {
+            La cantidad debe ser al menos 1
+          }
+        </p>
+      }
+    </div>
+
+    <!-- ⭐ PRECIO PERSONALIZADO -->
+    <div>
+      <div class="flex justify-between items-center mb-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Precio unitario
+        </label>
+        <button
+          type="button"
+          (click)="resetToSuggestedPrice()"
+          class="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+          Resetear a sugerido
+        </button>
+      </div>
+
+      <div class="relative">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-semibold">
+          Q
+        </span>
+        <input
+          type="number"
+          formControlName="customPrice"
+          step="0.01"
+          min="0"
+          class="w-full pl-8 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg
+                 bg-white dark:bg-slate-800 text-gray-900 dark:text-white font-semibold
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+      </div>
+
+      <!-- ⭐ INDICADOR DE PRECIO vs COSTO -->
+      @if (!data.isPurchase && customPrice !== suggestedPrice) {
+        <div class="mt-2 p-2 rounded"
+             [ngClass]="customPrice >= costPrice ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'">
+          <p class="text-xs" [ngClass]="customPrice >= costPrice ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'">
+            @if (customPrice >= costPrice) {
+              ✓ Precio por encima del costo
+            } @else {
+              ⚠️ Precio por debajo del costo (pérdida)
+            }
+          </p>
+        </div>
+      }
+    </div>
+
+    <!-- ⭐ RESUMEN DE GANANCIA (solo ventas) -->
+    @if (!data.isPurchase) {
+      <div class="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-lg p-4 space-y-2">
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-700 dark:text-gray-300">Costo total:</span>
+          <span class="font-semibold text-gray-900 dark:text-white">
+            Q {{ (costPrice * quantity).toFixed(2) }}
+          </span>
+        </div>
+
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-700 dark:text-gray-300">Venta total:</span>
+          <span class="font-semibold text-gray-900 dark:text-white">
+            Q {{ total.toFixed(2) }}
+          </span>
+        </div>
+
+        <div class="border-t pt-2 dark:border-emerald-700">
+          <div class="flex justify-between">
+            <span class="font-semibold text-gray-700 dark:text-gray-300">Ganancia:</span>
+            <span class="font-bold text-lg"
+                  [ngClass]="potentialProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+              Q {{ potentialProfit.toFixed(2) }}
+            </span>
+          </div>
+          <div class="flex justify-between text-xs mt-1">
+            <span class="text-gray-600 dark:text-gray-400">Margen:</span>
+            <span [ngClass]="profitMargin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+              {{ profitMargin.toFixed(1) }}%
+            </span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TOTAL (para compras) -->
+    @if (data.isPurchase) {
+      <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+        <div class="flex justify-between items-center">
+          <span class="text-gray-700 dark:text-gray-300 font-semibold">Total:</span>
+          <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            Q {{ total.toFixed(2) }}
+          </span>
+        </div>
+      </div>
+    }
+  </form>
+
+  <!-- BOTONES -->
+  <div class="flex gap-3 pt-3 border-t dark:border-slate-700">
+    <button
+      type="button"
+      (click)="cancel()"
+      class="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600
+             text-gray-700 dark:text-gray-300 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+      <ng-icon name="matCancelOutline" size="20"></ng-icon>
       Cancelar
     </button>
-    <button (click)="ok()" [disabled]="load || form.invalid" class="btn-success h-12 w-48 font-bold">
-      Continuar
+
+    <button
+      type="button"
+      (click)="confirm()"
+      [disabled]="form.invalid"
+      class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed
+             text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+      <ng-icon name="matCheckCircleOutline" size="20"></ng-icon>
+      Confirmar
     </button>
   </div>
 </div>

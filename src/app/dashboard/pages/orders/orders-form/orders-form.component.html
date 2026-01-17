@@ -36,6 +36,23 @@
         (changes)="productsSelect($event)"
         (finalized)="finalizedSelectProducts($event)">
       </app-orders-products-select>
+
+      <!-- Botones de control del paso 2 -->
+      <div class="flex justify-end gap-3 mt-4 pt-4 border-t dark:border-slate-700">
+        <button
+          (click)="goToPreviousStep()"
+          type="button"
+          class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors">
+          Atrás
+        </button>
+        <button
+          [disabled]="selectedProducts.length === 0"
+          (click)="selectProducts.finalizeSelection()"
+          type="button"
+          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors">
+          Continuar
+        </button>
+      </div>
     </mat-step>
 
     <!-- PASO 3: Confirmación de la Venta -->

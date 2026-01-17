@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -32,12 +32,17 @@ import {
   matFilterBAndWOutline,
   matStackedBarChartOutline,
   matProductionQuantityLimitsOutline,
+  matCheckCircleOutline,
+  matPercentOutline,
+  matLightbulbOutline,
+  matInventoryOutline,
+  matAddOutline,
 } from '@ng-icons/material-icons/outline';
 
 // Constants & Interfaces
 import { URL_PRODUCTS } from '../../../../shared/constants/endpoints';
 import { REGUEX_DECIMAL_INT, REGUX_AFL } from '../../../../shared/constants/reguex';
-import { Product, ProductVariant } from '../../../../shared/interfaces/product';
+import { Product, ProductVariant, ProductSupplierPrice } from '../../../../shared/interfaces/product';
 import { InputOptionsSelect } from '../../../../shared/interfaces/input';
 import { environment } from '../../../../../environments/environment';
 import BaseForm from '../../../../shared/classes/base-form';
@@ -50,6 +55,7 @@ import { ProductVariantComponent } from '../Components/product-variant/product-v
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     HeaderComponent,
     InputComponent,
     SelectComponent,
@@ -74,7 +80,12 @@ import { ProductVariantComponent } from '../Components/product-variant/product-v
     matCategoryOutline,
     matFilterBAndWOutline,
     matStackedBarChartOutline,
-    matProductionQuantityLimitsOutline
+    matProductionQuantityLimitsOutline,
+    matCheckCircleOutline,
+    matPercentOutline,
+    matLightbulbOutline,
+    matInventoryOutline,
+    matAddOutline,
   })]
 })
 export default class ProductsFormComponent extends BaseForm implements OnInit, FormComponent {
@@ -89,6 +100,9 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   product: Product;
   variants: ProductVariant[] = [];
 
+  // ⭐ NUEVA PROPIEDAD: Precios por proveedor
+  supplierPrices: ProductSupplierPrice[] = [];
+
   // ==================== OPTIONS ====================
   categoryOptions: InputOptionsSelect[] = [];
   brandOptions: InputOptionsSelect[] = [];
@@ -97,6 +111,7 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   // ==================== UI STATE ====================
   activeTab: 'general' | 'variants' = 'general';
   productType: 'simple' | 'variant' = 'simple';
+  suggestedSalePrice: number = 0;
 
   get supplierLabels(): string[] {
     return this.supplierOptions.map(opt => opt.label);
@@ -123,8 +138,8 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
 
   initForms() {
     this.productForm = this.fb.group({
-      productName: ['', [Validators.required, Validators.pattern(REGUX_AFL), Validators.maxLength(100)]],
-      productDesc: ['', [Validators.required, Validators.maxLength(255)]],
+      baseProductName: ['', [Validators.required, Validators.pattern(REGUX_AFL), Validators.maxLength(100)]],
+      productDesc: ['', [Validators.maxLength(255)]],
       categoryId: ['', Validators.required],
       brandRef: ['', Validators.required],
       active: [true]
@@ -132,12 +147,11 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
 
     this.stockForm = this.fb.group({
       sku: ['', [Validators.required, Validators.maxLength(50)]],
-      costPrice: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]],
+      desiredMargin: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT), Validators.min(0), Validators.max(100)]],
       salePrice: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]],
       currentStock: [0, [Validators.required, Validators.min(0)]],
       minStock: [0, [Validators.required, Validators.min(0)]],
-      maxStock: [100, [Validators.required, Validators.min(1)]],
-      supplierId: this.fb.array([])
+      maxStock: [100, [Validators.required, Validators.min(1)]]
     });
   }
 
@@ -178,8 +192,6 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
         label: supplier.supplierName
       }));
 
-      this.initSupplierFormArrays(suppliersList.length);
-
       this.productForm.markAsPristine();
       this.stockForm.markAsPristine();
 
@@ -189,22 +201,15 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     }
   }
 
-  initSupplierFormArrays(count: number) {
-    const stockSuppliers = this.stockForm.get('supplierId') as FormArray;
-    stockSuppliers.clear();
-
-    for (let i = 0; i < count; i++) {
-      stockSuppliers.push(new FormControl(false));
-    }
-  }
-
   async loadProduct(): Promise<void> {
     this.load = true;
     try {
       const product: Product = await firstValueFrom(this.crud.getId(this.id));
 
+      const baseProductName = this.extractBaseProductName(product.productName, product.brandRef);
+
       this.productForm.patchValue({
-        productName: product.productName,
+        baseProductName: baseProductName,
         productDesc: product.productDesc,
         categoryId: product.categoryId?.toString(),
         brandRef: product.brandRef?.toString(),
@@ -214,18 +219,38 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
       this.productType = product.hasVariants ? 'variant' : 'simple';
 
       if (this.productType === 'simple') {
+        // ⭐ CARGAR PRECIOS POR PROVEEDOR si existen
+        if (product.supplierPrices && product.supplierPrices.length > 0) {
+          this.supplierPrices = product.supplierPrices.map(sp => ({
+            ...sp,
+            supplierName: this.supplierOptions.find(opt => opt.value === sp.supplierId.toString())?.label
+          }));
+        } else if (product.costPrice && product.supplierId && product.supplierId.length > 0) {
+          // LEGACY: Convertir formato antiguo a nuevo
+          this.supplierPrices = product.supplierId.map((supplierId, index) => ({
+            supplierId,
+            supplierName: this.supplierOptions.find(opt => opt.value === supplierId.toString())?.label,
+            costPrice: product.costPrice || 0,
+            isPreferred: index === 0
+          }));
+        }
+
+        const bestCostPrice = this.getBestCostPrice();
+        const desiredMargin = product.desiredMargin || this.calculateMarginFromPrices(
+          bestCostPrice,
+          Number(product.salePrice)
+        );
+
         this.stockForm.patchValue({
           sku: product.sku,
-          costPrice: Number(product.costPrice).toFixed(2),
+          desiredMargin: desiredMargin.toFixed(2),
           salePrice: Number(product.salePrice).toFixed(2),
           currentStock: product.currentStock,
           minStock: product.minStock,
           maxStock: product.maxStock
         });
 
-        if (product.supplierId) {
-          this.setSuppliers(this.stockForm, product.supplierId);
-        }
+        this.calculateSuggestedPrice();
       } else {
         if (product.variants && product.variants.length > 0) {
           this.variants = product.variants;
@@ -241,6 +266,114 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     } finally {
       this.load = false;
     }
+  }
+
+  // ==================== PRODUCT NAME GENERATION ====================
+
+  getFullProductName(): string {
+    const baseName = this.productForm.get('baseProductName')?.value?.trim() || '';
+    const brandId = this.productForm.get('brandRef')?.value;
+
+    if (!baseName) return '';
+
+    if (brandId) {
+      const brand = this.brandOptions.find(b => b.value === brandId);
+      if (brand) {
+        return `${baseName} ${brand.label}`.toUpperCase();
+      }
+    }
+
+    return baseName.toUpperCase();
+  }
+
+  updateProductName(): void {
+    // El nombre completo se genera automáticamente
+  }
+
+  private extractBaseProductName(fullProductName: string, brandId: number): string {
+    if (!fullProductName) return '';
+
+    const brand = this.brandOptions.find(b => b.value === brandId.toString());
+    if (brand) {
+      const brandName = brand.label.toUpperCase();
+      if (fullProductName.toUpperCase().endsWith(brandName)) {
+        return fullProductName.substring(0, fullProductName.length - brandName.length).trim();
+      }
+    }
+
+    return fullProductName;
+  }
+
+  // ==================== SUPPLIER PRICES MANAGEMENT ====================
+
+  addSupplierPrice() {
+    this.supplierPrices.push({
+      supplierId: 0,
+      costPrice: 0,
+      isPreferred: this.supplierPrices.length === 0
+    });
+  }
+
+  removeSupplierPrice(supplierPrice: ProductSupplierPrice) {
+    const index = this.supplierPrices.indexOf(supplierPrice);
+    if (index > -1) {
+      this.supplierPrices.splice(index, 1);
+
+      if (supplierPrice.isPreferred && this.supplierPrices.length > 0) {
+        this.supplierPrices[0].isPreferred = true;
+      }
+
+      this.calculateSuggestedPrice();
+    }
+  }
+
+  setPreferredSupplier(supplierPrice: ProductSupplierPrice) {
+    this.supplierPrices.forEach(sp => sp.isPreferred = false);
+    supplierPrice.isPreferred = true;
+    this.calculateSuggestedPrice();
+  }
+
+  onSupplierChange(supplierPrice: ProductSupplierPrice) {
+    const supplier = this.supplierOptions.find(s => s.value === supplierPrice.supplierId.toString());
+    if (supplier) {
+      supplierPrice.supplierName = supplier.label;
+    }
+  }
+
+  getBestSupplierPrice(): ProductSupplierPrice | null {
+    if (this.supplierPrices.length === 0) return null;
+
+    const preferred = this.supplierPrices.find(sp => sp.isPreferred && sp.supplierId > 0);
+    if (preferred && preferred.costPrice > 0) return preferred;
+
+    return this.supplierPrices
+      .filter(sp => sp.costPrice > 0 && sp.supplierId > 0)
+      .reduce((best, current) =>
+        (!best || current.costPrice < best.costPrice) ? current : best
+      , null as ProductSupplierPrice | null);
+  }
+
+  getBestCostPrice(): number {
+    const best = this.getBestSupplierPrice();
+    return best?.costPrice || 0;
+  }
+
+  // ==================== PRICE CALCULATION ====================
+
+  calculateSuggestedPrice(): void {
+    const bestCostPrice = this.getBestCostPrice();
+    const desiredMargin = parseFloat(this.stockForm.get('desiredMargin')?.value) || 0;
+
+    if (bestCostPrice > 0 && desiredMargin >= 0) {
+      this.suggestedSalePrice = bestCostPrice * (1 + desiredMargin / 100);
+    } else {
+      this.suggestedSalePrice = 0;
+    }
+  }
+
+  private calculateMarginFromPrices(costPrice: number, salePrice: number): number {
+    if (costPrice === 0) return 0;
+    return ((salePrice - costPrice) / costPrice) * 100;
   }
 
   // ==================== PRODUCT TYPE MANAGEMENT ====================
@@ -277,14 +410,6 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
 
   // ==================== HELPERS ====================
 
-  setSuppliers(form: FormGroup, supplierId: number[]) {
-    const supplierFormArray = form.get('supplierId') as FormArray;
-    this.supplierOptions.forEach((option, index) => {
-      const isSelected = supplierId.includes(Number(option.value));
-      supplierFormArray.at(index).setValue(isSelected);
-    });
-  }
-
   validateStockMinMax() {
     const maxControl = this.stockForm.get('maxStock');
     const minControl = this.stockForm.get('minStock');
@@ -313,7 +438,8 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     if (this.productForm.invalid) return false;
 
     if (this.productType === 'simple') {
-      return this.stockForm.valid;
+      const hasValidSupplier = this.supplierPrices.some(sp => sp.supplierId > 0 && sp.costPrice > 0);
+      return this.stockForm.valid && hasValidSupplier;
     } else {
       return this.variants.length > 0;
     }
@@ -325,32 +451,52 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
       return;
     }
 
+    if (this.productType === 'simple' && this.supplierPrices.length === 0) {
+      this.toast.error('Debes agregar al menos un proveedor con precio');
+      return;
+    }
+
     this.load = true;
     this.isSaving = true;
 
     try {
       let product: Product;
+      const fullProductName = this.getFullProductName();
 
       if (this.productType === 'simple') {
-        const supplierFormArray = this.stockForm.get('supplierId') as FormArray;
-        const selectedSuppliers = this.supplierOptions
-          .filter((_, index) => supplierFormArray.at(index).value)
-          .map(option => Number(option.value));
+        const validSupplierPrices = this.supplierPrices.filter(sp =>
+          sp.supplierId > 0 && sp.costPrice > 0
+        );
+
+        if (validSupplierPrices.length === 0) {
+          this.toast.error('Debes configurar al menos un proveedor con precio válido');
+          this.load = false;
+          this.isSaving = false;
+          return;
+        }
 
         product = {
           id: this.id || null,
-          productName: this.productForm.value.productName.trim(),
-          productDesc: this.productForm.value.productDesc.trim(),
+          productName: fullProductName,
+          baseProductName: this.productForm.value.baseProductName.trim(),
+          productDesc: this.productForm.value.productDesc?.trim() || '',
           categoryId: Number(this.productForm.value.categoryId),
           brandRef: Number(this.productForm.value.brandRef),
           hasVariants: false,
           sku: this.stockForm.value.sku.trim(),
-          costPrice: Number(this.stockForm.value.costPrice),
+
+          // ⭐ NUEVO: Enviar precios por proveedor
+          supplierPrices: validSupplierPrices.map(sp => ({
+            supplierId: Number(sp.supplierId),
+            costPrice: Number(sp.costPrice),
+            isPreferred: sp.isPreferred || false
+          })),
+
           salePrice: Number(this.stockForm.value.salePrice),
+          desiredMargin: Number(this.stockForm.value.desiredMargin),
           currentStock: Number(this.stockForm.value.currentStock),
           minStock: Number(this.stockForm.value.minStock),
           maxStock: Number(this.stockForm.value.maxStock),
-          supplierId: selectedSuppliers,
           active: this.productForm.value.active
         };
       } else {
@@ -377,8 +523,9 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
 
         product = {
           id: this.id || null,
-          productName: this.productForm.value.productName.trim(),
-          productDesc: this.productForm.value.productDesc.trim(),
+          productName: fullProductName,
+          baseProductName: this.productForm.value.baseProductName.trim(),
+          productDesc: this.productForm.value.productDesc?.trim() || '',
           categoryId: Number(this.productForm.value.categoryId),
           brandRef: Number(this.productForm.value.brandRef),
           hasVariants: true,
@@ -439,19 +586,16 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   // ==================== CAMBIOS SIN GUARDAR ====================
 
   isDirty(): boolean {
-    // Si ya hay variantes creadas, NO mostrar mensaje de cambios sin guardar
     if (this.productType === 'variant' && this.variantComponent?.hasVariants()) {
       return false;
     }
 
-    // Para productos simples o variantes sin crear, verificar formularios dirty
     const formsAreDirty = this.productForm.dirty || this.stockForm.dirty;
-
-    // Para productos con variantes, verificar si hay cambios en el formulario de variantes
+    const hasSupplierPriceChanges = this.supplierPrices.length > 0;
     const hasUnsavedVariantChanges = this.productType === 'variant'
       && this.variantComponent?.hasUnsavedChanges();
 
-    return formsAreDirty || !!hasUnsavedVariantChanges;
+    return formsAreDirty || hasSupplierPriceChanges || !!hasUnsavedVariantChanges;
   }
 
   // ==================== TEMPLATE HELPERS ====================

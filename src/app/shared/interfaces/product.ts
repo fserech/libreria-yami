@@ -1,29 +1,47 @@
 // ==================== INTERFACES DE PRODUCTO ====================
 
+export interface ProductSupplierPrice {
+  supplierId: number;
+  supplierName?: string;
+  costPrice: number;
+  isPreferred?: boolean;
+  lastPurchaseDate?: string;
+  lastPurchasePrice?: number;
+}
+
 export interface Product {
   id?: number | null;
   productName: string;
+  baseProductName?: string;
   productDesc?: string;
   categoryId: number;
   brandRef: number;
   hasVariants: boolean;
 
-   // Relación con sucursal
-  branchId?: number | null; // NULL = disponible en todas las sucursales
+  // Relación con sucursal
+  branchId?: number | null;
   branch?: {
     id: number;
     name: string;
   };
+
   // Campos para PRODUCTO SIMPLE (solo si hasVariants = false)
   sku?: string;
+
+  // ⭐ MANTENER COMPATIBILIDAD: costPrice y supplierId siguen existiendo
   costPrice?: number;
+  supplierId?: number[];
+
+  // ⭐ NUEVO: Precios por proveedor (opcional, para nuevos productos)
+  supplierPrices?: ProductSupplierPrice[];
+  desiredMargin?: number;
+
   salePrice?: number;
   currentStock?: number;
   minStock?: number;
   maxStock?: number;
-  supplierId?: number[]; // Proveedores del producto simple
 
-  // Variantes (solo si hasVariants = true)
+  // Variantes
   variants?: ProductVariant[];
 
   // Estado
@@ -41,8 +59,14 @@ export interface ProductVariant {
   sku: string;
   variantName: string;
 
-  // Precios y Stock
+  // ⭐ MANTENER COMPATIBILIDAD: costPrice y supplierId siguen existiendo
   costPrice: number;
+  supplierId: number[];
+
+  // ⭐ NUEVO: Precios por proveedor (opcional, para nuevas variantes)
+  supplierPrices?: ProductSupplierPrice[];
+  desiredMargin?: number;
+
   salePrice: number;
   currentStock: number;
   minStock: number;
@@ -50,10 +74,6 @@ export interface ProductVariant {
 
   // Atributos dinámicos
   attributes: { [key: string]: string };
-  // Ejemplo: { "hojas": "100", "rayado": "Cuadriculado", "tamaño": "Carta", "color": "Azul" }
-
-  // Proveedores
-  supplierId: number[];
 
   // Estado
   active: boolean;
@@ -72,7 +92,6 @@ export interface VariantAttribute {
   required: boolean;
   active?: boolean;
 }
-
 
 export interface Supplier {
   id: number;
@@ -96,7 +115,6 @@ export interface Category {
 }
 
 // ==================== INVENTORY VIEW ====================
-
 export interface ProductInventory {
   productId: number;
   variantId?: number;

@@ -1,49 +1,302 @@
-<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
-<div class="w-full p-3 border-b">
-  <div class="w-full grid grid-cols-1 sm:grid-cols-1">
-    @if (product) {
-      <div class="text-center mb-4">
-        <!-- ✅ Mostrar precio según contexto -->
-        @if (isPurchase) {
-          <!-- Para compras: mostrar precio de costo -->
-          <p class="text-sm text-gray-500 dark:text-gray-400">Precio de costo</p>
-          <p class="text-2xl font-bold text-blue-500">
-            Q {{ product?.costPrice?.toFixed(2) ?? '0.00' }}
-          </p>
-          <!-- Mostrar precio de venta como referencia -->
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            Precio venta: Q {{ product?.salePrice?.toFixed(2) ?? '0.00' }}
-          </p>
-        } @else {
-          <!-- Para ventas: mostrar precio de venta -->
-          <p class="text-sm text-gray-500 dark:text-gray-400">Precio de venta</p>
-          <p class="text-2xl font-bold text-emerald-500">
-            Q {{ product?.salePrice?.toFixed(2) ?? '0.00' }}
-          </p>
-        }
-      </div>
-    }
-
-    <app-input
-      [form]="form"
-      name="quantity"
-      icon="matFilter2Outline"
-      label="Cantidad"
-      placeholder="Cantidad"
-      helpMessage="Sólo se aceptan números enteros"
-      errorMessage="Debe ingresar una cantidad válida"
-      [counter]="true"
-      [minlength]="1"
-      [maxlength]="5">
-    </app-input>
+<div class="flex flex-col gap-4 p-4 max-h-[90vh] overflow-y-auto">
+  <!-- HEADER -->
+  <div class="border-b pb-3 dark:border-slate-700">
+    <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+      {{ data.title }}
+    </h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+      {{ data.product.productName }}
+    </p>
   </div>
 
-  <div class="flex justify-center align-middle gap-2 mt-4">
-    <button (click)="close()" [disabled]="load" class="btn-danger h-12 w-48 font-bold">
+  <!-- ⭐ INFO DEL PRODUCTO CON PRECIOS -->
+  <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 space-y-3">
+    <div class="flex items-center gap-2 mb-2">
+      <ng-icon name="matInfoOutline" size="20" class="text-blue-600 dark:text-blue-400"></ng-icon>
+      <h3 class="font-semibold text-gray-900 dark:text-white">Información del producto</h3>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      @if (data.product.sku) {
+        <div class="col-span-2">
+          <span class="text-xs text-gray-600 dark:text-gray-400">SKU:</span>
+          <p class="font-mono font-semibold text-gray-900 dark:text-white">{{ data.product.sku }}</p>
+        </div>
+      }
+
+      @if (!data.isPurchase) {
+        <div class="col-span-2">
+          <span class="text-xs text-gray-600 dark:text-gray-400">Stock disponible:</span>
+          <p class="font-semibold text-lg" [ngClass]="maxStock > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+            {{ maxStock }} unidades
+          </p>
+        </div>
+      }
+
+      <!-- ⭐ PRECIO DE COSTO DEL PROVEEDOR -->
+      <div class="bg-white dark:bg-slate-800 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800">
+        <span class="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+          <ng-icon name="matAttachMoneyOutline" size="14"></ng-icon>
+          Costo (Proveedor)
+        </span>
+        <p class="font-bold text-lg text-blue-600 dark:text-blue-400">
+          Q {{ costPrice.toFixed(2) }}
+        </p>
+      </div>
+
+      <!-- ⭐ PRECIO DE VENTA -->
+      <div class="bg-white dark:bg-slate-800 rounded-lg p-3 border-2 border-emerald-200 dark:border-emerald-800">
+        <span class="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+          <ng-icon name="matAttachMoneyOutline" size="14"></ng-icon>
+          Precio Venta
+        </span>
+        <p class="font-bold text-lg text-emerald-600 dark:text-emerald-400">
+          Q {{ salePrice.toFixed(2) }}
+        </p>
+      </div>
+
+      <!-- ⭐ MARGEN ACTUAL DEL PRODUCTO -->
+      @if (!data.isPurchase && costPrice > 0) {
+        <div class="col-span-2 bg-white dark:bg-slate-800 rounded-lg p-3 border-2 border-purple-200 dark:border-purple-800">
+          <span class="text-xs text-gray-600 dark:text-gray-400">Margen del producto:</span>
+          <p class="font-bold text-purple-600 dark:text-purple-400">
+            {{ ((salePrice - costPrice) / costPrice * 100).toFixed(1) }}%
+            <span class="text-sm font-normal">(Q {{ (salePrice - costPrice).toFixed(2) }} ganancia/unidad)</span>
+          </p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <form [formGroup]="form" class="space-y-4">
+
+    <!-- ⭐ CANTIDAD -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Cantidad
+      </label>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="decrementQuantity()"
+          [disabled]="quantity <= 1"
+          class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600
+                 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors">
+          <ng-icon name="matRemoveOutline" size="20" class="text-gray-700 dark:text-gray-300"></ng-icon>
+        </button>
+
+        <input
+          type="number"
+          formControlName="quantity"
+          min="1"
+          [max]="data.isPurchase ? 999999 : maxStock"
+          class="flex-1 text-center px-4 py-2 border-2 border-gray-300 dark:border-slate-600 rounded-lg
+                 bg-white dark:bg-slate-800 text-gray-900 dark:text-white font-semibold text-xl
+                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+
+        <button
+          type="button"
+          (click)="incrementQuantity()"
+          [disabled]="!data.isPurchase && quantity >= maxStock"
+          class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600
+                 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors">
+          <ng-icon name="matAddOutline" size="20" class="text-gray-700 dark:text-gray-300"></ng-icon>
+        </button>
+      </div>
+
+      @if (form.get('quantity')?.invalid && form.get('quantity')?.touched) {
+        <p class="text-red-500 text-xs mt-1 flex items-center gap-1">
+          <ng-icon name="matInfoOutline" size="14"></ng-icon>
+          @if (form.get('quantity')?.hasError('max')) {
+            Stock insuficiente. Máximo disponible: {{ maxStock }}
+          }
+          @if (form.get('quantity')?.hasError('min')) {
+            La cantidad debe ser al menos 1
+          }
+        </p>
+      }
+    </div>
+
+    <!-- ⭐ PRECIO PERSONALIZADO CON SUGERENCIAS -->
+    <div>
+      <div class="flex justify-between items-center mb-2">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ data.isPurchase ? 'Precio de compra unitario' : 'Precio de venta unitario' }}
+        </label>
+
+        @if (isPriceModified) {
+          <button
+            type="button"
+            (click)="resetToSuggestedPrice()"
+            class="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300
+                   flex items-center gap-1 font-semibold">
+            <ng-icon name="matRestartAltOutline" size="14"></ng-icon>
+            Resetear a sugerido
+          </button>
+        }
+      </div>
+
+      <!-- Botones de precio rápido -->
+      <div class="flex gap-2 mb-2">
+        <button
+          type="button"
+          (click)="applyCostPrice()"
+          class="flex-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50
+                 text-blue-700 dark:text-blue-300 rounded font-semibold transition-colors">
+          Usar costo: Q{{ costPrice.toFixed(2) }}
+        </button>
+
+        @if (!data.isPurchase) {
+          <button
+            type="button"
+            (click)="applySalePrice()"
+            class="flex-1 px-2 py-1 text-xs bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50
+                   text-emerald-700 dark:text-emerald-300 rounded font-semibold transition-colors">
+            Usar venta: Q{{ salePrice.toFixed(2) }}
+          </button>
+        }
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="decrementPrice(1)"
+          class="px-3 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50
+                 text-red-700 dark:text-red-300 rounded-lg transition-colors">
+          <ng-icon name="matRemoveOutline" size="16"></ng-icon>
+        </button>
+
+        <div class="flex-1 relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-bold text-lg">
+            Q
+          </span>
+          <input
+            type="number"
+            formControlName="customPrice"
+            step="0.01"
+            min="0"
+            class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-slate-600 rounded-lg
+                   bg-white dark:bg-slate-800 text-gray-900 dark:text-white font-bold text-xl text-center
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <button
+          type="button"
+          (click)="incrementPrice(1)"
+          class="px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50
+                 text-green-700 dark:text-green-300 rounded-lg transition-colors">
+          <ng-icon name="matAddOutline" size="16"></ng-icon>
+        </button>
+      </div>
+
+      <!-- ⭐ INDICADOR DE PRECIO vs COSTO (solo para ventas) -->
+      @if (!data.isPurchase && isPriceModified) {
+        <div class="mt-2 p-3 rounded-lg border-2"
+             [ngClass]="{
+               'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700': !isPriceBelowCost,
+               'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700': isPriceBelowCost
+             }">
+          <p class="text-sm font-semibold flex items-center gap-2"
+             [ngClass]="{
+               'text-green-700 dark:text-green-400': !isPriceBelowCost,
+               'text-red-700 dark:text-red-400': isPriceBelowCost
+             }">
+            @if (!isPriceBelowCost) {
+              <ng-icon name="matCheckCircleOutline" size="16"></ng-icon>
+              Precio por encima del costo
+            } @else {
+              <ng-icon name="matCancelOutline" size="16"></ng-icon>
+              ⚠️ Advertencia: Precio por debajo del costo (pérdida)
+            }
+          </p>
+        </div>
+      }
+    </div>
+
+    <!-- ⭐ RESUMEN DE LA TRANSACCIÓN -->
+    <div class="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-800 rounded-lg p-4 border-2 border-slate-200 dark:border-slate-700">
+      <h4 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        <ng-icon name="matReceiptLongOutline" size="18"></ng-icon>
+        Resumen
+      </h4>
+
+      <div class="space-y-2">
+        <!-- Para COMPRAS -->
+        @if (data.isPurchase) {
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600 dark:text-gray-400">Cantidad:</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ quantity }} unidades</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600 dark:text-gray-400">Precio unitario:</span>
+            <span class="font-semibold text-gray-900 dark:text-white">Q {{ customPrice.toFixed(2) }}</span>
+          </div>
+          <div class="border-t-2 pt-2 mt-2 dark:border-slate-600">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-gray-700 dark:text-gray-300">Total a invertir:</span>
+              <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                Q {{ total.toFixed(2) }}
+              </span>
+            </div>
+          </div>
+        }
+
+        <!-- Para VENTAS -->
+        @if (!data.isPurchase) {
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600 dark:text-gray-400">Cantidad:</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ quantity }} unidades</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600 dark:text-gray-400">Costo total:</span>
+            <span class="font-semibold text-gray-900 dark:text-white">Q {{ (costPrice * quantity).toFixed(2) }}</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600 dark:text-gray-400">Venta total:</span>
+            <span class="font-semibold text-gray-900 dark:text-white">Q {{ total.toFixed(2) }}</span>
+          </div>
+
+          <div class="border-t-2 pt-2 mt-2 dark:border-slate-600">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-gray-700 dark:text-gray-300">Ganancia:</span>
+              <span class="text-2xl font-bold"
+                    [ngClass]="potentialProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+                Q {{ potentialProfit.toFixed(2) }}
+              </span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-gray-600 dark:text-gray-400">Margen de ganancia:</span>
+              <span class="font-semibold"
+                    [ngClass]="profitMargin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+                {{ profitMargin.toFixed(1) }}%
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </form>
+
+  <!-- BOTONES -->
+  <div class="flex gap-3 pt-3 border-t-2 dark:border-slate-700">
+    <button
+      type="button"
+      (click)="cancel()"
+      class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600
+             text-gray-700 dark:text-gray-300 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+      <ng-icon name="matCancelOutline" size="20"></ng-icon>
       Cancelar
     </button>
-    <button (click)="ok()" [disabled]="load || form.invalid" class="btn-success h-12 w-48 font-bold">
-      Continuar
+
+    <button
+      type="button"
+      (click)="confirm()"
+      [disabled]="form.invalid"
+      class="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed
+             text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg">
+      <ng-icon name="matCheckCircleOutline" size="20"></ng-icon>
+      {{ data.isPurchase ? 'Agregar a compra' : 'Agregar a venta' }}
     </button>
   </div>
 </div>

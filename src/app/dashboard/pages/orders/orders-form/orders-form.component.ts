@@ -38,7 +38,7 @@ import { Branch } from '../../../../shared/interfaces/branch';
   imports: [HeaderComponent, InputComponent, NgIconComponent, ToggleComponent, MatStepperModule,
     FormsModule, MatFormFieldModule, ReactiveFormsModule, MatButtonModule, MatInputModule,
     SearchInputTextComponent, NgIcon, ChatBubbleComponent, NgClass, OrdersClientSelectComponent,
-    DialogModule, MatIconModule, OrdersProductsSelectComponent, OrdersConfirmComponent],
+    DialogModule, MatIconModule, OrdersProductsSelectComponent, OrdersConfirmComponent,FormsModule ],
   templateUrl: './orders-form.component.html',
   styleUrl: './orders-form.component.scss',
   viewProviders: [ provideIcons({ matArrowBackOutline, matSearchOutline })],
@@ -153,62 +153,64 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
     this.goToNextStep();
   }
 
-  productsSelect(products: ProductOrderSelect[]){
-    this.products = [];
-    this.products = products;
-  }
+productsSelect(products: ProductOrderSelect[]){
+  this.products = products;
+  console.log('Productos seleccionados:', this.products);
+}
 
-  async finalizedSelectProducts(ev: boolean){
-    if(ev && this.products.length > 0){
-      const darkmode = localStorage.getItem('theme');
-      const dialogRef = this.dialog.open(DataOrderDialogComponent, {
-        backdropClass: ['bg-black/60', 'dark:bg-white'],
-        panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
-                    ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
-        width: this.getDialogWidth(),
-        closeOnDestroy: true,
-        disableClose: true,
-        data: {
-          title: 'Datos adicionales de la venta',
-        },
+  async finalizedSelectProducts(confirmed: boolean){
+  if(confirmed && this.products.length > 0){
+    const darkmode = localStorage.getItem('theme');
+    const dialogRef = this.dialog.open(DataOrderDialogComponent, {
+      backdropClass: ['bg-black/60', 'dark:bg-white'],
+      panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
+                  ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
+      width: this.getDialogWidth(),
+      closeOnDestroy: true,
+      disableClose: true,
+      data: {
+        title: 'Datos adicionales de la venta',
+      },
+    });
+
+    await firstValueFrom(dialogRef.closed)
+      .then(async (data: { idBranch: number, branchName: string, observation: string }) => {
+        this.stepTwoForm.controls.idBranch.setValue(data.idBranch);
+        this.stepTwoForm.controls.branchName.setValue(data.branchName);
+        this.stepTwoForm.controls.observation.setValue(data.observation);
+
+        this.client = {
+          id: Number(this.clientForm.controls.id.value),
+          name: this.clientForm.controls.name.value!,
+          address: this.clientForm.controls.address.value!,
+          telephone: this.clientForm.controls.telephone.value!,
+          idUser: this.getUserId()
+        };
+
+        this.branch = {
+          id: this.stepTwoForm.controls.idBranch.value!,
+          name: this.stepTwoForm.controls.branchName.value!,
+          address: '',
+          telephone: '',
+          idUser: this.getUserId(),
+          active: true
+        };
+
+        this.observation = this.stepTwoForm.controls.observation.value!;
+        this.goToNextStep();
+      })
+      .catch((error: any) => {
+        this.toast.error(error.message);
       });
-
-      await firstValueFrom(dialogRef.closed)
-        .then(async (data: { idBranch: number, branchName: string, observation: string }) => {
-          this.stepTwoForm.controls.idBranch.setValue(data.idBranch);
-          this.stepTwoForm.controls.branchName.setValue(data.branchName);
-          this.stepTwoForm.controls.observation.setValue(data.observation);
-
-          this.client = {
-            id: Number(this.clientForm.controls.id.value),
-            name: this.clientForm.controls.name.value,
-            address: this.clientForm.controls.address.value,
-            telephone: this.clientForm.controls.telephone.value,
-            idUser: this.getUserId()
-          };
-
-          // Buscar la sucursal completa desde el backend si es necesario
-          // O crear un objeto Branch simplificado con la info disponible
-          this.branch = {
-            id: this.stepTwoForm.controls.idBranch.value,
-            name: this.stepTwoForm.controls.branchName.value,
-            address: '', // Se puede obtener del backend si es necesario
-            telephone: '', // Se puede obtener del backend si es necesario
-            idUser: this.getUserId(),
-            active: true
-          };
-
-          this.observation = this.stepTwoForm.controls.observation.value;
-          this.goToNextStep();
-        })
-        .catch((error: any) => {
-          this.toast.error(error.message);
-        });
-    }else{
-      this.toast.info('Selecciona al menos 1 producto.');
-    }
+  } else if (!confirmed) {
+    // El usuario canceló o no hay productos
+    console.log('Selección de productos cancelada o sin productos');
   }
+}
 
+get selectedProducts(): ProductOrderSelect[] {
+  return this.products;
+}
   goToNextStep(): void {
     this.stepper.next();
   }

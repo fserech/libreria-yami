@@ -1,289 +1,189 @@
-import { NgClass, KeyValuePipe } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatRadioModule } from '@angular/material/radio';
-import { bootstrapChevronBarLeft, bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarRight } from '@ng-icons/bootstrap-icons';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { matAddOutline, matArrowUpwardOutline, matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline, matExpandMoreOutline } from '@ng-icons/material-icons/outline';
-import { ChatBubbleComponent } from '../../../../../shared/components/chat-bubble/chat-bubble.component';
-import { HeaderComponent } from '../../../../../shared/components/header/header.component';
-import { SearchInputTextComponent } from '../../../../../shared/components/search-input-text/search-input-text.component';
-import { Product, ProductVariant } from '../../../../../shared/interfaces/product';
-import { Dialog } from '@angular/cdk/dialog';
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { Router, ActivatedRoute } from '@angular/router';
-import { URL_PRODUCTS } from '../../../../../shared/constants/endpoints';
-import { AuthService } from '../../../../../shared/services/auth.service';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
+import { firstValueFrom } from 'rxjs';
 import { CrudService } from '../../../../../shared/services/crud.service';
 import { ToastService } from '../../../../../shared/services/toast.service';
-import BaseForm from '../../../../../shared/classes/base-form';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import {
+  matSearchOutline,
+  matAddShoppingCartOutline,
+  matInventory2Outline,
+  matAttachMoneyOutline,
+  matCheckCircleOutline,
+  matCancelOutline,
+} from '@ng-icons/material-icons/outline';
+import { Product, ProductVariant } from '../../../../../shared/interfaces/product';
+import { environment } from '../../../../../../environments/environment';
 import { SelectProductQuantityDialogComponent } from '../select-product-quantity-dialog/select-product-quantity-dialog.component';
-import { firstValueFrom } from 'rxjs';
-import { MatBadgeModule } from '@angular/material/badge';
+import { getProductCostPrice } from '../../../../../shared/utils/product-utils';
 import { ProductOrderSelect } from '../../../../../shared/interfaces/order';
-import { OrdersProductsSelectListDialogComponent } from '../orders-products-select-list-dialog/orders-products-select-list-dialog.component';
 
 @Component({
   selector: 'app-orders-products-select',
   standalone: true,
-  imports: [HeaderComponent, NgIcon, SearchInputTextComponent, NgClass, ChatBubbleComponent,
-    MatCheckboxModule, FormsModule, ReactiveFormsModule, SelectProductQuantityDialogComponent,
-    MatBadgeModule, KeyValuePipe],
+  imports: [
+    CommonModule,
+    NgIconComponent,
+    FormsModule
+  ],
   templateUrl: './orders-products-select.component.html',
   styleUrl: './orders-products-select.component.scss',
-  viewProviders: [ provideIcons({ matAddOutline, bootstrapChevronBarLeft, bootstrapChevronLeft,
-    bootstrapChevronRight, bootstrapChevronBarRight, matArrowUpwardOutline,
-    matArrowDownwardOutline, matShoppingCartOutline, matPlaylistAddCheckOutline, matExpandMoreOutline
-   }) ]
+  viewProviders: [provideIcons({
+    matSearchOutline,
+    matAddShoppingCartOutline,
+    matInventory2Outline,
+    matAttachMoneyOutline,
+    matCheckCircleOutline,
+    matCancelOutline,
+  })]
 })
-export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
-
-  form: FormGroup;
-  products: ProductOrderSelect[];
-  displayedColumns: string[] = ['productName'];
-  dataSource;
-  selectedIdControl = new FormControl(null);
-  expandedProductId: number | null = null;
-
+export class OrdersProductsSelectComponent implements OnInit {
+  // ✅ Outputs que coinciden con el HTML del padre
   @Output() changes = new EventEmitter<ProductOrderSelect[]>();
   @Output() finalized = new EventEmitter<boolean>();
 
+  products: Product[] = [];
+  filteredProducts: Product[] = [];
+  searchTerm: string = '';
+  selectedProducts: ProductOrderSelect[] = [];
+  load = false;
+
+  // Hacer disponible la función en el template
+  getProductCostPrice = getProductCostPrice;
+
   constructor(
-    private _formBuilder: FormBuilder,
     private crud: CrudService,
     private toast: ToastService,
-    private router: Router,
-    private route: ActivatedRoute,
-    public dialog: Dialog,
-    private auth: AuthService,
-    private bpo: BreakpointObserver
-  ){
-    super(crud, toast, auth, bpo);
-    this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
-    this.sortConfig.sortBy = 'productName';
-    this.sortConfig.sortOrder = 'asc';
-    this.pageSize = 10;
-    this.crud.baseUrl = URL_PRODUCTS;
-    this.products = [];
+    private dialog: MatDialog
+  ) {}
 
-    if(this.mode !== 'new') this.id = Number(this.route.snapshot.paramMap.get('id'));
-    this.form = new FormGroup({
-      productName: new FormControl('', []),
-    });
+  async ngOnInit() {
+    await this.loadProducts();
   }
 
-  ngOnInit(): void {
-    this.filter();
-  }
+  async loadProducts() {
+    this.load = true;
+    try {
+      const response = await firstValueFrom(
+        this.crud.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)
+      );
 
-  filter(name?: string){
-    let filter = '&active=true';
-    if(name){
-      filter = filter.concat(`&productName=${encodeURIComponent(name)}`);
-    }
-    this.filters = filter;
-    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
-  }
-
-  introSearch(){
-    const name: any = this.form.controls['productName'].value;
-    if(name && name !== ''){
-      this.filter(name);
+      this.products = response.filter(p => p.active);
+      this.filteredProducts = [...this.products];
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+      this.toast.error('Error al cargar productos');
+    } finally {
+      this.load = false;
     }
   }
 
-  changeSortOrderBy(field: string){
-    if(field === this.sortConfig.sortBy){
-      if(this.sortConfig.sortOrder === 'asc'){
-        this.sortConfig.sortOrder = 'desc';
-      }else if(this.sortConfig.sortOrder === 'desc'){
-        this.sortConfig.sortOrder = 'asc';
-      }
+  searchProducts() {
+    const term = this.searchTerm.toLowerCase().trim();
+
+    if (!term) {
+      this.filteredProducts = [...this.products];
+      return;
     }
-    if(field !== this.sortConfig.sortBy){
-      this.sortConfig.sortBy = field;
-      this.sortConfig.sortOrder = 'asc';
-    }
-    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, this.filters);
+
+    this.filteredProducts = this.products.filter(product =>
+      product.productName.toLowerCase().includes(term) ||
+      product.sku?.toLowerCase().includes(term) ||
+      product.productDesc?.toLowerCase().includes(term)
+    );
   }
 
-  back(){
-    this.router.navigate(['dashboard/orders']);
-  }
-
-  initPage(){
-    let filter = '&active=true';
-    this.filters = filter;
-    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, 1, 10, this.filters);
-    this.form.reset();
-  }
-
-  toggleVariants(productId: number): void {
-    if (this.expandedProductId === productId) {
-      this.expandedProductId = null;
+  selectProduct(product: Product) {
+    if (product.hasVariants && product.variants && product.variants.length > 0) {
+      this.selectVariant(product);
     } else {
-      this.expandedProductId = productId;
+      this.openQuantityDialog(product);
     }
   }
 
-  isExpanded(productId: number): boolean {
-    return this.expandedProductId === productId;
-  }
-
-  hasStock(stock: number | undefined): boolean {
-    return stock !== undefined && stock > 0;
-  }
-
-  async selectProduct(product: Product) {
-    // Validar stock
-    if (!this.hasStock(product.currentStock)) {
-      this.toast.error('No hay stock disponible para este producto');
-      return;
-    }
-
-    const darkmode = localStorage.getItem('theme');
-    const dialogRef = this.dialog.open(SelectProductQuantityDialogComponent, {
-      backdropClass: ['bg-black/60', 'dark:bg-white'],
-      panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
-                  ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
-      width: this.getDialogWidth(),
-      closeOnDestroy: true,
-      data: {
-        title: product.productName,
-        record: product
-      },
-    });
-
-    await firstValueFrom(dialogRef.closed)
-      .then(async (quantity: number) => {
-        if(quantity){
-          const record: ProductOrderSelect = {
-            product: product,
-            quantity: quantity,
-            variantId: null
-          }
-          if (!this.products.some(p => p.product.id === record.product.id && !p.variantId)){
-            this.products.push(record);
-            this.changes.emit(this.products);
-          }else{
-            this.toast.info('El producto ya se encuentra en la lista');
-          }
-        }
-      })
-      .catch((error: any) => {
-        this.toast.error(error.message);
-      });
-  }
-
-  async selectVariant(product: Product, variant: ProductVariant) {
-    // Validar stock de la variante
-    if (!this.hasStock(variant.currentStock)) {
-      this.toast.error('No hay stock disponible para esta variante');
-      return;
-    }
-
-    const darkmode = localStorage.getItem('theme');
-
-    const variantAsProduct: Product = {
+  selectVariant(product: Product) {
+    // Convertir variantes a productos individuales
+    const variantProducts: Product[] = (product.variants || []).map(variant => ({
       ...product,
       id: product.id,
-      productName: variant.variantName,
+      productName: `${product.productName} - ${variant.variantName}`,
       sku: variant.sku,
-      costPrice: variant.costPrice,
       salePrice: variant.salePrice,
+      costPrice: getProductCostPrice(variant),
       currentStock: variant.currentStock,
-      minStock: variant.minStock,
-      maxStock: variant.maxStock
-    };
+      hasVariants: false
+    }));
 
+    // Mostrar selector de variantes
+    if (variantProducts.length > 0) {
+      this.openQuantityDialog(variantProducts[0]);
+    }
+  }
+
+  openQuantityDialog(product: Product) {
     const dialogRef = this.dialog.open(SelectProductQuantityDialogComponent, {
-      backdropClass: ['bg-black/60', 'dark:bg-white'],
-      panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
-                  ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
-      width: this.getDialogWidth(),
-      closeOnDestroy: true,
+      width: '400px',
       data: {
-        title: variant.variantName,
-        record: variantAsProduct
-      },
+        product,
+        title: 'Cantidad a vender',
+        isPurchase: false
+      }
     });
 
-    await firstValueFrom(dialogRef.closed)
-      .then(async (quantity: number) => {
-        if(quantity){
-          const record: ProductOrderSelect = {
-            product: variantAsProduct,
-            quantity: quantity,
-            variantId: variant.id || null
-          }
-
-          if (!this.products.some(p => p.product.id === product.id && p.variantId === variant.id)){
-            this.products.push(record);
-            this.changes.emit(this.products);
-          }else{
-            this.toast.info('Esta variante ya se encuentra en la lista');
-          }
-        }
-      })
-      .catch((error: any) => {
-        this.toast.error(error.message);
-      });
-  }
-
-  async viewProductsSelect(){
-    const darkmode = localStorage.getItem('theme');
-    const dialogRef = this.dialog.open(OrdersProductsSelectListDialogComponent, {
-      backdropClass: ['bg-black/60', 'dark:bg-white'],
-      panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
-                  ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
-      width: this.getDialogWidth(),
-      closeOnDestroy: true,
-      disableClose: false,
-      data: {
-        title: 'Lista de productos',
-        products: this.products
-      },
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.addProductToOrder(result.product, result.quantity);
+      }
     });
-
-    await firstValueFrom(dialogRef.closed)
-      .then(async (products: ProductOrderSelect[] | boolean) => {
-        if(products && Array.isArray(products)){
-          if((JSON.stringify(products) !== JSON.stringify(this.products))){
-            this.products = [];
-            this.products = products;
-          }
-        }else if(products === true){
-          this.products = [];
-        }
-        this.changes.emit(this.products);
-      });
   }
 
-  finalizedOrder(){
-    this.finalized.emit(true);
-  }
+  addProductToOrder(product: Product, quantity: number) {
+    const existingProduct = this.selectedProducts.find(p => p.product.id === product.id);
 
-  getVariantPriceRange(product: Product): string {
-    if (!product.variants || product.variants.length === 0) return '';
-
-    const prices = product.variants.map(v => v.salePrice);
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-
-    if (min === max) {
-      return `Q ${min.toFixed(2)}`;
-    }
-    return `Desde Q ${min.toFixed(2)} hasta Q ${max.toFixed(2)}`;
-  }
-
-  getVariantAttributesDisplay(variant: ProductVariant): string {
-    if (!variant.attributes || Object.keys(variant.attributes).length === 0) {
-      return '';
+    if (existingProduct) {
+      existingProduct.quantity += quantity;
+    } else {
+      this.selectedProducts.push({ product, quantity });
     }
 
-    return Object.entries(variant.attributes)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(', ');
+    // ✅ Emitir evento de cambio
+    this.changes.emit(this.selectedProducts);
+    this.toast.success(`${product.productName} agregado a la orden`);
+  }
+
+  removeProduct(index: number) {
+    this.selectedProducts.splice(index, 1);
+    // ✅ Emitir evento de cambio
+    this.changes.emit(this.selectedProducts);
+  }
+
+  // ✅ Método para finalizar selección (llamado desde el padre o un botón)
+  finalizeSelection() {
+    if (this.selectedProducts.length > 0) {
+      this.finalized.emit(true);
+    } else {
+      this.toast.info('Selecciona al menos 1 producto.');
+      this.finalized.emit(false);
+    }
+  }
+
+  getStockStatus(product: Product): string {
+    const stock = product.currentStock || 0;
+    const minStock = product.minStock || 0;
+
+    if (stock === 0) return 'Sin stock';
+    if (stock <= minStock) return 'Stock bajo';
+    return 'Disponible';
+  }
+
+  getStockClass(product: Product): string {
+    const stock = product.currentStock || 0;
+    const minStock = product.minStock || 0;
+
+    if (stock === 0) return 'text-red-600 dark:text-red-400';
+    if (stock <= minStock) return 'text-orange-600 dark:text-orange-400';
+    return 'text-green-600 dark:text-green-400';
   }
 }

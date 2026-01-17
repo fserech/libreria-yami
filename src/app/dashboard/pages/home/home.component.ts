@@ -26,6 +26,8 @@ import { AuthService } from '../../../shared/services/auth.service';
 import { CrudService } from '../../../shared/services/crud.service';
 import { URL_ORDERS } from '../../../shared/constants/endpoints';
 import { GoalConfig, GoalsComponent } from './component/goals/goals.component';
+// ⭐ IMPORTAR UTILIDAD
+import { getProductCostPrice } from '../../../shared/utils/product-utils';
 
 Chart.register(...registerables);
 
@@ -169,7 +171,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         if (orders.length > 0) {
           const firstOrder = orders[0];
           if (!firstOrder.products) {
-
             const ordersWithDetailsPromises = orders.map(order =>
               firstValueFrom(this.crud.getId(order.id)).catch(err => {
                 console.error(`Error cargando orden ${order.id}:`, err);
@@ -180,12 +181,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           } else {
             ordersWithProducts = orders;
           }
-
-          const statusCount = orders.reduce((acc: any, order) => {
-            const status = order.status || 'SIN_STATUS';
-            acc[status] = (acc[status] || 0) + 1;
-            return acc;
-          }, {});
         }
       } catch (e) {
         console.error('⚠️ Error cargando órdenes:', e);
@@ -246,13 +241,14 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const totalSales = currentMonthOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
     const previousMonthSales = previousMonthOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
 
+    // ⭐ USAR UTILIDAD para obtener costPrice
     const productsWithPrices = products.filter(p =>
-      p.active && (p.salePrice || 0) > 0 && (p.costPrice || 0) > 0
+      p.active && (p.salePrice || 0) > 0 && getProductCostPrice(p) > 0
     );
 
     const totalMargin = productsWithPrices.reduce((sum, p) => {
       const price = p.salePrice || 0;
-      const cost = p.costPrice || 0;
+      const cost = getProductCostPrice(p); // ⭐ USAR UTILIDAD
       return sum + ((price - cost) / price) * 100;
     }, 0);
 
