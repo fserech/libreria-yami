@@ -110,8 +110,7 @@ export default class InventoryComponent implements OnInit {
     this.router.events.subscribe(() => {
       if (this.router.url.includes('/low-stock')) {
         this.activeTab = 'low-stock';
-      } else if (this.router.url.includes('/entries-exits')) {
-        this.activeTab = 'entries-exits';
+
       } else {
         this.activeTab = 'movements';
       }
@@ -119,7 +118,7 @@ export default class InventoryComponent implements OnInit {
   }
 
   // ✅ AGREGAR: Método para cambiar tab
-  setActiveTab(tab: 'movements' | 'low-stock' | 'entries-exits') {
+  setActiveTab(tab: 'movements' | 'low-stock') {
     this.activeTab = tab;
   }
 }
