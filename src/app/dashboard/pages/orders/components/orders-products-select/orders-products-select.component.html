@@ -136,14 +136,25 @@
                     <p class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                       Precio venta: Q {{ product?.salePrice?.toFixed(2) ?? '0.00' }}
                     </p>
+                    <p class="text-sm" [ngClass]="hasStock(product.currentStock) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                      Stock: {{ product?.currentStock ?? 0 }}
+                    </p>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                       ID: {{ product?.id }}
                     </p>
-                    <button
-                      (click)="selectProduct(product)"
-                      class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold transition-colors">
-                      Seleccionar
-                    </button>
+                    @if (hasStock(product.currentStock)) {
+                      <button
+                        (click)="selectProduct(product)"
+                        class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold transition-colors">
+                        Seleccionar
+                      </button>
+                    } @else {
+                      <button
+                        disabled
+                        class="px-3 py-1 bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-400 rounded-lg text-xs font-semibold cursor-not-allowed">
+                        Sin stock
+                      </button>
+                    }
                   }
 
                   <!-- PRODUCTO CON VARIANTES -->
@@ -176,7 +187,8 @@
                 @if (product.hasVariants && isExpanded(product.id!) && product.variants) {
                   <div class="mt-3 pl-4 border-l-4 border-purple-300 dark:border-purple-700">
                     @for (variant of product.variants; track variant.id) {
-                      <div class="mb-2 p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+                      <div class="mb-2 p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700"
+                           [ngClass]="{'opacity-60': !hasStock(variant.currentStock)}">
                         <div class="flex justify-between items-start">
                           <div class="flex-1">
                             <p class="font-semibold text-gray-800 dark:text-gray-200 text-sm">
@@ -198,8 +210,8 @@
                               <span class="font-semibold text-emerald-600 dark:text-emerald-400">
                                 Precio venta: Q {{ variant.salePrice?.toFixed(2) }}
                               </span>
-                              <span class="text-gray-500 dark:text-gray-400">
-                                Stock: {{ variant.currentStock }}
+                              <span [ngClass]="hasStock(variant.currentStock) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                                Stock: {{ variant.currentStock ?? 0 }}
                               </span>
                               <span class="text-gray-500 dark:text-gray-400 font-mono">
                                 SKU: {{ variant.sku }}
@@ -207,11 +219,19 @@
                             </div>
                           </div>
 
-                          <button
-                            (click)="selectVariant(product, variant)"
-                            class="ml-3 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold transition-colors whitespace-nowrap">
-                            Seleccionar
-                          </button>
+                          @if (hasStock(variant.currentStock)) {
+                            <button
+                              (click)="selectVariant(product, variant)"
+                              class="ml-3 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold transition-colors whitespace-nowrap">
+                              Seleccionar
+                            </button>
+                          } @else {
+                            <button
+                              disabled
+                              class="ml-3 px-3 py-1 bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-400 rounded-lg text-xs font-semibold cursor-not-allowed whitespace-nowrap">
+                              Sin stock
+                            </button>
+                          }
                         </div>
                       </div>
                     }

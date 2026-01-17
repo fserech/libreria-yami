@@ -18,28 +18,18 @@ import { AuthService } from '../../../../../shared/services/auth.service';
   styleUrl: './orders-client-new-dialog.component.scss'
 })
 export class OrdersClientNewDialogComponent {
-
   form: FormGroup;
   load: boolean = false;
-  daysOfWeek = [
-    { value: 'MONDAY', label: 'Lunes' },
-    { value: 'TUESDAY', label: 'Martes' },
-    { value: 'WEDNESDAY', label: 'Miércoles' },
-    { value: 'THURSDAY', label: 'Jueves' },
-    { value: 'FRIDAY', label: 'Viernes' },
-    { value: 'SATURDAY', label: 'Sábado' },
-    { value: 'SUNDAY', label: 'Domingo' }
-  ];
 
   constructor(@Inject(DIALOG_DATA) public data: DialogData,
   public dialogRef: DialogRef,
-  private toast: ToastService, private auth: AuthService){
+  private toast: ToastService,
+  private auth: AuthService){
     this.form = new FormGroup({
       id: new FormControl('', Validators.pattern(REGUEX_INT)),
       name: new FormControl('', Validators.required),
       address: new FormControl('', Validators.required),
-      telephone: new FormControl('',[Validators.pattern(/^\d+$/), Validators.minLength(8), Validators.maxLength(8)]),
-      offerDay: new FormControl('', Validators.required),
+      telephone: new FormControl('', [Validators.pattern(/^\d+$/), Validators.minLength(8), Validators.maxLength(8)]),
     });
   }
 
@@ -50,11 +40,10 @@ export class OrdersClientNewDialogComponent {
   ok(): void {
     const data: Client = {
       name: this.form.controls['name'].value,
-      address: (this.form.controls['address'].value !== '')? this.form.controls['address'].value: '',
-      telephone: (this.form.controls['telephone'].value !== '') ? this.form.controls['telephone'].value: '',
+      address: (this.form.controls['address'].value !== '') ? this.form.controls['address'].value : '',
+      telephone: (this.form.controls['telephone'].value !== '') ? this.form.controls['telephone'].value : '',
       idUser: this.getUserId()
     };
-
     this.dialogRef.close(data);
   }
 

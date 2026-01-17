@@ -131,7 +131,17 @@ export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
     return this.expandedProductId === productId;
   }
 
+  hasStock(stock: number | undefined): boolean {
+    return stock !== undefined && stock > 0;
+  }
+
   async selectProduct(product: Product) {
+    // Validar stock
+    if (!this.hasStock(product.currentStock)) {
+      this.toast.error('No hay stock disponible para este producto');
+      return;
+    }
+
     const darkmode = localStorage.getItem('theme');
     const dialogRef = this.dialog.open(SelectProductQuantityDialogComponent, {
       backdropClass: ['bg-black/60', 'dark:bg-white'],
@@ -167,6 +177,12 @@ export class OrdersProductsSelectComponent extends BaseForm implements OnInit {
   }
 
   async selectVariant(product: Product, variant: ProductVariant) {
+    // Validar stock de la variante
+    if (!this.hasStock(variant.currentStock)) {
+      this.toast.error('No hay stock disponible para esta variante');
+      return;
+    }
+
     const darkmode = localStorage.getItem('theme');
 
     const variantAsProduct: Product = {
