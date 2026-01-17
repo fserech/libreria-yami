@@ -124,17 +124,18 @@ export class OrdersConfirmComponent {
     }
   }
 
-  buildProducts(products: ProductOrderSelect[]): ProductOrder[] {
-    return products.map(product => {
-      const subtotal = parseFloat((product.product.salePrice * product.quantity).toFixed(2));
-      return {
-        productId: product.product.id,
-        priceSale: product.product.salePrice,
-        quantity: product.quantity,
-        subtotal: subtotal
-      };
-    });
-  }
+ buildProducts(products: ProductOrderSelect[]): ProductOrder[] {
+  return products.map(product => {
+    const subtotal = parseFloat((product.product.salePrice * product.quantity).toFixed(2));
+    return {
+      productId: product.product.id,
+      variantId: product.variantId || null, // ✅ CRÍTICO: Enviar variantId al backend
+      priceSale: product.product.salePrice,
+      quantity: product.quantity,
+      subtotal: subtotal
+    };
+  });
+}
 
   getObservation(): string {
     if(this.observation !== null && this.observation !== undefined ){

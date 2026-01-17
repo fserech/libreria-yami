@@ -126,56 +126,73 @@ export class OrdersProductsSelectComponent implements OnInit {
     }
   }
 
-  selectVariant(product: Product, variant: ProductVariant) {
-    // Crear un producto temporal con los datos de la variante
-    const variantProduct: Product = {
-      ...product,
-      id: product.id,
-      productName: `${product.productName} - ${variant.variantName}`,
-      sku: variant.sku,
-      salePrice: variant.salePrice,
-      costPrice: getProductCostPrice(variant),
-      currentStock: variant.currentStock,
-      hasVariants: false
-    };
+selectVariant(product: Product, variant: ProductVariant) {
+  // ❌ ANTES: Se creaba un producto temporal sin mantener la estructura correcta
+  // ✅ AHORA: Mantener el producto original y pasar el variantId correctamente
 
-    this.openQuantityDialog(variantProduct, variant.id);
-  }
+  const variantProduct: Product = {
+    ...product,
+    // ✅ MANTENER el ID del producto padre (IMPORTANTE)
+    id: product.id,
 
-  openQuantityDialog(product: Product, variantId?: number) {
-    const dialogRef = this.matDialog.open(SelectProductQuantityDialogComponent, {
-      width: '500px',
-      maxWidth: '95vw',
-      data: {
-        product,
-        title: 'Cantidad a vender',
-        isPurchase: false
-      }
-    });
+    // Actualizar el nombre para mostrar
+    productName: `${product.productName} - ${variant.variantName}`,
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.addProductToOrder(result.product, result.quantity, variantId);
-      }
-    });
-  }
+    // Usar los datos de la variante
+    sku: variant.sku,
+    salePrice: variant.salePrice,
+    costPrice: getProductCostPrice(variant),
+    currentStock: variant.currentStock,
+
+    // ✅ IMPORTANTE: Indicar que NO tiene variantes (para el display)
+    hasVariants: false
+  };
+
+  // ✅ CRÍTICO: Pasar el variantId al diálogo
+  this.openQuantityDialog(variantProduct, variant.id);
+}
+
+ openQuantityDialog(product: Product, variantId?: number) {
+  const dialogRef = this.matDialog.open(SelectProductQuantityDialogComponent, {
+    width: '500px',
+    maxWidth: '95vw',
+    data: {
+      product,
+      title: 'Cantidad a vender',
+      isPurchase: false
+    }
+  });
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result) {
+      // ✅ CRÍTICO: Pasar el variantId
+      this.addProductToOrder(result.product, result.quantity, variantId);
+    }
+  });
+}
 
   addProductToOrder(product: Product, quantity: number, variantId?: number) {
-    const existingProduct = this.selectedProducts.find(p =>
-      p.product.id === product.id &&
-      (variantId ? p.variantId === variantId : !p.variantId)
-    );
+  const existingProduct = this.selectedProducts.find(p =>
+    p.product.id === product.id &&
+    // ✅ Verificar el variantId correctamente
+    (variantId ? p.variantId === variantId : !p.variantId)
+  );
 
-    if (existingProduct) {
-      existingProduct.quantity += quantity;
-      existingProduct.product = product;
-    } else {
-      this.selectedProducts.push({ product, quantity, variantId: variantId || null });
-    }
-
-    this.emitChanges();
-    this.toast.success(`${product.productName} agregado a la orden`);
+  if (existingProduct) {
+    existingProduct.quantity += quantity;
+    existingProduct.product = product;
+  } else {
+    // ✅ CRÍTICO: Guardar el variantId
+    this.selectedProducts.push({
+      product,
+      quantity,
+      variantId: variantId || null // ✅ Esto es lo importante
+    });
   }
+
+  this.emitChanges();
+  this.toast.success(`${product.productName} agregado a la orden`);
+}
 
   removeProduct(index: number) {
     this.selectedProducts.splice(index, 1);
