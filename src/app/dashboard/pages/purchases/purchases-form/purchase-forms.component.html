@@ -16,7 +16,8 @@
   </div>
 
   <mat-stepper #stepper [linear]="true" (selectionChange)="onStepChange($event)" class="w-full">
-    <!-- PASO 1: Selección de Proveedor -->
+
+    <!-- ✅ PASO 1: Selección de Proveedor -->
     <mat-step [stepControl]="supplierForm" [editable]="false" state="person">
       <ng-template matStepLabel>
         <p class="hidden sm:block">Proveedor</p>
@@ -26,49 +27,44 @@
       </app-purchases-supplier-select>
     </mat-step>
 
-    <!-- PASO 2: Selección de Productos y Sucursal -->
+    <!-- ✅ PASO 2: Selección de Productos -->
     <mat-step [stepControl]="stepTwoForm" [editable]="true" state="shopping_cart">
       <ng-template matStepLabel>
-        <p class="hidden sm:block">Productos y Sucursal</p>
+        <p class="hidden sm:block">Productos</p>
       </ng-template>
       <app-purchases-products-select
         #selectProducts
         (changes)="productsSelect($event)"
         (finalized)="finalizedSelectProducts($event)">
       </app-purchases-products-select>
-
-      <!-- Botones de control del paso 2 -->
-      <div class="flex justify-end gap-3 mt-4 pt-4 border-t dark:border-slate-700">
-        <button
-          (click)="goToPreviousStep()"
-          type="button"
-          class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors">
-          Atrás
-        </button>
-        <button
-          [disabled]="selectedProducts.length === 0"
-          (click)="selectProducts.finalizeSelection()"
-          type="button"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors">
-          Continuar
-        </button>
-      </div>
     </mat-step>
 
-    <!-- PASO 3: Confirmación de la Compra -->
-    <mat-step [editable]="false" state="checklist_rtl">
+    <!-- ✅ PASO 3: Confirmación de la Compra -->
+    <mat-step [stepControl]="stepThreeForm" [editable]="false" state="checklist_rtl">
       <ng-template matStepLabel>
         <p class="hidden sm:block">Confirmación</p>
       </ng-template>
-      <app-purchases-confirm
-        #confirmPurchase
-        (confirmPurchase)="submit($event)"
-        (backStep)="backStep($event)"
-        [supplier]="supplier"
-        [products]="products"
-        [branch]="branch"
-        [observation]="observation">
-      </app-purchases-confirm>
+
+      <!-- ✅ Validación para asegurar que supplier existe antes de renderizar -->
+      @if (supplier && supplier.id && products.length > 0) {
+        <app-purchases-confirm
+          #confirmPurchase
+          (confirmPurchase)="confirmPurchaseWithDialog()"
+          (backStep)="backStep($event)"
+          [supplier]="supplier"
+          [products]="products"
+          [branch]="branch"
+          [observation]="observation">
+        </app-purchases-confirm>
+      } @else {
+        <div class="p-8 text-center">
+          <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-4"></div>
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
+          </div>
+          <p class="text-gray-500 dark:text-gray-400 mt-4">Cargando información de la compra...</p>
+        </div>
+      }
     </mat-step>
   </mat-stepper>
 </div>

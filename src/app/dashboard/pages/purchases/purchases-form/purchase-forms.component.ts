@@ -83,17 +83,34 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
   });
 
   stepTwoForm = this._formBuilder.group({
+    productsSelected: [false, Validators.requiredTrue]
+  });
+
+  stepThreeForm = this._formBuilder.group({
     idBranch: [0, Validators.required],
     branchName: ['', Validators.required],
     observation: [''],
     deliveryDate: ['']
   });
 
-  supplier!: Supplier;
+  // ✅ Inicialización del supplier con valores por defecto
+  supplier: Supplier = {
+    id: 0,
+    supplierName: '',
+    supplierDesc: '',
+    email: '',
+    phone: '',
+    address: '',
+    active: true
+  };
+
   products: ProductPurchaseSelect[] = [];
   branch: Branch | null = null;
   observation: string = '';
   deliveryDate: string = '';
+
+  // ✅ Variable para controlar el flujo de guardado
+  private isSavingPurchase: boolean = false;
 
   constructor(
     private _formBuilder: FormBuilder,
@@ -127,7 +144,6 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
   }
 
   onStepChange(event: StepperSelectionEvent): void {
-    // Lógica adicional si es necesaria
     console.log('Paso cambiado:', event.selectedIndex);
   }
 
@@ -135,11 +151,27 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
     // Inicialización del componente
   }
 
+  /**
+   * ✅ Método para detectar cambios sin guardar
+   * Solo muestra el diálogo si está en el paso 1 (selección de proveedor)
+   * Una vez que avanza a productos o confirmación, ya no se considera "cambio sin guardar"
+   */
   isDirty(): boolean {
-    return this.supplierForm.valid;
+    // No hay cambios sin guardar si está guardando o ya guardó
+    if (this.load || this.isSaving || this.isSavingPurchase) {
+      return false;
+    }
+
+    // No hay cambios sin guardar si ya pasó del paso 1 (ya está en productos o confirmación)
+    if (this.stepper && this.stepper.selectedIndex > 0) {
+      return false;
+    }
+
+    // Solo hay cambios sin guardar en el paso 1 si seleccionó un proveedor
+    const hasSelectedSupplier = this.supplier && this.supplier.id > 0;
+    return hasSelectedSupplier;
   }
 
-  // ✅ Propiedad para acceder a los productos seleccionados desde el template
   get selectedProducts(): ProductPurchaseSelect[] {
     return this.products;
   }
@@ -169,92 +201,183 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
 
+  /**
+   * ✅ Método para regresar al listado
+   * Ahora solo muestra confirmación si está en el paso 1 con proveedor seleccionado
+   */
   back(): void {
     this.router.navigate(['dashboard/purchases']);
   }
 
-  // ✅ Método que recibe el proveedor seleccionado
+  /**
+   * ✅ Método llamado cuando se selecciona un proveedor
+   */
   supplierSelect(supplier: Supplier): void {
+    // Actualizar el formulario del proveedor
     this.supplierForm.controls.id.setValue(supplier.id ?? 0);
     this.supplierForm.controls.supplierName.setValue(supplier.supplierName ?? '');
     this.supplierForm.controls.email.setValue(supplier.email ?? '');
     this.supplierForm.controls.phone.setValue(supplier.phone ?? '');
     this.supplierForm.controls.address.setValue(supplier.address ?? '');
 
+    // Construir el objeto Supplier completo
+    this.supplier = {
+      id: supplier.id ?? 0,
+      supplierName: supplier.supplierName ?? '',
+      supplierDesc: supplier.supplierDesc ?? '',
+      email: supplier.email ?? '',
+      phone: supplier.phone ?? '',
+      address: supplier.address ?? '',
+      active: supplier.active ?? true
+    };
+
     console.log('Proveedor seleccionado', this.supplierForm.valid);
     this.goToNextStep();
   }
 
-  // ✅ Método que recibe el array de productos seleccionados (con precios personalizados)
+  /**
+   * ✅ Método llamado cuando se actualizan los productos seleccionados
+   */
   productsSelect(products: ProductPurchaseSelect[]): void {
     this.products = products;
     console.log('Productos seleccionados para compra:', this.products);
+
+    // Actualizar validación del step 2
+    if (this.products.length > 0) {
+      this.stepTwoForm.controls.productsSelected.setValue(true);
+    } else {
+      this.stepTwoForm.controls.productsSelected.setValue(false);
+    }
   }
 
-  // ✅ Método que recibe la confirmación de finalización de selección de productos
+  /**
+   * ✅ Método llamado cuando se finaliza la selección de productos
+   */
   async finalizedSelectProducts(confirmed: boolean): Promise<void> {
     if (confirmed && this.products.length > 0) {
-      const darkmode = localStorage.getItem('theme');
-      const dialogRef = this.dialog.open(DataPurchaseDialogComponent, {
-        backdropClass: ['bg-black/60', 'dark:bg-white'],
-        panelClass: (darkmode === 'dark')
-          ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4']
-          : ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
-        width: this.getDialogWidth(),
-        closeOnDestroy: true,
-        disableClose: true,
-        data: {
-          title: 'Datos adicionales de la compra',
-        },
-      });
+      // Validar que hay productos antes de continuar
+      this.stepTwoForm.controls.productsSelected.setValue(true);
 
-      await firstValueFrom(dialogRef.closed)
-        .then(async (data: { idBranch: number, branchName: string, observation: string, deliveryDate: Date }) => {
-          if (data) {
-            this.stepTwoForm.controls.idBranch.setValue(data.idBranch);
-            this.stepTwoForm.controls.branchName.setValue(data.branchName);
-            this.stepTwoForm.controls.observation.setValue(data.observation ?? '');
-            this.stepTwoForm.controls.deliveryDate.setValue(data.deliveryDate ? data.deliveryDate.toString() : '');
-
-            // Construir el objeto Supplier
-            this.supplier = {
-              id: Number(this.supplierForm.controls.id.value),
-              supplierName: this.supplierForm.controls.supplierName.value ?? '',
-              supplierDesc: '',
-              email: this.supplierForm.controls.email.value ?? '',
-              phone: this.supplierForm.controls.phone.value ?? '',
-              address: this.supplierForm.controls.address.value ?? '',
-              active: true
-            };
-
-            // Construir el objeto Branch
-            this.branch = {
-              id: this.stepTwoForm.controls.idBranch.value ?? 0,
-              name: this.stepTwoForm.controls.branchName.value ?? '',
-              address: '',
-              telephone: '',
-              idUser: this.getUserId(),
-              active: true
-            };
-
-            this.observation = this.stepTwoForm.controls.observation.value ?? '';
-            this.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate).toISOString() : '';
-
-            this.goToNextStep();
-          }
-        })
-        .catch((error: any) => {
-          if (error?.message) {
-            this.toast.error(error.message);
-          }
-        });
-    } else if (!confirmed) {
-      console.log('Selección de productos cancelada o sin productos');
+      // Pasar al paso 3 (Confirmación)
+      this.goToNextStep();
     } else {
       this.toast.info('Selecciona al menos 1 producto.');
     }
   }
 
+  /**
+   * ✅ Método llamado desde el componente de confirmación
+   * cuando el usuario presiona "Finalizar compra"
+   */
+  async confirmPurchaseWithDialog(): Promise<void> {
+    // Validar que tenemos un proveedor válido
+    if (!this.supplier || !this.supplier.id) {
+      this.toast.error('Error: No se ha seleccionado un proveedor válido');
+      return;
+    }
+
+    // Validar que tenemos productos
+    if (!this.products || this.products.length === 0) {
+      this.toast.error('Error: No hay productos seleccionados');
+      return;
+    }
+
+    const darkmode = localStorage.getItem('theme');
+    const dialogRef = this.dialog.open(DataPurchaseDialogComponent, {
+      backdropClass: ['bg-black/60', 'dark:bg-white'],
+      panelClass: (darkmode === 'dark')
+        ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4']
+        : ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
+      width: this.getDialogWidth(),
+      closeOnDestroy: true,
+      disableClose: true,
+      data: {
+        title: 'Datos adicionales de la compra',
+      },
+    });
+
+    await firstValueFrom(dialogRef.closed)
+      .then(async (data: { idBranch: number, branchName: string, observation: string, deliveryDate?: Date }) => {
+        if (data) {
+          this.stepThreeForm.controls.idBranch.setValue(data.idBranch);
+          this.stepThreeForm.controls.branchName.setValue(data.branchName);
+          this.stepThreeForm.controls.observation.setValue(data.observation ?? '');
+          this.stepThreeForm.controls.deliveryDate.setValue(data.deliveryDate ? data.deliveryDate.toString() : '');
+
+          // Construir el objeto Branch
+          this.branch = {
+            id: data.idBranch,
+            name: data.branchName,
+            address: '',
+            telephone: '',
+            idUser: this.getUserId(),
+            active: true
+          };
+
+          this.observation = data.observation ?? '';
+          this.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate).toISOString() : '';
+
+          // Construir y guardar la compra
+          await this.buildAndSubmitPurchase();
+        }
+      })
+      .catch((error: any) => {
+        if (error?.message) {
+          this.toast.error(error.message);
+        }
+      });
+  }
+
+  /**
+   * ✅ Construye y envía la compra al servidor
+   */
+  private async buildAndSubmitPurchase(): Promise<void> {
+    if (!this.branch || !this.branch.id) {
+      this.toast.error('Debe seleccionar una sucursal');
+      return;
+    }
+
+    if (!this.supplier || !this.supplier.id) {
+      this.toast.error('Error: Proveedor no válido');
+      return;
+    }
+
+    if (!this.products || this.products.length === 0) {
+      this.toast.error('Error: No hay productos en la compra');
+      return;
+    }
+
+    const userId = this.auth.getUserData().id;
+    const name: string = this.auth.getUserData().sub;
+    const email: string = this.auth.getUserData().email;
+
+    const purchase: Purchase = {
+      supplierId: this.supplier.id,
+      userId: userId,
+      user: name,
+      emailUser: email,
+      idBranch: this.branch.id,
+      branchName: this.branch.name,
+      purchaseDate: new Date().toISOString().split('T')[0],
+      deliveryDate: null,
+      observation: this.observation || '',
+      status: 'PENDING',
+      products: this.products.map(product => ({
+        productId: product.product.id,
+        variantId: product.variantId || null,
+        priceCost: product.product.costPrice,
+        quantity: product.quantity,
+        subtotal: parseFloat((product.product.costPrice * product.quantity).toFixed(2))
+      }))
+    };
+
+    console.log('Compra a enviar:', purchase);
+    await this.submit(purchase);
+  }
+
+  /**
+   * ✅ Navegación del stepper
+   */
   goToNextStep(): void {
     this.stepper.next();
   }
@@ -267,15 +390,22 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
     this.stepper.selectedIndex = index;
   }
 
+  /**
+   * ✅ Método para regresar del paso de confirmación al paso de productos
+   */
   backStep(shouldGoBack: boolean): void {
     if (shouldGoBack) {
       this.stepper.selectedIndex = 1;
     }
   }
 
+  /**
+   * ✅ Envía la compra al servidor
+   */
   async submit(purchase: Purchase): Promise<void> {
     this.load = true;
     this.isSaving = true;
+    this.isSavingPurchase = true; // ✅ Marcar que está guardando para no mostrar diálogo
     this.crud.baseUrl = URL_PURCHASES;
 
     await firstValueFrom(this.crud.save(purchase))
@@ -288,9 +418,11 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
         const errorMessage = error?.error?.message || error?.message || 'Error al registrar la compra';
         this.toast.error(errorMessage);
         this.load = false;
+        this.isSavingPurchase = false; // ✅ Resetear si hay error
       })
       .finally(() => {
         this.load = false;
+        this.isSaving = false;
         this.router.navigate(['dashboard/purchases']);
       });
   }

@@ -45,15 +45,15 @@
 
 <div class="p-1 bg-white rounded dark:bg-slate-900">
 
-  <!-- Información del Proveedor y Sucursal -->
+  <!-- ✅ Información del Proveedor y Sucursal -->
   <div class="w-full p-0">
     <div class="bg-gray-50 dark:bg-slate-950 rounded-lg p-4">
-      <h2 class="text-sm text-gray-500 dark:text-gray-400"><b>ID </b>{{ supplier?.id }}</h2>
-      <h2 class="text-lg font-semibold mb-1 text-gray-500 dark:text-gray-200">{{ supplier?.supplierName }}</h2>
+      <h2 class="text-sm text-gray-500 dark:text-gray-400"><b>ID </b>{{ supplier?.id || 'N/A' }}</h2>
+      <h2 class="text-lg font-semibold mb-1 text-gray-500 dark:text-gray-200">{{ supplier?.supplierName || 'Sin nombre' }}</h2>
       <div class="mb-4 border-b border-gray-200 dark:border-gray-500 pb-2">
         <h3 class="text-sm text-gray-500 dark:text-gray-400">
           <ng-icon class="btn-back-icon" size="20" name="matLocationOnOutline"></ng-icon>
-          {{ supplier?.address }}
+          {{ supplier?.address || 'Sin dirección' }}
         </h3>
         @if (supplier?.phone) {
           <h3 class="text-sm text-gray-500 dark:text-gray-400">
@@ -74,7 +74,7 @@
             <ng-icon class="btn-back-icon" size="20" name="bootstrapShop"></ng-icon>
             Sucursal de destino
           </h3>
-          <h3 class="text-sm text-gray-500 dark:text-gray-400">{{ branch?.name || 'No especificada' }}</h3>
+          <h3 class="text-sm text-gray-500 dark:text-gray-400">{{ branch?.name || 'Pendiente de especificar' }}</h3>
           @if (branch?.address) {
             <h3 class="text-xs text-gray-400 dark:text-gray-500">{{ branch.address }}</h3>
           }
@@ -127,7 +127,7 @@
             class="flex py-4 rounded-lg justify-between p-4 mt-1">
           <div class="overflow-hidden float-start">
             <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark'}"
-               class="text-md font-bold">{{product?.product?.productName}}</p>
+               class="text-md font-bold">{{product?.product?.productName || 'Sin nombre'}}</p>
 
             <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
                class="text-sm truncate">
@@ -168,9 +168,9 @@
           }
         </li>
       }@empty {
-        <li class="flex py-4 first:pt-0 last:pb-0">
-          <div class="ml-3 overflow-hidden">
-            <p>No hay productos seleccionados</p>
+        <li class="flex py-4 first:pt-0 last:pb-0 justify-center">
+          <div class="ml-3 overflow-hidden text-center">
+            <p class="text-gray-400">No hay productos seleccionados</p>
           </div>
         </li>
       }
