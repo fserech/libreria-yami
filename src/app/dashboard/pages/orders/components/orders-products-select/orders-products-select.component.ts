@@ -51,7 +51,7 @@ interface ProductOrder {
 })
 export class OrdersProductsSelectComponent implements OnInit {
   @Output() changes = new EventEmitter<ProductOrderSelect[]>();
-  @Output() finalized = new EventEmitter<boolean>();
+  // ⚠️ ELIMINADO: @Output() finalized - Ya no se necesita
 
   products: Product[] = [];
   filteredProducts: Product[] = [];
@@ -239,16 +239,9 @@ export class OrdersProductsSelectComponent implements OnInit {
   }
 
   /**
-   * Finaliza la selección de productos
+   * ⚠️ ELIMINADO: finalizeSelection() - Ya no se necesita
    */
-  finalizeSelection() {
-    if (this.selectedProducts.length > 0) {
-      this.finalized.emit(true);
-    } else {
-      this.toast.info('Selecciona al menos 1 producto.');
-      this.finalized.emit(false);
-    }
-  }
+  // finalizeSelection() { ... }
 
   getVariantPriceRange(product: Product): string {
     if (!product.variants || product.variants.length === 0) return 'N/A';
@@ -286,9 +279,6 @@ export class OrdersProductsSelectComponent implements OnInit {
 
   // ==================== FUNCIONES PARA VARIANTES ====================
 
-  /**
-   * ✅ NUEVO: Obtiene el estado del stock de una variante
-   */
   getVariantStockStatus(variant: ProductVariant): string {
     const stock = variant.currentStock || 0;
     const minStock = variant.minStock || 0;
@@ -298,9 +288,6 @@ export class OrdersProductsSelectComponent implements OnInit {
     return 'Stock';
   }
 
-  /**
-   * ✅ NUEVO: Obtiene la clase CSS para el color del stock de una variante
-   */
   getVariantStockClass(variant: ProductVariant): string {
     const stock = variant.currentStock || 0;
     const minStock = variant.minStock || 0;

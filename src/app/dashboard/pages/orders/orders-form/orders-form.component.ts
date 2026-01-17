@@ -64,8 +64,10 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
   });
 
   stepTwoForm = this._formBuilder.group({
-    idBranch: [0, Validators.required],
-    branchName: ['', Validators.required],
+    // ✅ CAMBIO: Hacer los campos opcionales inicialmente
+    // Se validarán cuando se abra el diálogo
+    idBranch: [0],
+    branchName: [''],
     observation: ['']
   });
 
@@ -104,8 +106,99 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
   ngAfterViewInit(): void {
   }
 
+  /**
+   * ✅ DETECTAR CAMBIO DE PASO EN EL STEPPER
+   */
   onStepChange(event: StepperSelectionEvent): void {
-    // Lógica adicional si es necesaria
+    const newStepIndex = event.selectedIndex;
+
+    console.log('📍 Cambio de paso:', {
+      anterior: event.previouslySelectedIndex,
+      nuevo: newStepIndex,
+      productosSeleccionados: this.products.length
+    });
+
+    // Si el usuario intenta ir al paso 3 (Confirmación)
+    if (newStepIndex === 2) {
+      // Validar que haya productos seleccionados
+      if (this.products.length === 0) {
+        this.toast.error('Debe seleccionar al menos un producto');
+        // Regresar al paso anterior
+        setTimeout(() => {
+          this.stepper.selectedIndex = event.previouslySelectedIndex;
+        }, 0);
+        return;
+      }
+
+      // ✅ Si ya se llenó la sucursal, no abrir el diálogo de nuevo
+      if (this.stepTwoForm.controls.idBranch.value && this.stepTwoForm.controls.idBranch.value > 0) {
+        console.log('✅ Sucursal ya seleccionada, mostrando confirmación');
+        return;
+      }
+
+      // Abrir diálogo de sucursal y observación
+      console.log('🔄 Abriendo diálogo de sucursal...');
+      this.openBranchDialog();
+    }
+  }
+
+  /**
+   * ✅ ABRIR DIÁLOGO DE SUCURSAL Y OBSERVACIÓN
+   */
+  async openBranchDialog() {
+    const darkmode = localStorage.getItem('theme');
+    const dialogRef = this.dialog.open(DataOrderDialogComponent, {
+      backdropClass: ['bg-black/60', 'dark:bg-white'],
+      panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
+                  ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
+      width: this.getDialogWidth(),
+      closeOnDestroy: true,
+      disableClose: true,
+      data: {
+        title: 'Datos adicionales de la venta',
+      },
+    });
+
+    await firstValueFrom(dialogRef.closed)
+      .then(async (data: { idBranch: number, branchName: string, observation: string }) => {
+        if (!data) {
+          // Usuario canceló el diálogo - regresar al paso 2
+          this.stepper.selectedIndex = 1;
+          return;
+        }
+
+        // Guardar datos
+        this.stepTwoForm.controls.idBranch.setValue(data.idBranch);
+        this.stepTwoForm.controls.branchName.setValue(data.branchName);
+        this.stepTwoForm.controls.observation.setValue(data.observation);
+
+        this.client = {
+          id: Number(this.clientForm.controls.id.value),
+          name: this.clientForm.controls.name.value!,
+          address: this.clientForm.controls.address.value!,
+          telephone: this.clientForm.controls.telephone.value!,
+          idUser: this.getUserId()
+        };
+
+        this.branch = {
+          id: this.stepTwoForm.controls.idBranch.value!,
+          name: this.stepTwoForm.controls.branchName.value!,
+          address: '',
+          telephone: '',
+          idUser: this.getUserId(),
+          active: true
+        };
+
+        this.observation = this.stepTwoForm.controls.observation.value!;
+
+        // Ya estamos en el paso 3, no hay que avanzar más
+        console.log('Datos de sucursal guardados correctamente');
+      })
+      .catch((error: any) => {
+        console.error('Error en diálogo:', error);
+        // Regresar al paso 2 en caso de error
+        this.stepper.selectedIndex = 1;
+      });
   }
 
   ngOnInit(): void {}
@@ -153,64 +246,21 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
     this.goToNextStep();
   }
 
-productsSelect(products: ProductOrderSelect[]){
-  this.products = products;
-  console.log('Productos seleccionados:', this.products);
-}
-
-  async finalizedSelectProducts(confirmed: boolean){
-  if(confirmed && this.products.length > 0){
-    const darkmode = localStorage.getItem('theme');
-    const dialogRef = this.dialog.open(DataOrderDialogComponent, {
-      backdropClass: ['bg-black/60', 'dark:bg-white'],
-      panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
-                  ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
-      width: this.getDialogWidth(),
-      closeOnDestroy: true,
-      disableClose: true,
-      data: {
-        title: 'Datos adicionales de la venta',
-      },
-    });
-
-    await firstValueFrom(dialogRef.closed)
-      .then(async (data: { idBranch: number, branchName: string, observation: string }) => {
-        this.stepTwoForm.controls.idBranch.setValue(data.idBranch);
-        this.stepTwoForm.controls.branchName.setValue(data.branchName);
-        this.stepTwoForm.controls.observation.setValue(data.observation);
-
-        this.client = {
-          id: Number(this.clientForm.controls.id.value),
-          name: this.clientForm.controls.name.value!,
-          address: this.clientForm.controls.address.value!,
-          telephone: this.clientForm.controls.telephone.value!,
-          idUser: this.getUserId()
-        };
-
-        this.branch = {
-          id: this.stepTwoForm.controls.idBranch.value!,
-          name: this.stepTwoForm.controls.branchName.value!,
-          address: '',
-          telephone: '',
-          idUser: this.getUserId(),
-          active: true
-        };
-
-        this.observation = this.stepTwoForm.controls.observation.value!;
-        this.goToNextStep();
-      })
-      .catch((error: any) => {
-        this.toast.error(error.message);
-      });
-  } else if (!confirmed) {
-    // El usuario canceló o no hay productos
-    console.log('Selección de productos cancelada o sin productos');
+  productsSelect(products: ProductOrderSelect[]){
+    this.products = products;
+    console.log('Productos seleccionados:', this.products);
   }
-}
 
-get selectedProducts(): ProductOrderSelect[] {
-  return this.products;
-}
+  /**
+   * ⚠️ ELIMINADAS: Funciones ya no necesarias
+   */
+  // async continueToConfirmation() { ... }
+  // async finalizedSelectProducts(confirmed: boolean) { ... }
+
+  get selectedProducts(): ProductOrderSelect[] {
+    return this.products;
+  }
+
   goToNextStep(): void {
     this.stepper.next();
   }

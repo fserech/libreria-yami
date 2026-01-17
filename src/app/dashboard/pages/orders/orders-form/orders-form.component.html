@@ -16,6 +16,7 @@
   </div>
 
   <mat-stepper #stepper [linear]="true" (selectionChange)="onStepChange($event)" class="w-full">
+
     <!-- PASO 1: Selección de Cliente -->
     <mat-step [stepControl]="clientForm" [editable]="false" state="person">
       <ng-template matStepLabel>
@@ -26,33 +27,18 @@
       </app-orders-client-select>
     </mat-step>
 
-    <!-- PASO 2: Selección de Productos y Sucursal -->
+    <!-- PASO 2: Selección de Productos -->
     <mat-step [stepControl]="stepTwoForm" [editable]="true" state="shopping_cart">
       <ng-template matStepLabel>
         <p class="hidden sm:block">Productos y Sucursal</p>
       </ng-template>
+
       <app-orders-products-select
         #selectProducts
-        (changes)="productsSelect($event)"
-        (finalized)="finalizedSelectProducts($event)">
+        (changes)="productsSelect($event)">
       </app-orders-products-select>
 
-      <!-- Botones de control del paso 2 -->
-      <div class="flex justify-end gap-3 mt-4 pt-4 border-t dark:border-slate-700">
-        <button
-          (click)="goToPreviousStep()"
-          type="button"
-          class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors">
-          Atrás
-        </button>
-        <button
-          [disabled]="selectedProducts.length === 0"
-          (click)="selectProducts.finalizeSelection()"
-          type="button"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors">
-          Continuar
-        </button>
-      </div>
+      <!-- ⚠️ BOTONES ELIMINADOS - La navegación al paso 3 abre automáticamente el diálogo -->
     </mat-step>
 
     <!-- PASO 3: Confirmación de la Venta -->
@@ -60,6 +46,7 @@
       <ng-template matStepLabel>
         <p class="hidden sm:block">Confirmación</p>
       </ng-template>
+
       <app-orders-confirm
         #confirmOrder
         (confirmOrder)="submit($event)"
@@ -70,5 +57,6 @@
         [observation]="observation">
       </app-orders-confirm>
     </mat-step>
+
   </mat-stepper>
 </div>
