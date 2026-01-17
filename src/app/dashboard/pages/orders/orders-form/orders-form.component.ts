@@ -56,16 +56,15 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
   @ViewChild('stepper') stepper!: MatStepper;
   form: FormGroup;
 
+  // ✅ MODIFICADO: Hacer el formulario de cliente opcional
   clientForm = this._formBuilder.group({
-    id: [0, Validators.required],
-    name: ['', Validators.required],
+    id: [0], // Ya no es requerido
+    name: [''], // Ya no es requerido
     address: [''],
     telephone: ['']
   });
 
   stepTwoForm = this._formBuilder.group({
-    // ✅ CAMBIO: Hacer los campos opcionales inicialmente
-    // Se validarán cuando se abra el diálogo
     idBranch: [0],
     branchName: [''],
     observation: ['']
@@ -103,12 +102,8 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
       }
   }
 
-  ngAfterViewInit(): void {
-  }
+  ngAfterViewInit(): void {}
 
-  /**
-   * ✅ DETECTAR CAMBIO DE PASO EN EL STEPPER
-   */
   onStepChange(event: StepperSelectionEvent): void {
     const newStepIndex = event.selectedIndex;
 
@@ -118,33 +113,24 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
       productosSeleccionados: this.products.length
     });
 
-    // Si el usuario intenta ir al paso 3 (Confirmación)
     if (newStepIndex === 2) {
-      // Validar que haya productos seleccionados
       if (this.products.length === 0) {
         this.toast.error('Debe seleccionar al menos un producto');
-        // Regresar al paso anterior
         setTimeout(() => {
           this.stepper.selectedIndex = event.previouslySelectedIndex;
         }, 0);
         return;
       }
 
-      // ✅ Si ya se llenó la sucursal, no abrir el diálogo de nuevo
       if (this.stepTwoForm.controls.idBranch.value && this.stepTwoForm.controls.idBranch.value > 0) {
         console.log('✅ Sucursal ya seleccionada, mostrando confirmación');
         return;
       }
 
-      // Abrir diálogo de sucursal y observación
-      console.log('🔄 Abriendo diálogo de sucursal...');
       this.openBranchDialog();
     }
   }
 
-  /**
-   * ✅ ABRIR DIÁLOGO DE SUCURSAL Y OBSERVACIÓN
-   */
   async openBranchDialog() {
     const darkmode = localStorage.getItem('theme');
     const dialogRef = this.dialog.open(DataOrderDialogComponent, {
@@ -162,21 +148,20 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
     await firstValueFrom(dialogRef.closed)
       .then(async (data: { idBranch: number, branchName: string, observation: string }) => {
         if (!data) {
-          // Usuario canceló el diálogo - regresar al paso 2
           this.stepper.selectedIndex = 1;
           return;
         }
 
-        // Guardar datos
         this.stepTwoForm.controls.idBranch.setValue(data.idBranch);
         this.stepTwoForm.controls.branchName.setValue(data.branchName);
         this.stepTwoForm.controls.observation.setValue(data.observation);
 
+        // ✅ MODIFICADO: Manejar cliente anónimo
         this.client = {
-          id: Number(this.clientForm.controls.id.value),
-          name: this.clientForm.controls.name.value!,
-          address: this.clientForm.controls.address.value!,
-          telephone: this.clientForm.controls.telephone.value!,
+          id: Number(this.clientForm.controls.id.value) || 0,
+          name: this.clientForm.controls.name.value || 'Cliente Anónimo',
+          address: this.clientForm.controls.address.value || '',
+          telephone: this.clientForm.controls.telephone.value || '',
           idUser: this.getUserId()
         };
 
@@ -190,21 +175,19 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
         };
 
         this.observation = this.stepTwoForm.controls.observation.value!;
-
-        // Ya estamos en el paso 3, no hay que avanzar más
         console.log('Datos de sucursal guardados correctamente');
       })
       .catch((error: any) => {
         console.error('Error en diálogo:', error);
-        // Regresar al paso 2 en caso de error
         this.stepper.selectedIndex = 1;
       });
   }
 
   ngOnInit(): void {}
 
+  // ✅ MODIFICADO: Permitir avanzar sin cliente
   isDirty(): boolean {
-    return this.clientForm.valid;
+    return true; // Siempre permite avanzar
   }
 
   introSearch(){
@@ -227,7 +210,6 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
     if(name){
       filter = filter.concat(`&name=${name}`);
     }
-
     this.filters = filter;
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
@@ -242,7 +224,7 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
     this.clientForm.controls.address.setValue(ev.address);
     this.clientForm.controls.telephone.setValue(ev.telephone);
 
-    console.log('Cliente seleccionado', this.clientForm.valid);
+    console.log('Cliente seleccionado:', ev.id === 0 ? 'Anónimo' : ev.name);
     this.goToNextStep();
   }
 
@@ -250,12 +232,6 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
     this.products = products;
     console.log('Productos seleccionados:', this.products);
   }
-
-  /**
-   * ⚠️ ELIMINADAS: Funciones ya no necesarias
-   */
-  // async continueToConfirmation() { ... }
-  // async finalizedSelectProducts(confirmed: boolean) { ... }
 
   get selectedProducts(): ProductOrderSelect[] {
     return this.products;

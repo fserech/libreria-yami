@@ -9,21 +9,38 @@ import { Branch } from '../../../../../shared/interfaces/branch';
 import { CrudService } from '../../../../../shared/services/crud.service';
 import { URL_BRANCHES } from '../../../../../shared/constants/endpoints';
 import { firstValueFrom } from 'rxjs';
+import { NgClass } from '@angular/common';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { matRefreshOutline } from '@ng-icons/material-icons/outline';
 
 @Component({
   selector: 'app-data-order-dialog',
   standalone: true,
-  imports: [FormsModule, InputComponent, SelectComponent],
+  imports: [FormsModule, InputComponent, SelectComponent, NgClass, NgIconComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './data-order-dialog.component.html',
-  styleUrl: './data-order-dialog.component.scss'
+  styleUrl: './data-order-dialog.component.scss',
+  viewProviders: [provideIcons({ matRefreshOutline })]
 })
 export class DataOrderDialogComponent implements OnInit {
-
   form: FormGroup;
   load: boolean = false;
   branches: { value: number, label: string, address: string, telephone: string }[] = [];
   branchesData: Branch[] = [];
+
+  // ✅ MENSAJES DE AGRADECIMIENTO PREDEFINIDOS
+  thankYouMessages: string[] = [
+    '¡Gracias por su compra!',
+    '¡Gracias por preferirnos!',
+    '¡Gracias por su confianza!',
+    '¡Apreciamos su visita!',
+    '¡Gracias por elegirnos!',
+    '¡Es un placer atenderle!',
+    '¡Vuelva pronto!',
+    '¡Gracias por su visita!',
+    '¡Fue un gusto servirle!',
+    '¡Gracias, esperamos verle pronto!'
+  ];
 
   constructor(
     @Inject(DIALOG_DATA) public data: DialogData,
@@ -39,12 +56,29 @@ export class DataOrderDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadBranches();
+    // ✅ Establecer mensaje aleatorio al iniciar
+    this.setRandomThankYouMessage();
+  }
+
+  /**
+   * ✅ ESTABLECER MENSAJE DE AGRADECIMIENTO ALEATORIO
+   */
+  setRandomThankYouMessage(): void {
+    const randomIndex = Math.floor(Math.random() * this.thankYouMessages.length);
+    const randomMessage = this.thankYouMessages[randomIndex];
+    this.form.controls['observation'].setValue(randomMessage);
+  }
+
+  /**
+   * ✅ GENERAR NUEVO MENSAJE ALEATORIO
+   */
+  generateNewMessage(): void {
+    this.setRandomThankYouMessage();
   }
 
   async loadBranches(): Promise<void> {
     this.load = true;
     this.crud.baseUrl = URL_BRANCHES;
-
     try {
       const response: any = await this.crud.getAll('');
       this.branchesData = response.data || response;

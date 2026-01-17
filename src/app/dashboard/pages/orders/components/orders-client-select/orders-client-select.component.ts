@@ -66,7 +66,6 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
 
   ngOnInit(): void {
     this.filter();
-    // this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize);
   }
 
   initPage(){
@@ -82,11 +81,9 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
     if(name && name !== ''){
       this.filter(name);
     }
-
   }
 
   filter(name?: string, id?: number){
-
     let filter = '';
     if(id){
       filter = filter.concat(`&id=${id}`)
@@ -94,8 +91,6 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
     if(name){
       filter = filter.concat(`&name=${name}`);
     }
-
-    //filter = filter.concat(`&offerDay=${this.getToday()}&idUser=${this.getUserId()}`);
     this.filters = filter;
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
@@ -121,32 +116,15 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
 
   getDay(value: string): string {
     let dayName = '';
-
     switch (value) {
-        case 'MONDAY':
-            dayName = 'Lunes';
-            break;
-        case 'TUESDAY':
-            dayName = 'Martes';
-            break;
-        case 'WEDNESDAY':
-            dayName = 'Miércoles';
-            break;
-        case 'THURSDAY':
-            dayName = 'Jueves';
-            break;
-        case 'FRIDAY':
-            dayName = 'Viernes';
-            break;
-        case 'SATURDAY':
-            dayName = 'Sábado';
-            break;
-        case 'SUNDAY':
-            dayName = 'Domingo';
-            break;
-        default:
-            dayName = 'Día desconocido';
-            break;
+        case 'MONDAY': dayName = 'Lunes'; break;
+        case 'TUESDAY': dayName = 'Martes'; break;
+        case 'WEDNESDAY': dayName = 'Miércoles'; break;
+        case 'THURSDAY': dayName = 'Jueves'; break;
+        case 'FRIDAY': dayName = 'Viernes'; break;
+        case 'SATURDAY': dayName = 'Sábado'; break;
+        case 'SUNDAY': dayName = 'Domingo'; break;
+        default: dayName = 'Día desconocido'; break;
     }
     return dayName.charAt(0).toUpperCase() + dayName.slice(1);
   }
@@ -165,6 +143,18 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
     this.changes.emit(client);
   }
 
+  // ✅ NUEVO: Continuar sin cliente
+  continueWithoutClient() {
+    const anonymousClient: Client = {
+      id: 0, // ID 0 indica venta sin cliente
+      name: 'Cliente Anónimo',
+      address: '',
+      telephone: '',
+      idUser: this.getUserId()
+    };
+    this.changes.emit(anonymousClient);
+  }
+
   async add() {
     const darkmode = localStorage.getItem('theme');
     const dialogRef = this.dialog.open(OrdersClientNewDialogComponent, {
@@ -177,35 +167,34 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
       data: {
         title: 'Nuevo cliente'
       },
-      });
+    });
 
-      let clientSelect: Client = null;
-      await firstValueFrom(dialogRef.closed)
-      .then(async (client: Client) => {
-        if(client){
-          await firstValueFrom(this.crud.save(client))
-            .then((response: any) => {
-              this.load = false;
-              this.toast.success(response.message);
-              clientSelect = response.register;
-            })
-            .catch((error: any) => {
-              this.load = false;
-              this.toast.error(error.message);
-            })
-            .finally(() => {
-              this.load = false;
-              this.changes.emit(clientSelect);
-            });
-        }
-      })
-      .catch((error: any) => {
-        this.toast.error(error.message);
-      });
+    let clientSelect: Client = null;
+    await firstValueFrom(dialogRef.closed)
+    .then(async (client: Client) => {
+      if(client){
+        await firstValueFrom(this.crud.save(client))
+          .then((response: any) => {
+            this.load = false;
+            this.toast.success(response.message);
+            clientSelect = response.register;
+          })
+          .catch((error: any) => {
+            this.load = false;
+            this.toast.error(error.message);
+          })
+          .finally(() => {
+            this.load = false;
+            this.changes.emit(clientSelect);
+          });
+      }
+    })
+    .catch((error: any) => {
+      this.toast.error(error.message);
+    });
   }
 
   getUserId(){
     return this.auth?.getUserData()?.id;
   }
-
 }
