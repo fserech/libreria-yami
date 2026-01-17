@@ -191,12 +191,12 @@
                             {{ variant.variantName }}
                           </p>
 
-                          <!-- Atributos de la variante -->
+                          <!-- ✅ ATRIBUTOS DE LA VARIANTE CON COLORES -->
                           @if (variant.attributes) {
                             <div class="flex flex-wrap gap-1 mb-2">
                               @for (attr of variant.attributes | keyvalue; track attr.key) {
                                 <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-xs">
-                                  {{ attr.key }}: <strong>{{ attr.value }}</strong>
+                                  <strong class="font-semibold">{{ attr.key }}:</strong> {{ attr.value }}
                                 </span>
                               }
                             </div>
@@ -219,10 +219,10 @@
                               </span>
                             }
 
-                            <span [ngClass]="(variant.currentStock ?? 0) > 0 ?
-                                            'text-green-600 dark:text-green-400' :
-                                            'text-red-600 dark:text-red-400'">
-                              Stock: {{ variant.currentStock ?? 0 }}
+                            <!-- ✅ ALERTAS DE STOCK CON COLORES (VERDE, NARANJA, ROJO) -->
+                            <span [ngClass]="getVariantStockClass(variant)">
+                              <ng-icon name="matInventory2Outline" size="16" class="inline"></ng-icon>
+                              {{ getVariantStockStatus(variant) }}: {{ variant.currentStock ?? 0 }}
                             </span>
                           </div>
                         </div>

@@ -126,73 +126,59 @@ export class OrdersProductsSelectComponent implements OnInit {
     }
   }
 
-selectVariant(product: Product, variant: ProductVariant) {
-  // ❌ ANTES: Se creaba un producto temporal sin mantener la estructura correcta
-  // ✅ AHORA: Mantener el producto original y pasar el variantId correctamente
+  selectVariant(product: Product, variant: ProductVariant) {
+    const variantProduct: Product = {
+      ...product,
+      id: product.id,
+      productName: `${product.productName} - ${variant.variantName}`,
+      sku: variant.sku,
+      salePrice: variant.salePrice,
+      costPrice: getProductCostPrice(variant),
+      currentStock: variant.currentStock,
+      hasVariants: false
+    };
 
-  const variantProduct: Product = {
-    ...product,
-    // ✅ MANTENER el ID del producto padre (IMPORTANTE)
-    id: product.id,
+    this.openQuantityDialog(variantProduct, variant.id);
+  }
 
-    // Actualizar el nombre para mostrar
-    productName: `${product.productName} - ${variant.variantName}`,
+  openQuantityDialog(product: Product, variantId?: number) {
+    const dialogRef = this.matDialog.open(SelectProductQuantityDialogComponent, {
+      width: '500px',
+      maxWidth: '95vw',
+      data: {
+        product,
+        title: 'Cantidad a vender',
+        isPurchase: false
+      }
+    });
 
-    // Usar los datos de la variante
-    sku: variant.sku,
-    salePrice: variant.salePrice,
-    costPrice: getProductCostPrice(variant),
-    currentStock: variant.currentStock,
-
-    // ✅ IMPORTANTE: Indicar que NO tiene variantes (para el display)
-    hasVariants: false
-  };
-
-  // ✅ CRÍTICO: Pasar el variantId al diálogo
-  this.openQuantityDialog(variantProduct, variant.id);
-}
-
- openQuantityDialog(product: Product, variantId?: number) {
-  const dialogRef = this.matDialog.open(SelectProductQuantityDialogComponent, {
-    width: '500px',
-    maxWidth: '95vw',
-    data: {
-      product,
-      title: 'Cantidad a vender',
-      isPurchase: false
-    }
-  });
-
-  dialogRef.afterClosed().subscribe(result => {
-    if (result) {
-      // ✅ CRÍTICO: Pasar el variantId
-      this.addProductToOrder(result.product, result.quantity, variantId);
-    }
-  });
-}
-
-  addProductToOrder(product: Product, quantity: number, variantId?: number) {
-  const existingProduct = this.selectedProducts.find(p =>
-    p.product.id === product.id &&
-    // ✅ Verificar el variantId correctamente
-    (variantId ? p.variantId === variantId : !p.variantId)
-  );
-
-  if (existingProduct) {
-    existingProduct.quantity += quantity;
-    existingProduct.product = product;
-  } else {
-    // ✅ CRÍTICO: Guardar el variantId
-    this.selectedProducts.push({
-      product,
-      quantity,
-      variantId: variantId || null // ✅ Esto es lo importante
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.addProductToOrder(result.product, result.quantity, variantId);
+      }
     });
   }
 
-  this.emitChanges();
-  this.toast.success(`${product.productName} agregado a la orden`);
-}
+  addProductToOrder(product: Product, quantity: number, variantId?: number) {
+    const existingProduct = this.selectedProducts.find(p =>
+      p.product.id === product.id &&
+      (variantId ? p.variantId === variantId : !p.variantId)
+    );
+
+    if (existingProduct) {
+      existingProduct.quantity += quantity;
+      existingProduct.product = product;
+    } else {
+      this.selectedProducts.push({
+        product,
+        quantity,
+        variantId: variantId || null
+      });
+    }
+
+    this.emitChanges();
+    this.toast.success(`${product.productName} agregado a la orden`);
+  }
 
   removeProduct(index: number) {
     this.selectedProducts.splice(index, 1);
@@ -237,12 +223,10 @@ selectVariant(product: Product, variant: ProductVariant) {
 
     dialogRef.closed.subscribe(result => {
       if (result === true) {
-        // El usuario presionó "Limpiar todo"
         this.selectedProducts = [];
         this.emitChanges();
         this.toast.success('Lista de productos limpiada');
       } else if (Array.isArray(result)) {
-        // El usuario modificó la lista y presionó "Confirmar"
         this.selectedProducts = result.map(item => ({
           product: item.product,
           quantity: item.quantity,
@@ -280,6 +264,8 @@ selectVariant(product: Product, variant: ProductVariant) {
     return `Q${minPrice.toFixed(2)} - Q${maxPrice.toFixed(2)}`;
   }
 
+  // ==================== FUNCIONES PARA PRODUCTOS SIMPLES ====================
+
   getStockStatus(product: Product): string {
     const stock = product.currentStock || 0;
     const minStock = product.minStock || 0;
@@ -295,6 +281,36 @@ selectVariant(product: Product, variant: ProductVariant) {
 
     if (stock === 0) return 'text-red-600 dark:text-red-400';
     if (stock <= minStock) return 'text-orange-600 dark:text-orange-400';
+    return 'text-green-600 dark:text-green-400';
+  }
+
+  // ==================== FUNCIONES PARA VARIANTES ====================
+
+  /**
+   * ✅ NUEVO: Obtiene el estado del stock de una variante
+   */
+  getVariantStockStatus(variant: ProductVariant): string {
+    const stock = variant.currentStock || 0;
+    const minStock = variant.minStock || 0;
+
+    if (stock === 0) return 'Sin stock';
+    if (stock <= minStock) return 'Stock bajo';
+    return 'Stock';
+  }
+
+  /**
+   * ✅ NUEVO: Obtiene la clase CSS para el color del stock de una variante
+   */
+  getVariantStockClass(variant: ProductVariant): string {
+    const stock = variant.currentStock || 0;
+    const minStock = variant.minStock || 0;
+
+    if (stock === 0) {
+      return 'text-red-600 dark:text-red-400 font-semibold';
+    }
+    if (stock <= minStock) {
+      return 'text-orange-600 dark:text-orange-400 font-semibold';
+    }
     return 'text-green-600 dark:text-green-400';
   }
 }
