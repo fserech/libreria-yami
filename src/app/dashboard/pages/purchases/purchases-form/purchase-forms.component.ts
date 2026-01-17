@@ -12,9 +12,9 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { InputComponent } from '../../../../shared/components/input/input.component';
 import { ToggleComponent } from '../../../../shared/components/toggle/toggle.component';
 import { URL_SUPPLIERS, URL_PURCHASES, URL_PRODUCTS, URL_BRANCHES } from '../../../../shared/constants/endpoints';
-import {MatStepper, MatStepperModule} from '@angular/material/stepper';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatButtonModule} from '@angular/material/button';
+import { MatStepper, MatStepperModule } from '@angular/material/stepper';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { SearchInputTextComponent } from '../../../../shared/components/search-input-text/search-input-text.component';
 import { ChatBubbleComponent } from '../../../../shared/components/chat-bubble/chat-bubble.component';
@@ -22,8 +22,8 @@ import { NgClass } from '@angular/common';
 import { Dialog, DialogModule } from '@angular/cdk/dialog';
 import { PurchasesSupplierSelectComponent } from '../components/purchases-supplier-select/purchases-supplier-select.component';
 import { Supplier } from '../../../../shared/interfaces/supplier';
-import {MatIconModule} from '@angular/material/icon';
-import {STEPPER_GLOBAL_OPTIONS, StepperSelectionEvent} from '@angular/cdk/stepper';
+import { MatIconModule } from '@angular/material/icon';
+import { STEPPER_GLOBAL_OPTIONS, StepperSelectionEvent } from '@angular/cdk/stepper';
 import { PurchasesProductsSelectComponent } from '../components/purchases-products-select/purchases-products-select.component';
 import { Product } from '../../../../shared/interfaces/product';
 import { Purchase, ProductPurchaseSelect } from '../../../../shared/interfaces/purchase';
@@ -35,25 +35,43 @@ import { Branch } from '../../../../shared/interfaces/branch';
 @Component({
   selector: 'app-purchases-form',
   standalone: true,
-  imports: [HeaderComponent, InputComponent, NgIconComponent, ToggleComponent, MatStepperModule,
-    FormsModule, MatFormFieldModule, ReactiveFormsModule, MatButtonModule, MatInputModule,
-    SearchInputTextComponent, NgIcon, ChatBubbleComponent, NgClass, PurchasesSupplierSelectComponent,
-    DialogModule, MatIconModule, PurchasesProductsSelectComponent, PurchasesConfirmComponent],
+  imports: [
+    HeaderComponent,
+    InputComponent,
+    NgIconComponent,
+    ToggleComponent,
+    MatStepperModule,
+    FormsModule,
+    MatFormFieldModule,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatInputModule,
+    SearchInputTextComponent,
+    NgIcon,
+    ChatBubbleComponent,
+    NgClass,
+    PurchasesSupplierSelectComponent,
+    DialogModule,
+    MatIconModule,
+    PurchasesProductsSelectComponent,
+    PurchasesConfirmComponent
+  ],
   templateUrl: './purchase-forms.component.html',
   styleUrl: './purchase-forms.component.scss',
-  viewProviders: [ provideIcons({ matArrowBackOutline, matSearchOutline })],
-  providers:[
+  viewProviders: [provideIcons({ matArrowBackOutline, matSearchOutline })],
+  providers: [
     {
       provide: STEPPER_GLOBAL_OPTIONS,
-      useValue: {displayDefaultIndicatorType: false},
+      useValue: { displayDefaultIndicatorType: false },
     },
   ]
 })
 export default class PurchasesFormComponent extends BaseForm implements OnInit, AfterViewInit {
 
-  @ViewChild(PurchasesProductsSelectComponent) selectProducts: PurchasesProductsSelectComponent;
-  @ViewChild(PurchasesConfirmComponent) confirmPurchase: PurchasesConfirmComponent;
+  @ViewChild(PurchasesProductsSelectComponent) selectProducts!: PurchasesProductsSelectComponent;
+  @ViewChild(PurchasesConfirmComponent) confirmPurchase!: PurchasesConfirmComponent;
   @ViewChild('stepper') stepper!: MatStepper;
+
   form: FormGroup;
 
   supplierForm = this._formBuilder.group({
@@ -71,10 +89,10 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
     deliveryDate: ['']
   });
 
-  supplier: Supplier;
+  supplier!: Supplier;
   products: ProductPurchaseSelect[] = [];
   branch: Branch | null = null;
-  observation: string;
+  observation: string = '';
   deliveryDate: string = '';
 
   constructor(
@@ -86,55 +104,64 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
     private auth: AuthService,
     private bpo: BreakpointObserver,
     public dialog: Dialog,
-    ){
-      super(crud, toast, auth, bpo);
-      this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
+  ) {
+    super(crud, toast, auth, bpo);
+    this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
 
-      if(this.mode !== 'new') this.id = Number(this.route.snapshot.paramMap.get('id'));
-      this.crud.baseUrl = URL_PURCHASES;
+    if (this.mode !== 'new') this.id = Number(this.route.snapshot.paramMap.get('id'));
+    this.crud.baseUrl = URL_PURCHASES;
 
-      this.form = new FormGroup({
-        name: new FormControl('', [Validators.required]),
-        productDesc: new FormControl(),
-        active: new FormControl(true)
-      });
+    this.form = new FormGroup({
+      name: new FormControl('', [Validators.required]),
+      productDesc: new FormControl(),
+      active: new FormControl(true)
+    });
 
-      if(this.mode === 'edit'){
-        this.load = true;
-      }
+    if (this.mode === 'edit') {
+      this.load = true;
+    }
   }
 
   ngAfterViewInit(): void {
+    // Lógica adicional después de la inicialización de la vista
   }
 
   onStepChange(event: StepperSelectionEvent): void {
     // Lógica adicional si es necesaria
+    console.log('Paso cambiado:', event.selectedIndex);
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Inicialización del componente
+  }
 
   isDirty(): boolean {
     return this.supplierForm.valid;
   }
 
-  introSearch(){
+  // ✅ Propiedad para acceder a los productos seleccionados desde el template
+  get selectedProducts(): ProductPurchaseSelect[] {
+    return this.products;
+  }
+
+  introSearch(): void {
     const name: any = this.form.controls['name'].value;
-    if(name && name !== ''){
+    if (name && name !== '') {
       this.filter(name);
     }
   }
 
-  initPage(){
+  initPage(): void {
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, 1, 10);
     this.form.reset();
   }
 
-  filter(name?: string, id?: number){
+  filter(name?: string, id?: number): void {
     let filter = '';
-    if(id){
-      filter = filter.concat(`&id=${id}`)
+    if (id) {
+      filter = filter.concat(`&id=${id}`);
     }
-    if(name){
+    if (name) {
       filter = filter.concat(`&name=${name}`);
     }
 
@@ -142,33 +169,37 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
   }
 
-  back() {
+  back(): void {
     this.router.navigate(['dashboard/purchases']);
   }
 
-  supplierSelect(ev: Supplier){
-    this.supplierForm.controls.id.setValue(ev.id);
-    this.supplierForm.controls.supplierName.setValue(ev.supplierName);
-    this.supplierForm.controls.email.setValue(ev.email);
-    this.supplierForm.controls.phone.setValue(ev.phone);
-    this.supplierForm.controls.address.setValue(ev.address || '');
+  // ✅ Método que recibe el proveedor seleccionado
+  supplierSelect(supplier: Supplier): void {
+    this.supplierForm.controls.id.setValue(supplier.id ?? 0);
+    this.supplierForm.controls.supplierName.setValue(supplier.supplierName ?? '');
+    this.supplierForm.controls.email.setValue(supplier.email ?? '');
+    this.supplierForm.controls.phone.setValue(supplier.phone ?? '');
+    this.supplierForm.controls.address.setValue(supplier.address ?? '');
 
     console.log('Proveedor seleccionado', this.supplierForm.valid);
     this.goToNextStep();
   }
 
-  productsSelect(products: ProductPurchaseSelect[]){
-    this.products = [];
+  // ✅ Método que recibe el array de productos seleccionados (con precios personalizados)
+  productsSelect(products: ProductPurchaseSelect[]): void {
     this.products = products;
+    console.log('Productos seleccionados para compra:', this.products);
   }
 
-  async finalizedSelectProducts(ev: boolean){
-    if(ev && this.products.length > 0){
+  // ✅ Método que recibe la confirmación de finalización de selección de productos
+  async finalizedSelectProducts(confirmed: boolean): Promise<void> {
+    if (confirmed && this.products.length > 0) {
       const darkmode = localStorage.getItem('theme');
       const dialogRef = this.dialog.open(DataPurchaseDialogComponent, {
         backdropClass: ['bg-black/60', 'dark:bg-white'],
-        panelClass: (darkmode === 'dark') ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4'] :
-                    ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
+        panelClass: (darkmode === 'dark')
+          ? ['bg-slate-900', 'rounded-lg', 'text-gray-200', 'p-4']
+          : ['bg-white', 'rounded-lg', 'text-gray-500', 'p-4', 'border-b', 'border-slate-900'],
         width: this.getDialogWidth(),
         closeOnDestroy: true,
         disableClose: true,
@@ -179,41 +210,47 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
 
       await firstValueFrom(dialogRef.closed)
         .then(async (data: { idBranch: number, branchName: string, observation: string, deliveryDate: Date }) => {
-          this.stepTwoForm.controls.idBranch.setValue(data.idBranch);
-          this.stepTwoForm.controls.branchName.setValue(data.branchName);
-          this.stepTwoForm.controls.observation.setValue(data.observation);
-          this.stepTwoForm.controls.deliveryDate.setValue(data.deliveryDate ? data.deliveryDate.toString() : '');
+          if (data) {
+            this.stepTwoForm.controls.idBranch.setValue(data.idBranch);
+            this.stepTwoForm.controls.branchName.setValue(data.branchName);
+            this.stepTwoForm.controls.observation.setValue(data.observation ?? '');
+            this.stepTwoForm.controls.deliveryDate.setValue(data.deliveryDate ? data.deliveryDate.toString() : '');
 
-          this.supplier = {
-            id: Number(this.supplierForm.controls.id.value),
-            supplierName: this.supplierForm.controls.supplierName.value,
-            supplierDesc: '',
-            email: this.supplierForm.controls.email.value,
-            phone: this.supplierForm.controls.phone.value,
-            address: this.supplierForm.controls.address.value,
-            active: true
-          };
+            // Construir el objeto Supplier
+            this.supplier = {
+              id: Number(this.supplierForm.controls.id.value),
+              supplierName: this.supplierForm.controls.supplierName.value ?? '',
+              supplierDesc: '',
+              email: this.supplierForm.controls.email.value ?? '',
+              phone: this.supplierForm.controls.phone.value ?? '',
+              address: this.supplierForm.controls.address.value ?? '',
+              active: true
+            };
 
-          // Buscar la sucursal completa desde el backend si es necesario
-          // O crear un objeto Branch simplificado con la info disponible
-          this.branch = {
-            id: this.stepTwoForm.controls.idBranch.value,
-            name: this.stepTwoForm.controls.branchName.value,
-            address: '', // Se puede obtener del backend si es necesario
-            telephone: '', // Se puede obtener del backend si es necesario
-            idUser: this.getUserId(),
-            active: true
-          };
+            // Construir el objeto Branch
+            this.branch = {
+              id: this.stepTwoForm.controls.idBranch.value ?? 0,
+              name: this.stepTwoForm.controls.branchName.value ?? '',
+              address: '',
+              telephone: '',
+              idUser: this.getUserId(),
+              active: true
+            };
 
-          this.observation = this.stepTwoForm.controls.observation.value;
-          // Convertir Date a string ISO
-          this.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate).toISOString() : '';
-          this.goToNextStep();
+            this.observation = this.stepTwoForm.controls.observation.value ?? '';
+            this.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate).toISOString() : '';
+
+            this.goToNextStep();
+          }
         })
         .catch((error: any) => {
-          this.toast.error(error.message);
+          if (error?.message) {
+            this.toast.error(error.message);
+          }
         });
-    }else{
+    } else if (!confirmed) {
+      console.log('Selección de productos cancelada o sin productos');
+    } else {
       this.toast.info('Selecciona al menos 1 producto.');
     }
   }
@@ -230,23 +267,26 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
     this.stepper.selectedIndex = index;
   }
 
-  backStep(ev: boolean){
-    this.stepper.selectedIndex = 1;
+  backStep(shouldGoBack: boolean): void {
+    if (shouldGoBack) {
+      this.stepper.selectedIndex = 1;
+    }
   }
 
-  async submit(purchase: Purchase){
+  async submit(purchase: Purchase): Promise<void> {
     this.load = true;
     this.isSaving = true;
     this.crud.baseUrl = URL_PURCHASES;
 
     await firstValueFrom(this.crud.save(purchase))
       .then((response: any) => {
-        this.toast.success(response.message);
+        this.toast.success(response.message || 'Compra registrada exitosamente');
         this.load = false;
       })
       .catch((error: any) => {
-        console.log('err: ', error);
-        this.toast.error(error.message);
+        console.error('Error al guardar compra:', error);
+        const errorMessage = error?.error?.message || error?.message || 'Error al registrar la compra';
+        this.toast.error(errorMessage);
         this.load = false;
       })
       .finally(() => {
@@ -255,7 +295,7 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
       });
   }
 
-  getUserId(){
+  getUserId(): number {
     return this.auth.getUserData().id;
   }
 }

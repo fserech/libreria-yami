@@ -39,7 +39,7 @@ export class PurchasesConfirmComponent {
   constructor(private decimalPipe: DecimalPipe,
               private toast: ToastService,
               private authService: AuthService){
-    this.darkmode = localStorage.getItem('theme');
+    this.darkmode = localStorage.getItem('theme') || '';
   }
 
   removeUnit(product: ProductPurchaseSelect): void {
@@ -93,14 +93,27 @@ export class PurchasesConfirmComponent {
     this.backStep.emit(true);
   }
 
+  /**
+   * Obtiene el estado de la fecha de entrega
+   * @returns Mensaje indicando que está pendiente de recepción
+   */
+  getDeliveryStatus(): string {
+    return 'Pendiente de recepción';
+  }
+
+  /**
+   * Verifica si la fecha de entrega está pendiente
+   * @returns true si está pendiente (siempre en este componente)
+   */
+  isDeliveryPending(): boolean {
+    return true;
+  }
+
   buildPurchase(){
     if (!this.branch || !this.branch.id) {
       this.toast.error('Debe seleccionar una sucursal');
       return;
     }
-
-    // ✅ YA NO SE VALIDA LA FECHA DE ENTREGA AQUÍ
-    // La fecha se registrará cuando se marque como RECIBIDA
 
     this.load = true;
     this.count++;
@@ -117,8 +130,8 @@ export class PurchasesConfirmComponent {
         emailUser: email,
         idBranch: this.branch.id,
         branchName: this.branch.name,
-        purchaseDate: new Date().toISOString().split('T')[0], // Fecha de creación
-        deliveryDate: null, // ✅ Se registrará cuando se marque como RECIBIDA
+        purchaseDate: new Date().toISOString().split('T')[0], // Fecha de creación de la compra
+        deliveryDate: null, // Se registrará cuando se marque como RECIBIDA
         observation: this.getObservation(),
         status: 'PENDING',
         products: this.buildProducts(this.products)

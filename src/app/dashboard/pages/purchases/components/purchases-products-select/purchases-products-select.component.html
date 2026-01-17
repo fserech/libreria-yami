@@ -1,68 +1,36 @@
-<div class="flex flex-col sm:flex-row sm:items-center w-full justify-between sticky top-0 bg-white dark:bg-slate-900 pb-3 border-b dark:border-slate-700">
+<div class="flex flex-col space-y-4">
 
-  <!-- Botones versión móvil -->
-  <div class="w-full mb-4 sm:hidden">
-    <div class="flex pt-3">
-      <button (click)="viewProductsSelect()" [disabled]="products.length === 0" type="button" class="btn-success float-end h-10 w-40 mb-5"
-              matBadge="{{products.length}}" matBadgeOverlap="false" matBadgePosition="before" mat-raised-button color="primary">
-        <div class="flex text-center justify-center align-middle">
-          <p class="text-sm md:text-base">Lista</p>
-          <ng-icon class="text-white font-bold m-1" size="15" name="matShoppingCartOutline"></ng-icon>
-        </div>
-      </button>
-      <button [disabled]="products.length === 0" (click)="finalizedPurchase()" type="button" class="btn-primary float-end h-10 w-40 mb-5">
-        <div class="flex text-center justify-center align-middle">
-          <p class="text-sm md:text-base">Confirmar</p>
-          <ng-icon class="text-white font-bold m-1" size="15" name="matPlaylistAddCheckOutline"></ng-icon>
-        </div>
-      </button>
-    </div>
-  </div>
-
-  <!-- Búsqueda -->
-  <div class="flex sm:w-5/12 sm:ml-4 mb-5">
-    <app-search-input-text
-      class="w-full"
-      [form]="form"
-      name="productName"
-      icon="matSearchOutline"
-      label="Producto"
-      placeholder="Nombre de producto"
-      [maxlength]="50"
-      [load]="load"
-      [counter]="true"
-      (keydown.enter)="introSearch()"
-      (keydown.escape)="initPage()"
-      (clearFilters)="initPage()">
-    </app-search-input-text>
-    <button (click)="(form.controls['productName'].value && form.controls['productName'].value !== '') ?
-        filter(form.controls['productName'].value) : initPage()" type="button" class="btn-success h-10">
-      <div class="flex text-center justify-center align-middle">
-        <ng-icon class="text-white font-bold p-0 m-0" size="20" name="matSearchOutline"></ng-icon>
+  <!-- BUSCADOR -->
+  <div class="sticky top-0 bg-white dark:bg-slate-900 pb-3 border-b dark:border-slate-700 z-10">
+    <div class="flex gap-2">
+      <div class="flex-1 relative">
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="searchProducts()"
+          placeholder="Buscar producto por nombre, SKU o descripción..."
+          class="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-slate-600 rounded-lg
+                 bg-white dark:bg-slate-800 text-gray-900 dark:text-white
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <ng-icon
+          name="matSearchOutline"
+          size="20"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+        </ng-icon>
       </div>
-    </button>
+
+      @if (selectedProducts.length > 0) {
+        <div class="flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+          <ng-icon name="matAddShoppingCartOutline" size="20" class="text-blue-600 dark:text-blue-400 mr-2"></ng-icon>
+          <span class="font-semibold text-blue-700 dark:text-blue-300">
+            {{ selectedProducts.length }} producto(s) seleccionado(s)
+          </span>
+        </div>
+      }
+    </div>
   </div>
 
-  <!-- Botones versión desktop -->
-  <button (click)="viewProductsSelect()" [disabled]="products.length === 0" type="button" class="btn-success h-10 w-48 mb-2 sm:mb-0 hidden sm:inline-block"
-          matBadge="{{products.length}}" matBadgeOverlap="false" matBadgePosition="before" mat-raised-button color="primary">
-    <div class="flex text-center justify-center align-middle">
-      <p class="text-sm md:text-base">Lista</p>
-      <ng-icon class="text-white font-bold m-1" size="15" name="matShoppingCartOutline"></ng-icon>
-    </div>
-  </button>
-  <button (click)="finalizedPurchase()" [disabled]="products.length === 0" type="button" class="btn-primary h-10 w-48 mb-2 sm:mb-0 hidden sm:inline-block">
-    <div class="flex text-center justify-center align-middle">
-      <p class="text-sm md:text-base">Confirmar</p>
-      <ng-icon class="text-white font-bold m-1" size="15" name="matPlaylistAddCheckOutline"></ng-icon>
-    </div>
-  </button>
-
-</div>
-
-<div class="rounded-lg mt-4">
-
-  <!-- ✅ LOADING STATE -->
+  <!-- LOADING STATE -->
   @if (load) {
     <div class="w-full p-8 text-center">
       <div class="animate-pulse flex flex-col space-y-4">
@@ -74,18 +42,18 @@
     </div>
   }
 
-  <!-- ✅ EMPTY STATE -->
-  @if (!load && ItemsList.length === 0) {
+  <!-- EMPTY STATE -->
+  @if (!load && filteredProducts.length === 0) {
     <div class="w-full p-8 text-center">
       <div class="mx-auto mb-4 w-24 h-24 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
-        <ng-icon class="text-gray-400 dark:text-gray-500" size="48" name="matShoppingCartOutline"></ng-icon>
+        <ng-icon class="text-gray-400 dark:text-gray-500" size="48" name="matInventory2Outline"></ng-icon>
       </div>
       <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
         No hay productos
       </h3>
-      <p class="text-gray-500 dark:text-gray-400 mb-6">
-        @if (filters && filters !== '&active=true') {
-          No se encontraron productos con ese nombre
+      <p class="text-gray-500 dark:text-gray-400">
+        @if (searchTerm) {
+          No se encontraron productos con "{{ searchTerm }}"
         } @else {
           No hay productos activos disponibles
         }
@@ -93,170 +61,194 @@
     </div>
   }
 
-  <!-- ✅ DATA TABLE CON VARIANTES -->
-  @if (!load && ItemsList.length > 0) {
-    <table class="table-grid">
-      <thead>
-        <tr>
-          <th class="text-left">
-            <button (click)="changeSortOrderBy('productName')">
-              <p>Nombre del Producto</p>
-              @if(sortConfig.sortBy === 'productName' && sortConfig.sortOrder === 'asc'){
-                <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
-              }
-              @if(sortConfig.sortBy === 'productName' && sortConfig.sortOrder === 'desc'){
-                <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
-              }
-            </button>
-          </th>
-        </tr>
-      </thead>
+  <!-- LISTA DE PRODUCTOS -->
+  @if (!load && filteredProducts.length > 0) {
+    <div class="grid gap-3">
+      @for (product of filteredProducts; track product.id) {
+        <div class="p-4 border border-gray-200 dark:border-slate-700 rounded-lg
+                    bg-white dark:bg-slate-800 hover:shadow-md transition-shadow">
 
-      <tbody>
-        @for (product of ItemsList; track product.id) {
-          <!-- FILA PRINCIPAL DEL PRODUCTO -->
-          <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950': $odd}">
-            <td class="pb-3 pt-3 px-3">
-              <div class="flex flex-col space-y-1">
-                <!-- Nombre y descripción -->
-                <p class="font-bold text-gray-900 dark:text-white text-base">
-                  {{ product?.productName }}
-                </p>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                  {{ product?.productDesc || 'Sin descripción' }}
-                </p>
-
-                <!-- Info de precios y tipo -->
-                <div class="flex flex-wrap gap-4 mt-2">
-                  <!-- PRODUCTO SIMPLE -->
-                  @if (!product.hasVariants) {
-                    <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-xs font-medium">
-                      Producto simple
-                    </span>
-                    <p class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                      Precio compra: Q {{ product?.costPrice?.toFixed(2) ?? '0.00' }}
-                    </p>
-                    <p class="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                      Precio venta: Q {{ product?.salePrice?.toFixed(2) ?? '0.00' }}
-                    </p>
-                    <button
-                      (click)="selectProduct(product)"
-                      class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold transition-colors">
-                      Seleccionar
-                    </button>
-                  }
-
-                  <!-- PRODUCTO CON VARIANTES -->
-                  @if (product.hasVariants) {
-                    <span class="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-xs font-medium">
-                      Con variantes ({{ product.variants?.length || 0 }})
-                    </span>
-                    <p class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                      {{ getVariantPriceRange(product) }}
-                    </p>
-                    <button
-                      (click)="toggleVariants(product.id!)"
-                      class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1">
-                      @if (isExpanded(product.id!)) {
-                        Ocultar variantes
-                      } @else {
-                        Ver variantes
-                      }
-                      <ng-icon
-                        name="matExpandMoreOutline"
-                        size="16"
-                        [class.rotate-180]="isExpanded(product.id!)"
-                        class="transition-transform">
-                      </ng-icon>
-                    </button>
-                  }
+          <!-- PRODUCTO SIMPLE -->
+          @if (!product.hasVariants) {
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div class="flex-1">
+                <div class="flex items-start gap-2 mb-2">
+                  <h3 class="font-bold text-gray-900 dark:text-white text-base">
+                    {{ product.productName }}
+                  </h3>
+                  <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300
+                               rounded-full text-xs font-medium whitespace-nowrap">
+                    Simple
+                  </span>
                 </div>
 
-                <!-- LISTA DE VARIANTES (expandible) -->
-                @if (product.hasVariants && isExpanded(product.id!) && product.variants) {
-                  <div class="mt-3 pl-4 border-l-4 border-purple-300 dark:border-purple-700">
-                    @for (variant of product.variants; track variant.id) {
-                      <div class="mb-2 p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
-                        <div class="flex justify-between items-start">
-                          <div class="flex-1">
-                            <p class="font-semibold text-gray-800 dark:text-gray-200 text-sm">
-                              {{ variant.variantName }}
-                            </p>
+                @if (product.productDesc) {
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    {{ product.productDesc }}
+                  </p>
+                }
 
-                            <!-- Atributos de la variante -->
-                            @if (variant.attributes && (variant.attributes | keyvalue).length > 0) {
-                              <div class="flex flex-wrap gap-1 mt-1">
-                                @for (attr of variant.attributes | keyvalue; track attr.key) {
-                                  <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-xs">
-                                    {{ attr.key }}: <strong>{{ attr.value }}</strong>
-                                  </span>
-                                }
-                              </div>
-                            }
+                <div class="flex flex-wrap gap-3 text-sm">
+                  @if (product.sku) {
+                    <span class="text-gray-500 dark:text-gray-400 font-mono">
+                      SKU: {{ product.sku }}
+                    </span>
+                  }
 
-                            <div class="flex flex-wrap gap-3 mt-2 text-xs">
-                              <span class="font-semibold text-emerald-600 dark:text-emerald-400">
-                                Precio compra: Q {{ variant.costPrice?.toFixed(2) }}
-                              </span>
-                              <span class="font-semibold text-blue-600 dark:text-blue-400">
-                                Precio venta: Q {{ variant.salePrice?.toFixed(2) }}
-                              </span>
-                              <span class="text-gray-500 dark:text-gray-400">
-                                Stock: {{ variant.currentStock }}
-                              </span>
+                  <span class="font-semibold text-blue-600 dark:text-blue-400">
+                    <ng-icon name="matAttachMoneyOutline" size="16" class="inline"></ng-icon>
+                    Costo: Q {{ getProductCostPrice(product).toFixed(2) }}
+                  </span>
+
+                  <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                    Venta: Q {{ product.salePrice?.toFixed(2) ?? '0.00' }}
+                  </span>
+
+                  <span class="text-gray-600 dark:text-gray-400">
+                    <ng-icon name="matInventory2Outline" size="16" class="inline"></ng-icon>
+                    Stock: {{ product.currentStock ?? 0 }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex sm:flex-col gap-2">
+                <button
+                  (click)="selectProduct(product)"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
+                         text-sm font-semibold transition-colors flex items-center gap-2 whitespace-nowrap">
+                  <ng-icon name="matAddShoppingCartOutline" size="18"></ng-icon>
+                  Agregar
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- PRODUCTO CON VARIANTES -->
+          @if (product.hasVariants && product.variants) {
+            <div class="flex flex-col gap-3">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <h3 class="font-bold text-gray-900 dark:text-white text-base">
+                    {{ product.productName }}
+                  </h3>
+                  <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300
+                               rounded-full text-xs font-medium whitespace-nowrap inline-block mt-1">
+                    {{ product.variants.length }} variante(s)
+                  </span>
+                </div>
+
+                <button
+                  (click)="toggleProductExpansion(product.id!)"
+                  class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1">
+                  @if (isProductExpanded(product.id!)) {
+                    Ocultar
+                  } @else {
+                    Ver variantes
+                  }
+                  <ng-icon
+                    name="matExpandMoreOutline"
+                    size="16"
+                    [class.rotate-180]="isProductExpanded(product.id!)"
+                    class="transition-transform">
+                  </ng-icon>
+                </button>
+              </div>
+
+              @if (product.productDesc) {
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  {{ product.productDesc }}
+                </p>
+              }
+
+              <!-- LISTA DE VARIANTES -->
+              @if (isProductExpanded(product.id!)) {
+                <div class="pl-4 border-l-4 border-purple-300 dark:border-purple-700 space-y-2">
+                  @for (variant of product.variants; track variant.id) {
+                    <div class="p-3 bg-gray-50 dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700">
+                      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div class="flex-1">
+                          <p class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-1">
+                            {{ variant.variantName }}
+                          </p>
+
+                          <!-- Atributos de la variante -->
+                          @if (variant.attributes) {
+                            <div class="flex flex-wrap gap-1 mb-2">
+                              @for (attr of variant.attributes | keyvalue; track attr.key) {
+                                <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-xs">
+                                  {{ attr.key }}: <strong>{{ attr.value }}</strong>
+                                </span>
+                              }
+                            </div>
+                          }
+
+                          <div class="flex flex-wrap gap-3 text-xs">
+                            @if (variant.sku) {
                               <span class="text-gray-500 dark:text-gray-400 font-mono">
                                 SKU: {{ variant.sku }}
                               </span>
-                            </div>
+                            }
+
+                            <span class="font-semibold text-blue-600 dark:text-blue-400">
+                              Costo: Q {{ getProductCostPrice(variant).toFixed(2) }}
+                            </span>
+
+                            <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                              Venta: Q {{ variant.salePrice?.toFixed(2) ?? '0.00' }}
+                            </span>
+
+                            <span class="text-gray-600 dark:text-gray-400">
+                              Stock: {{ variant.currentStock ?? 0 }}
+                            </span>
                           </div>
-
-                          <button
-                            (click)="selectVariant(product, variant)"
-                            class="ml-3 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold transition-colors whitespace-nowrap">
-                            Seleccionar
-                          </button>
                         </div>
+
+                        <button
+                          (click)="selectVariant(product, variant)"
+                          class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
+                                 text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1">
+                          <ng-icon name="matAddShoppingCartOutline" size="16"></ng-icon>
+                          Agregar
+                        </button>
                       </div>
-                    }
-                  </div>
-                }
-              </div>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-
-    <!-- PAGINATION DESKTOP -->
-    <div class="content-desktop w-full mt-4">
-      <div class="pagination">
-        <div class="pagination-child">
-          <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{page}} de {{totalPages}}</b></p>
-          <p>Items {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
-          <button><ng-icon (click)="firstPage()" class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
-          <button><ng-icon (click)="previousPage()" class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
-          <button><ng-icon (click)="nextPage()" class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
-          <button><ng-icon (click)="lastPage()" class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
         </div>
-      </div>
+      }
     </div>
+  }
 
-    <!-- PAGINATION MOBILE -->
-    <div class="content-sm mt-4">
-      <div class="pagination">
-        <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
-          <div class="flex justify-between mb-2 p-2 rounded-lg border m-1 bg-white dark:bg-slate-900 dark:border-slate-700">
-            <button class="btn-pagination"><ng-icon (click)="firstPage()" size="22" name="bootstrapChevronBarLeft"></ng-icon></button>
-            <button class="btn-pagination"><ng-icon (click)="previousPage()" size="22" name="bootstrapChevronLeft"></ng-icon></button>
-            <button class="btn-pagination"><ng-icon (click)="nextPage()" size="22" name="bootstrapChevronRight"></ng-icon></button>
-            <button class="btn-pagination"><ng-icon (click)="lastPage()" size="22" name="bootstrapChevronBarRight"></ng-icon></button>
-          </div>
+  <!-- PRODUCTOS SELECCIONADOS (RESUMEN) -->
+  @if (selectedProducts.length > 0) {
+    <div class="sticky bottom-0 mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-500 dark:border-blue-600 rounded-lg">
+      <h4 class="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        <ng-icon name="matCheckCircleOutline" size="20" class="text-blue-600 dark:text-blue-400"></ng-icon>
+        Productos seleccionados ({{ selectedProducts.length }})
+      </h4>
 
-          <div class="flex justify-between">
-            <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Páginas: </b> {{page}} de {{totalPages}}</p>
-            <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Items: </b> {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+      <div class="space-y-2 max-h-48 overflow-y-auto">
+        @for (item of selectedProducts; track $index) {
+          <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700">
+            <div class="flex-1">
+              <p class="font-medium text-sm text-gray-900 dark:text-white">
+                {{ item.product.productName }}
+              </p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">
+                Cantidad: {{ item.quantity }} | Costo: Q {{ getProductCostPrice(item.product).toFixed(2) }}
+                | Total: Q {{ (item.quantity * getProductCostPrice(item.product)).toFixed(2) }}
+              </p>
+            </div>
+            <button
+              (click)="removeProduct($index)"
+              class="px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">
+              <ng-icon name="matCancelOutline" size="20"></ng-icon>
+            </button>
           </div>
-        </div>
+        }
       </div>
     </div>
   }
