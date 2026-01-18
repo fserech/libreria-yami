@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, SimpleChanges, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -17,10 +17,15 @@ import {
   matExpandMoreOutline,
 } from '@ng-icons/material-icons/outline';
 import { Product, ProductVariant } from '../../../../../shared/interfaces/product';
+import { Supplier } from '../../../../../shared/interfaces/supplier';
 import { environment } from '../../../../../../environments/environment';
 import { SelectProductQuantityDialogComponent } from '../select-product-quantity-dialog/select-product-quantity-dialog.component';
 import { PurchasesProductsSelectListDialogComponent } from '../purchases-products-select-list-dialog/purchases-products-select-list-dialog.component';
-import { getProductCostPrice } from '../../../../../shared/utils/product-utils';
+import {
+  getProductCostPrice,
+  getProductCostPriceForSupplier,
+  productHasSupplier
+} from '../../../../../shared/utils/product-utils';
 import { ProductPurchaseSelect } from '../../../../../shared/interfaces/purchase';
 
 interface ProductPurchase {
@@ -49,7 +54,8 @@ interface ProductPurchase {
     matExpandMoreOutline,
   })]
 })
-export class PurchasesProductsSelectComponent implements OnInit {
+export class PurchasesProductsSelectComponent implements OnInit, OnChanges {
+  @Input() selectedSupplier: Supplier | null = null; // ⭐ NUEVO: Recibir proveedor seleccionado
   @Output() changes = new EventEmitter<ProductPurchaseSelect[]>();
   @Output() finalized = new EventEmitter<boolean>();
 
@@ -59,9 +65,6 @@ export class PurchasesProductsSelectComponent implements OnInit {
   selectedProducts: ProductPurchase[] = [];
   expandedProducts: Set<number> = new Set();
   load = false;
-
-  // Hacer disponible la función en el template
-  getProductCostPrice = getProductCostPrice;
 
   constructor(
     private crud: CrudService,
@@ -74,6 +77,14 @@ export class PurchasesProductsSelectComponent implements OnInit {
     await this.loadProducts();
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    // ⭐ Cuando cambia el proveedor seleccionado, filtrar productos
+    if (changes['selectedSupplier'] && !changes['selectedSupplier'].firstChange) {
+      console.log('🔄 Proveedor cambiado:', this.selectedSupplier);
+      this.filterProductsBySupplier();
+    }
+  }
+
   async loadProducts() {
     this.load = true;
     try {
@@ -82,7 +93,7 @@ export class PurchasesProductsSelectComponent implements OnInit {
       );
 
       this.products = response.filter(p => p.active);
-      this.filteredProducts = [...this.products];
+      this.filterProductsBySupplier(); // Filtrar por proveedor seleccionado
     } catch (error) {
       console.error('Error cargando productos:', error);
       this.toast.error('Error al cargar productos');
@@ -91,19 +102,68 @@ export class PurchasesProductsSelectComponent implements OnInit {
     }
   }
 
-  searchProducts() {
-    const term = this.searchTerm.toLowerCase().trim();
+  /**
+   * ⭐ NUEVO: Filtra productos por proveedor seleccionado
+   */
+  filterProductsBySupplier() {
+    let productsToFilter = [...this.products];
 
-    if (!term) {
-      this.filteredProducts = [...this.products];
-      return;
+    // Si hay proveedor seleccionado, filtrar solo productos de ese proveedor
+    if (this.selectedSupplier?.id) {
+      productsToFilter = productsToFilter.filter(product =>
+        this.productHasSupplier(product)
+      );
     }
 
-    this.filteredProducts = this.products.filter(product =>
-      product.productName.toLowerCase().includes(term) ||
-      product.sku?.toLowerCase().includes(term) ||
-      product.productDesc?.toLowerCase().includes(term)
-    );
+    // Aplicar búsqueda por texto si existe
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase().trim();
+      this.filteredProducts = productsToFilter.filter(product =>
+        product.productName.toLowerCase().includes(term) ||
+        product.sku?.toLowerCase().includes(term) ||
+        product.productDesc?.toLowerCase().includes(term)
+      );
+    } else {
+      this.filteredProducts = productsToFilter;
+    }
+
+    console.log(`📦 Productos filtrados: ${this.filteredProducts.length}/${this.products.length}`);
+  }
+
+  /**
+   * ⭐ NUEVO: Verifica si un producto tiene el proveedor seleccionado
+   */
+  productHasSupplier(product: Product): boolean {
+    if (!this.selectedSupplier?.id) return true;
+
+    // Para productos simples
+    if (!product.hasVariants) {
+      return productHasSupplier(product, this.selectedSupplier.id);
+    }
+
+    // Para productos con variantes, al menos una variante debe tener el proveedor
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.some(variant =>
+        productHasSupplier(variant, this.selectedSupplier!.id)
+      );
+    }
+
+    return false;
+  }
+
+  /**
+   * ⭐ MODIFICADO: Obtiene el precio de costo según el proveedor seleccionado
+   */
+  getProductCostPrice(product: Product | ProductVariant): number {
+    if (!this.selectedSupplier?.id) {
+      return getProductCostPrice(product);
+    }
+
+    return getProductCostPriceForSupplier(product, this.selectedSupplier.id);
+  }
+
+  searchProducts() {
+    this.filterProductsBySupplier();
   }
 
   toggleProductExpansion(productId: number) {
@@ -119,6 +179,12 @@ export class PurchasesProductsSelectComponent implements OnInit {
   }
 
   selectProduct(product: Product) {
+    // ⭐ Validar que el producto tenga el proveedor seleccionado
+    if (this.selectedSupplier?.id && !this.productHasSupplier(product)) {
+      this.toast.error(`Este producto no está disponible con el proveedor ${this.selectedSupplier.supplierName}`);
+      return;
+    }
+
     if (product.hasVariants && product.variants && product.variants.length > 0) {
       this.toggleProductExpansion(product.id!);
     } else {
@@ -127,6 +193,17 @@ export class PurchasesProductsSelectComponent implements OnInit {
   }
 
   selectVariant(product: Product, variant: ProductVariant) {
+    // ⭐ Validar que la variante tenga el proveedor seleccionado
+    if (this.selectedSupplier?.id && !productHasSupplier(variant, this.selectedSupplier.id)) {
+      this.toast.error(`Esta variante no está disponible con el proveedor ${this.selectedSupplier.supplierName}`);
+      return;
+    }
+
+    // Obtener el precio correcto según el proveedor seleccionado
+    const costPrice = this.selectedSupplier?.id
+      ? getProductCostPriceForSupplier(variant, this.selectedSupplier.id)
+      : getProductCostPrice(variant);
+
     // Crear un producto temporal con los datos de la variante
     const variantProduct: Product = {
       ...product,
@@ -134,7 +211,7 @@ export class PurchasesProductsSelectComponent implements OnInit {
       productName: `${product.productName} - ${variant.variantName}`,
       sku: variant.sku,
       salePrice: variant.salePrice,
-      costPrice: getProductCostPrice(variant),
+      costPrice: costPrice,
       currentStock: variant.currentStock,
       hasVariants: false
     };
@@ -149,7 +226,8 @@ export class PurchasesProductsSelectComponent implements OnInit {
       data: {
         product,
         title: 'Cantidad a comprar',
-        isPurchase: true
+        isPurchase: true,
+        supplierId: this.selectedSupplier?.id // ⭐ Pasar proveedor al diálogo
       }
     });
 
@@ -214,18 +292,17 @@ export class PurchasesProductsSelectComponent implements OnInit {
       maxWidth: '95vw',
       data: {
         title: 'Productos Seleccionados',
-        products: productsSelect
+        products: productsSelect,
+        supplierId: this.selectedSupplier?.id // ⭐ Pasar proveedor al diálogo
       }
     });
 
     dialogRef.closed.subscribe(result => {
       if (result === true) {
-        // El usuario presionó "Limpiar todo"
         this.selectedProducts = [];
         this.emitChanges();
         this.toast.success('Lista de productos limpiada');
       } else if (Array.isArray(result)) {
-        // El usuario modificó la lista y presionó "Confirmar"
         this.selectedProducts = result.map(item => ({
           product: item.product,
           quantity: item.quantity,
@@ -252,7 +329,7 @@ export class PurchasesProductsSelectComponent implements OnInit {
   getVariantPriceRange(product: Product): string {
     if (!product.variants || product.variants.length === 0) return 'N/A';
 
-    const prices = product.variants.map(v => getProductCostPrice(v));
+    const prices = product.variants.map(v => this.getProductCostPrice(v));
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
 

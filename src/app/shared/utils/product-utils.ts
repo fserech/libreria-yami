@@ -1,8 +1,45 @@
 import { Product, ProductVariant, ProductSupplierPrice } from '../interfaces/product';
 
 /**
+ * 🆕 NUEVO: Obtiene el precio de costo para un proveedor ESPECÍFICO
+ * USO: Cuando tienes un proveedor seleccionado (ej: en compras)
+ */
+export function getProductCostPriceForSupplier(
+  product: Product | ProductVariant | null | undefined,
+  supplierId: number | null | undefined
+): number {
+  if (!product) return 0;
+
+  // Si no hay proveedor especificado, usar el mejor precio
+  if (!supplierId) {
+    return getProductCostPrice(product);
+  }
+
+  // NUEVO: Buscar precio específico del proveedor
+  if (product.supplierPrices && product.supplierPrices.length > 0) {
+    const supplierPrice = product.supplierPrices.find(sp => sp.supplierId === supplierId);
+
+    if (supplierPrice && supplierPrice.costPrice > 0) {
+      return supplierPrice.costPrice;
+    }
+  }
+
+  // LEGACY: Si el proveedor está en la lista pero no hay precio específico
+  if ((product as any).supplierId && Array.isArray((product as any).supplierId)) {
+    const hasSupplier = (product as any).supplierId.includes(supplierId);
+    if (hasSupplier) {
+      return (product as any).costPrice || 0;
+    }
+  }
+
+  // Fallback: usar el costPrice general
+  return (product as any).costPrice || 0;
+}
+
+/**
  * Obtiene el precio de costo de un producto o variante
  * PARA MOSTRAR EN LA UI - muestra el mejor precio disponible
+ * USO: Para listados generales donde no hay proveedor seleccionado
  */
 export function getProductCostPrice(product: Product | ProductVariant | null | undefined): number {
   if (!product) return 0;
@@ -157,6 +194,28 @@ export function getSupplierPriceInfo(
 }
 
 /**
+ * 🆕 Verifica si un producto tiene un proveedor específico
+ */
+export function productHasSupplier(
+  product: Product | ProductVariant | null | undefined,
+  supplierId: number
+): boolean {
+  if (!product || !supplierId) return false;
+
+  // Verificar en supplierPrices
+  if (product.supplierPrices && product.supplierPrices.length > 0) {
+    return product.supplierPrices.some(sp => sp.supplierId === supplierId);
+  }
+
+  // LEGACY: Verificar en supplierId
+  if ((product as any).supplierId && Array.isArray((product as any).supplierId)) {
+    return (product as any).supplierId.includes(supplierId);
+  }
+
+  return false;
+}
+
+/**
  * Obtiene el margen de ganancia de un producto
  */
 export function getProductMargin(product: Product | ProductVariant): number {
@@ -233,4 +292,27 @@ export function getCostBreakdown(product: Product | ProductVariant): {
     supplierCount: validPrices.length,
     suppliers: validPrices
   };
+}
+
+/**
+ * 🆕 Obtiene todos los precios de un producto agrupados por proveedor
+ */
+export function getAllSupplierPrices(product: Product | ProductVariant): Array<{
+  supplierId: number;
+  supplierName?: string;
+  costPrice: number;
+  isPreferred: boolean;
+}> {
+  if (!product || !product.supplierPrices || product.supplierPrices.length === 0) {
+    return [];
+  }
+
+  return product.supplierPrices
+    .filter(sp => sp.costPrice > 0)
+    .map(sp => ({
+      supplierId: sp.supplierId,
+      supplierName: sp.supplierName,
+      costPrice: sp.costPrice,
+      isPreferred: sp.isPreferred || false
+    }));
 }
