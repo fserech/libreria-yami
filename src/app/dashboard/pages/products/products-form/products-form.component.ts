@@ -37,6 +37,7 @@ import {
   matLightbulbOutline,
   matInventoryOutline,
   matAddOutline,
+  matTrendingUpOutline,
 } from '@ng-icons/material-icons/outline';
 
 // Constants & Interfaces
@@ -86,6 +87,7 @@ import { ProductVariantComponent } from '../Components/product-variant/product-v
     matLightbulbOutline,
     matInventoryOutline,
     matAddOutline,
+    matTrendingUpOutline,
   })]
 })
 export default class ProductsFormComponent extends BaseForm implements OnInit, FormComponent {
@@ -112,6 +114,7 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   activeTab: 'general' | 'variants' = 'general';
   productType: 'simple' | 'variant' = 'simple';
   suggestedSalePrice: number = 0;
+  private hasBeenSaved: boolean = false;
 
   get supplierLabels(): string[] {
     return this.supplierOptions.map(opt => opt.label);
@@ -147,8 +150,8 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
 
     this.stockForm = this.fb.group({
       sku: ['', [Validators.required, Validators.maxLength(50)]],
-      desiredMargin: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT), Validators.min(0), Validators.max(100)]],
-      salePrice: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]],
+      desiredMargin: [''],
+      salePrice: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT), Validators.min(0)]],
       currentStock: [0, [Validators.required, Validators.min(0)]],
       minStock: [0, [Validators.required, Validators.min(0)]],
       maxStock: [100, [Validators.required, Validators.min(1)]]
@@ -227,11 +230,10 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
           }));
         } else if (product.costPrice && product.supplierId && product.supplierId.length > 0) {
           // LEGACY: Convertir formato antiguo a nuevo
-          this.supplierPrices = product.supplierId.map((supplierId, index) => ({
+          this.supplierPrices = product.supplierId.map((supplierId) => ({
             supplierId,
             supplierName: this.supplierOptions.find(opt => opt.value === supplierId.toString())?.label,
-            costPrice: product.costPrice || 0,
-            isPreferred: index === 0
+            costPrice: product.costPrice || 0
           }));
         }
 
@@ -307,10 +309,17 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   // ==================== SUPPLIER PRICES MANAGEMENT ====================
 
   addSupplierPrice() {
+    // Verificar si ya hay un proveedor sin seleccionar
+    const hasUnselected = this.supplierPrices.some(sp => sp.supplierId === 0);
+    if (hasUnselected) {
+      this.toast.error('Por favor completa el proveedor actual antes de agregar otro');
+      return;
+    }
+
     this.supplierPrices.push({
       supplierId: 0,
       costPrice: 0,
-      isPreferred: this.supplierPrices.length === 0
+      isPreferred: false
     });
   }
 
@@ -318,19 +327,8 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     const index = this.supplierPrices.indexOf(supplierPrice);
     if (index > -1) {
       this.supplierPrices.splice(index, 1);
-
-      if (supplierPrice.isPreferred && this.supplierPrices.length > 0) {
-        this.supplierPrices[0].isPreferred = true;
-      }
-
       this.calculateSuggestedPrice();
     }
-  }
-
-  setPreferredSupplier(supplierPrice: ProductSupplierPrice) {
-    this.supplierPrices.forEach(sp => sp.isPreferred = false);
-    supplierPrice.isPreferred = true;
-    this.calculateSuggestedPrice();
   }
 
   onSupplierChange(supplierPrice: ProductSupplierPrice) {
@@ -338,19 +336,35 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     if (supplier) {
       supplierPrice.supplierName = supplier.label;
     }
+
+    // Validar duplicados
+    const duplicates = this.supplierPrices.filter(sp =>
+      sp.supplierId === supplierPrice.supplierId && sp.supplierId > 0
+    );
+
+    if (duplicates.length > 1) {
+      this.toast.error('Este proveedor ya está agregado. Por favor selecciona otro.');
+      supplierPrice.supplierId = 0;
+      supplierPrice.supplierName = undefined;
+    }
+
+    this.calculateSuggestedPrice();
   }
 
   getBestSupplierPrice(): ProductSupplierPrice | null {
     if (this.supplierPrices.length === 0) return null;
 
-    const preferred = this.supplierPrices.find(sp => sp.isPreferred && sp.supplierId > 0);
-    if (preferred && preferred.costPrice > 0) return preferred;
+    // Filtrar solo proveedores válidos (con ID y precio > 0)
+    const validSuppliers = this.supplierPrices.filter(sp =>
+      sp.supplierId > 0 && sp.costPrice > 0
+    );
 
-    return this.supplierPrices
-      .filter(sp => sp.costPrice > 0 && sp.supplierId > 0)
-      .reduce((best, current) =>
-        (!best || current.costPrice < best.costPrice) ? current : best
-      , null as ProductSupplierPrice | null);
+    if (validSuppliers.length === 0) return null;
+
+    // Retornar el de MENOR precio (mejor para compra)
+    return validSuppliers.reduce((best, current) =>
+      current.costPrice < best.costPrice ? current : best
+    );
   }
 
   getBestCostPrice(): number {
@@ -369,6 +383,23 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     } else {
       this.suggestedSalePrice = 0;
     }
+  }
+
+  calculateCurrentMargin(): string {
+    const bestCostPrice = this.getBestCostPrice();
+    const salePrice = parseFloat(this.stockForm.get('salePrice')?.value) || 0;
+
+    if (bestCostPrice === 0 || salePrice === 0) return '0.00';
+
+    const margin = ((salePrice - bestCostPrice) / bestCostPrice) * 100;
+    return margin.toFixed(2);
+  }
+
+  calculateProfit(): number {
+    const bestCostPrice = this.getBestCostPrice();
+    const salePrice = parseFloat(this.stockForm.get('salePrice')?.value) || 0;
+
+    return salePrice - bestCostPrice;
   }
 
   private calculateMarginFromPrices(costPrice: number, salePrice: number): number {
@@ -435,25 +466,106 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   // ==================== FORM SUBMISSION ====================
 
   canSubmit(): boolean {
-    if (this.productForm.invalid) return false;
+    console.log('🔍 Validación canSubmit()');
+    console.log('productForm.invalid:', this.productForm.invalid);
+    console.log('stockForm.invalid:', this.stockForm.invalid);
+    console.log('productType:', this.productType);
+    console.log('supplierPrices:', this.supplierPrices);
+
+    if (this.productForm.invalid) {
+      console.log('❌ productForm inválido');
+      return false;
+    }
 
     if (this.productType === 'simple') {
-      const hasValidSupplier = this.supplierPrices.some(sp => sp.supplierId > 0 && sp.costPrice > 0);
-      return this.stockForm.valid && hasValidSupplier;
+      // Validar campos básicos del stock
+      const skuValid = this.stockForm.get('sku')?.valid;
+      const salePriceValid = this.stockForm.get('salePrice')?.valid;
+      const currentStockValid = this.stockForm.get('currentStock')?.valid;
+      const minStockValid = this.stockForm.get('minStock')?.valid;
+      const maxStockValid = this.stockForm.get('maxStock')?.valid;
+
+      console.log('✅ SKU válido:', skuValid);
+      console.log('✅ Precio venta válido:', salePriceValid);
+      console.log('✅ Stock actual válido:', currentStockValid);
+      console.log('✅ Stock mín válido:', minStockValid);
+      console.log('✅ Stock máx válido:', maxStockValid);
+
+      if (!skuValid || !salePriceValid || !currentStockValid || !minStockValid || !maxStockValid) {
+        console.log('❌ Campos de stock inválidos');
+        return false;
+      }
+
+      // Validar que haya al menos un proveedor con precio válido
+      const validSuppliers = this.supplierPrices.filter(sp => {
+        const isValid = Number(sp.supplierId) > 0 && Number(sp.costPrice) > 0;
+        console.log(`Proveedor ${sp.supplierId}: costPrice=${sp.costPrice}, válido=${isValid}`);
+        return isValid;
+      });
+
+      console.log('✅ Proveedores válidos:', validSuppliers.length);
+      console.log('✅ Lista de proveedores válidos:', validSuppliers);
+
+      // Debe tener AL MENOS un proveedor válido
+      return validSuppliers.length > 0;
     } else {
-      return this.variants.length > 0;
+      const hasVariants = this.variants.length > 0;
+      console.log('✅ Tiene variantes:', hasVariants);
+      return hasVariants;
     }
   }
 
   async submit() {
-    if (!this.canSubmit()) {
-      this.toast.error('Por favor completa todos los campos requeridos');
+    console.log('🚀 Iniciando submit...');
+
+    // Validación detallada
+    if (this.productForm.invalid) {
+      const invalidFields = [];
+      Object.keys(this.productForm.controls).forEach(key => {
+        const control = this.productForm.get(key);
+        if (control?.invalid) {
+          invalidFields.push(key);
+        }
+      });
+      this.toast.error(`Campos inválidos en información general: ${invalidFields.join(', ')}`);
       return;
     }
 
-    if (this.productType === 'simple' && this.supplierPrices.length === 0) {
-      this.toast.error('Debes agregar al menos un proveedor con precio');
-      return;
+    if (this.productType === 'simple') {
+      // Validar stock form
+      if (this.stockForm.invalid) {
+        const invalidFields = [];
+        Object.keys(this.stockForm.controls).forEach(key => {
+          const control = this.stockForm.get(key);
+          if (control?.invalid) {
+            invalidFields.push(key);
+          }
+        });
+        this.toast.error(`Campos inválidos en stock: ${invalidFields.join(', ')}`);
+        return;
+      }
+
+      // Validar proveedores
+      if (this.supplierPrices.length === 0) {
+        this.toast.error('⚠️ Debes agregar al menos un proveedor con precio');
+        return;
+      }
+
+      const validSupplierPrices = this.supplierPrices.filter(sp =>
+        Number(sp.supplierId) > 0 && Number(sp.costPrice) > 0
+      );
+
+      if (validSupplierPrices.length === 0) {
+        this.toast.error('⚠️ Debes configurar al menos un proveedor con precio válido (mayor a 0)');
+        return;
+      }
+
+      console.log('✅ Validación exitosa, proveedores válidos:', validSupplierPrices);
+    } else {
+      if (!this.variants || this.variants.length === 0) {
+        this.toast.error('Debes agregar al menos una variante');
+        return;
+      }
     }
 
     this.load = true;
@@ -465,15 +577,11 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
 
       if (this.productType === 'simple') {
         const validSupplierPrices = this.supplierPrices.filter(sp =>
-          sp.supplierId > 0 && sp.costPrice > 0
+          Number(sp.supplierId) > 0 && Number(sp.costPrice) > 0
         );
 
-        if (validSupplierPrices.length === 0) {
-          this.toast.error('Debes configurar al menos un proveedor con precio válido');
-          this.load = false;
-          this.isSaving = false;
-          return;
-        }
+        // Obtener el mejor precio de costo para compatibilidad con backend legacy
+        const bestCostPrice = this.getBestCostPrice();
 
         product = {
           id: this.id || null,
@@ -485,28 +593,24 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
           hasVariants: false,
           sku: this.stockForm.value.sku.trim(),
 
-          // ⭐ NUEVO: Enviar precios por proveedor
+          // ⭐ COMPATIBILIDAD: Enviar tanto el formato nuevo como el legacy
           supplierPrices: validSupplierPrices.map(sp => ({
             supplierId: Number(sp.supplierId),
-            costPrice: Number(sp.costPrice),
-            isPreferred: sp.isPreferred || false
+            costPrice: Number(sp.costPrice)
           })),
 
+          // Legacy: Enviar costPrice y supplierId para compatibilidad
+          costPrice: bestCostPrice,
+          supplierId: validSupplierPrices.map(sp => Number(sp.supplierId)),
+
           salePrice: Number(this.stockForm.value.salePrice),
-          desiredMargin: Number(this.stockForm.value.desiredMargin),
+          desiredMargin: Number(this.calculateCurrentMargin()),
           currentStock: Number(this.stockForm.value.currentStock),
           minStock: Number(this.stockForm.value.minStock),
           maxStock: Number(this.stockForm.value.maxStock),
           active: this.productForm.value.active
         };
       } else {
-        if (!this.variants || this.variants.length === 0) {
-          this.toast.error('Debes agregar al menos una variante');
-          this.load = false;
-          this.isSaving = false;
-          return;
-        }
-
         const validatedVariants = this.variants.map(variant => ({
           id: variant.id || null,
           sku: variant.sku.trim(),
@@ -534,7 +638,7 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
         };
       }
 
-      console.log('Producto a enviar:', JSON.stringify(product, null, 2));
+      console.log('📦 Producto a enviar:', JSON.stringify(product, null, 2));
 
       if (this.mode === 'edit') {
         const response: any = await firstValueFrom(this.crud.updateId(this.id, product));
@@ -544,13 +648,18 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
         this.toast.success(response.message || 'Producto creado correctamente');
       }
 
+      // Marcar formularios como pristine
       this.productForm.markAsPristine();
       this.stockForm.markAsPristine();
+      this.hasBeenSaved = true;
+
+      // Pequeña espera antes de navegar para asegurar que los guards detecten pristine
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       this.router.navigate(['dashboard/products']);
 
     } catch (error: any) {
-      console.error('Error completo:', error);
+      console.error('❌ Error completo:', error);
 
       let errorMessage = 'Error al guardar el producto';
 
@@ -586,16 +695,32 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   // ==================== CAMBIOS SIN GUARDAR ====================
 
   isDirty(): boolean {
-    if (this.productType === 'variant' && this.variantComponent?.hasVariants()) {
+    // Si ya se guardó exitosamente, no hay cambios pendientes
+    if (this.hasBeenSaved) {
       return false;
     }
 
-    const formsAreDirty = this.productForm.dirty || this.stockForm.dirty;
-    const hasSupplierPriceChanges = this.supplierPrices.length > 0;
-    const hasUnsavedVariantChanges = this.productType === 'variant'
-      && this.variantComponent?.hasUnsavedChanges();
+    // Si estamos guardando, no hay cambios pendientes
+    if (this.isSaving) {
+      return false;
+    }
 
-    return formsAreDirty || hasSupplierPriceChanges || !!hasUnsavedVariantChanges;
+    // Para productos con variantes
+    if (this.productType === 'variant') {
+      // Si ya tiene variantes guardadas, no hay cambios pendientes
+      if (this.variantComponent?.hasVariants()) {
+        return false;
+      }
+      // Si está editando una variante nueva sin guardar
+      const hasUnsavedVariantChanges = this.variantComponent?.hasUnsavedChanges();
+      return !!hasUnsavedVariantChanges;
+    }
+
+    // Para productos simples
+    // Solo considerar dirty si los forms están dirty
+    const formsAreDirty = this.productForm.dirty || this.stockForm.dirty;
+
+    return formsAreDirty;
   }
 
   // ==================== TEMPLATE HELPERS ====================
@@ -603,5 +728,15 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   getCategoryIdAsNumber(): number | null {
     const categoryId = this.productForm.get('categoryId')?.value;
     return categoryId ? Number(categoryId) : null;
+  }
+
+  isSupplierSelected(supplierId: string | number, currentSupplierPrice: ProductSupplierPrice): boolean {
+    const supplierIdNum = Number(supplierId);
+    if (supplierIdNum === 0) return false;
+
+    return this.supplierPrices.some(sp =>
+      Number(sp.supplierId) === supplierIdNum &&
+      sp !== currentSupplierPrice
+    );
   }
 }

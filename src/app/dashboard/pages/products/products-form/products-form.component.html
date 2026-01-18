@@ -241,22 +241,6 @@
               </button>
             </div>
 
-            <!-- MARGEN DESEADO -->
-            <app-input
-              [form]="stockForm"
-              name="desiredMargin"
-              icon="matPercentOutline"
-              label="Margen de ganancia deseado (%)"
-              placeholder="Ej: 35.00"
-              helpMessage="Porcentaje de ganancia sobre el costo (0-100)"
-              errorMessage="Debe ser un número entre 0 y 100"
-              [minlength]="1"
-              [maxlength]="6"
-              [counter]="true"
-              [load]="load"
-              (changes)="calculateSuggestedPrice()">
-            </app-input>
-
             <!-- STOCK INICIAL -->
             <app-input
               [form]="stockForm"
@@ -297,12 +281,13 @@
 
           </div>
 
-          <!-- ⭐ NUEVA SECCIÓN: PRECIOS POR PROVEEDOR -->
+          <!-- ⭐ SECCIÓN: PRECIOS POR PROVEEDOR -->
           <div class="mt-6 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
               <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 <ng-icon name="matAttachMoneyOutline" size="18" class="inline mr-1"></ng-icon>
                 Precios por Proveedor
+                <span class="text-xs text-red-600 dark:text-red-400 ml-2">* Requerido (mínimo 1)</span>
               </p>
               <button
                 type="button"
@@ -315,9 +300,14 @@
 
             <!-- Lista de precios por proveedor -->
             @if (supplierPrices.length === 0) {
-              <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                No hay proveedores configurados. Haz clic en "Agregar Proveedor" para comenzar.
-              </p>
+              <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
+                <p class="text-sm text-yellow-800 dark:text-yellow-300 font-semibold mb-2">
+                  ⚠️ Debes agregar al menos un proveedor con precio
+                </p>
+                <p class="text-xs text-yellow-700 dark:text-yellow-400">
+                  Haz clic en "Agregar Proveedor" para comenzar. Puedes agregar múltiples proveedores con diferentes precios.
+                </p>
+              </div>
             }
 
             @for (supplierPrice of supplierPrices; track supplierPrice.supplierId || $index) {
@@ -327,23 +317,34 @@
                   <!-- Selector de Proveedor -->
                   <div>
                     <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Proveedor
+                      Proveedor *
                     </label>
                     <select
                       [(ngModel)]="supplierPrice.supplierId"
                       (ngModelChange)="onSupplierChange(supplierPrice)"
-                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-gray-200">
+                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-gray-200"
+                      [class.border-red-500]="supplierPrice.supplierId === 0">
                       <option [value]="0">Selecciona un proveedor</option>
                       @for (supplier of supplierOptions; track supplier.value) {
-                        <option [value]="supplier.value">{{ supplier.label }}</option>
+                        <option
+                          [value]="supplier.value"
+                          [disabled]="isSupplierSelected(supplier.value, supplierPrice)">
+                          {{ supplier.label }}
+                          @if (isSupplierSelected(supplier.value, supplierPrice)) {
+                            (Ya agregado)
+                          }
+                        </option>
                       }
                     </select>
+                    @if (supplierPrice.supplierId === 0) {
+                      <p class="text-xs text-red-600 dark:text-red-400 mt-1">Selecciona un proveedor</p>
+                    }
                   </div>
 
                   <!-- Precio de Compra -->
                   <div>
                     <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Precio de Compra
+                      Precio de Compra *
                     </label>
                     <input
                       type="number"
@@ -352,20 +353,15 @@
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-gray-200">
+                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-gray-200"
+                      [class.border-red-500]="supplierPrice.costPrice <= 0">
+                    @if (supplierPrice.costPrice <= 0) {
+                      <p class="text-xs text-red-600 dark:text-red-400 mt-1">Debe ser mayor a 0</p>
+                    }
                   </div>
 
                   <!-- Acciones -->
-                  <div class="flex items-end gap-2">
-                    <button
-                      type="button"
-                      (click)="setPreferredSupplier(supplierPrice)"
-                      [class]="supplierPrice.isPreferred
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'"
-                      class="px-3 py-2 text-xs font-semibold rounded hover:opacity-80 transition-opacity">
-                      {{ supplierPrice.isPreferred ? '⭐ Preferido' : 'Marcar preferido' }}
-                    </button>
+                  <div class="flex items-end justify-end">
                     <button
                       type="button"
                       (click)="removeSupplierPrice(supplierPrice)"
@@ -379,6 +375,7 @@
                 <!-- Info adicional -->
                 @if (supplierPrice.lastPurchaseDate) {
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <ng-icon name="matHistoryOutline" size="14" class="inline mr-1"></ng-icon>
                     Última compra: {{ supplierPrice.lastPurchaseDate | date }} - Q{{ supplierPrice.lastPurchasePrice }}
                   </p>
                 }
@@ -387,40 +384,61 @@
 
             <!-- Info del mejor precio -->
             @if (getBestSupplierPrice()) {
-              <div class="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
-                <p class="text-xs text-green-800 dark:text-green-300">
-                  <ng-icon name="matCheckCircleOutline" size="14" class="inline mr-1"></ng-icon>
-                  <b>Mejor precio:</b> {{ getBestSupplierPrice()?.supplierName }} - Q{{ getBestSupplierPrice()?.costPrice?.toFixed(2) }}
+              <div class="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                <p class="text-sm text-green-800 dark:text-green-300 font-semibold mb-2">
+                  <ng-icon name="matCheckCircleOutline" size="16" class="inline mr-1"></ng-icon>
+                  Mejor precio encontrado
                 </p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span class="text-green-700 dark:text-green-400">Proveedor:</span>
+                    <span class="ml-2 font-bold">{{ getBestSupplierPrice()?.supplierName }}</span>
+                  </div>
+                  <div>
+                    <span class="text-green-700 dark:text-green-400">Precio:</span>
+                    <span class="ml-2 font-bold">Q{{ getBestSupplierPrice()?.costPrice?.toFixed(2) }}</span>
+                  </div>
+                </div>
               </div>
             }
           </div>
 
           <!-- PRECIO DE VENTA -->
           <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <app-input
-              [form]="stockForm"
-              name="salePrice"
-              icon="matAttachMoneyOutline"
-              label="Precio de venta"
-              placeholder="0.00"
-              helpMessage="Precio al que vendes el producto"
-              errorMessage="El precio de venta es requerido"
-              [minlength]="1"
-              [maxlength]="10"
-              [load]="load">
-            </app-input>
+            <div>
+              <app-input
+                [form]="stockForm"
+                name="salePrice"
+                icon="matAttachMoneyOutline"
+                label="Precio de venta"
+                placeholder="0.00"
+                helpMessage="Precio al que vendes el producto"
+                errorMessage="El precio de venta es requerido y debe ser mayor a 0"
+                [minlength]="1"
+                [maxlength]="10"
+                [load]="load">
+              </app-input>
 
-            <!-- INFO: PRECIO SUGERIDO -->
-            @if (suggestedSalePrice > 0) {
-              <div class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+              @if (stockForm.get('salePrice')?.value && stockForm.get('salePrice')?.valid) {
+                <p class="text-xs text-green-600 dark:text-green-400 mt-1 ml-1">
+                  ✓ Precio válido
+                </p>
+              }
+            </div>
+
+            <!-- INFO: MARGEN DE GANANCIA CALCULADO -->
+            @if (getBestCostPrice() > 0 && stockForm.get('salePrice')?.value > 0) {
+              <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
                 <div class="flex-1">
-                  <p class="text-sm text-green-800 dark:text-green-300">
-                    <ng-icon name="matLightbulbOutline" size="16" class="inline mr-1"></ng-icon>
-                    <b>Precio sugerido:</b> Q{{ suggestedSalePrice.toFixed(2) }}
+                  <p class="text-sm text-blue-800 dark:text-blue-300 font-semibold mb-1">
+                    <ng-icon name="matTrendingUpOutline" size="16" class="inline mr-1"></ng-icon>
+                    Margen de ganancia
                   </p>
-                  <p class="text-xs text-green-700 dark:text-green-400 mt-1">
-                    Basado en mejor precio: Q{{ getBestCostPrice().toFixed(2) }} + Margen: {{ stockForm.get('desiredMargin')?.value }}%
+                  <p class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                    {{ calculateCurrentMargin() }}%
+                  </p>
+                  <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                    Ganancia: Q{{ calculateProfit().toFixed(2) }} por unidad
                   </p>
                 </div>
               </div>
@@ -456,26 +474,26 @@
   }
 
   <!-- BOTÓN GUARDAR FINAL -->
-  <div class="w-full border-t dark:border-slate-700 pt-4 mt-6 flex justify-end gap-3">
-    <button
-      (click)="back()"
-      class="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">
-      Cancelar
-    </button>
+  <div class="w-full border-t dark:border-slate-700 pt-4 mt-6 flex justify-between items-center gap-3">
 
-    @if (!load) {
-      <button
-        (click)="submit()"
-        [disabled]="!canSubmit()"
-        class="btn-primary h-10 px-8 font-bold">
-        <ng-icon name="matSaveOutline" size="18" class="inline mr-2"></ng-icon>
-        Guardar Producto
-      </button>
-    } @else {
-      <button class="btn-primary h-10 px-8 font-bold animate-pulse">
-        Guardando...
-      </button>
-    }
+    <div class="flex gap-3">
+
+      @if (!load) {
+        <button
+          (click)="submit()"
+          [disabled]="!canSubmit()"
+          [class.opacity-50]="!canSubmit()"
+          [class.cursor-not-allowed]="!canSubmit()"
+           class="btn-primary h-10 w-36 font-bold">
+          <ng-icon name="matSaveOutline" size="18" class="inline mr-2"></ng-icon>
+          Guardar
+        </button>
+      } @else {
+        <button class="btn-primary h-10 px-8 font-bold animate-pulse">
+          Guardando...
+        </button>
+      }
+    </div>
   </div>
 
 </div>

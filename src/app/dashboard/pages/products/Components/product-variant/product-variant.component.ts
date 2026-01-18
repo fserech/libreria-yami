@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 // Services
@@ -16,6 +16,9 @@ import {
   matTuneOutline,
   matInventoryOutline,
   matInventory2Outline,
+  matAddOutline,
+  matCheckCircleOutline,
+  matTrendingUpOutline,
 } from '@ng-icons/material-icons/outline';
 import { environment } from '../../../../../../environments/environment';
 import { CheckboxComponent } from '../../../../../shared/components/checkbox/checkbox.component';
@@ -23,7 +26,7 @@ import { InputComponent } from '../../../../../shared/components/input/input.com
 import { ToggleComponent } from '../../../../../shared/components/toggle/toggle.component';
 import { REGUEX_DECIMAL_INT } from '../../../../../shared/constants/reguex';
 import { InputOptionsSelect } from '../../../../../shared/interfaces/input';
-import { ProductVariant } from '../../../../../shared/interfaces/product';
+import { ProductVariant, ProductSupplierPrice } from '../../../../../shared/interfaces/product';
 import { CrudService } from '../../../../../shared/services/crud.service';
 import { ToastService } from '../../../../../shared/services/toast.service';
 
@@ -45,6 +48,7 @@ interface ManualAttribute {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     InputComponent,
     CheckboxComponent,
     ToggleComponent,
@@ -62,7 +66,10 @@ interface ManualAttribute {
     matQrCodeOutline,
     matTuneOutline,
     matInventoryOutline,
-    matInventory2Outline
+    matInventory2Outline,
+    matAddOutline,
+    matCheckCircleOutline,
+    matTrendingUpOutline,
   })]
 })
 export class ProductVariantComponent implements OnInit, OnChanges {
@@ -87,6 +94,9 @@ export class ProductVariantComponent implements OnInit, OnChanges {
   manualAttributes: ManualAttribute[] = [];
   availableAttributes: VariantAttribute[] = [];
   selectedAttributeValues: string[] = [];
+
+  // ⭐ NUEVA PROPIEDAD: Precios por proveedor para la variante actual
+  variantSupplierPrices: ProductSupplierPrice[] = [];
 
   // ==================== UI STATE ====================
   editingVariantIndex: number = -1;
@@ -119,10 +129,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     if (this.categoryId) {
       this.loadCategoryAttributes(this.categoryId);
     }
-
-    if (this.supplierOptions.length > 0) {
-      this.initSupplierFormArray();
-    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -130,12 +136,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       const newCategoryId = changes['categoryId'].currentValue;
       if (newCategoryId) {
         this.loadCategoryAttributes(newCategoryId);
-      }
-    }
-
-    if (changes['supplierOptions']) {
-      if (this.supplierOptions.length > 0) {
-        this.initSupplierFormArray();
       }
     }
   }
@@ -146,25 +146,14 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     this.variantForm = this.fb.group({
       sku: ['', [Validators.required, Validators.maxLength(50)]],
       variantName: ['', [Validators.required, Validators.maxLength(100)]],
-      costPrice: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]],
-      salePrice: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT)]],
+      salePrice: ['', [Validators.required, Validators.pattern(REGUEX_DECIMAL_INT), Validators.min(0)]],
       currentStock: [0, [Validators.required, Validators.min(0)]],
       minStock: [0, [Validators.required, Validators.min(0)]],
       maxStock: [100, [Validators.required, Validators.min(1)]],
-      supplierId: this.fb.array([]),
       active: [true],
       attrKey: [''],
       attrValue: ['']
     });
-  }
-
-  initSupplierFormArray() {
-    const variantSuppliers = this.variantForm.get('supplierId') as FormArray;
-    variantSuppliers.clear();
-
-    for (let i = 0; i < this.supplierOptions.length; i++) {
-      variantSuppliers.push(new FormControl(false));
-    }
   }
 
   // ==================== DATA LOADING ====================
@@ -181,6 +170,74 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     } catch (error) {
       this.availableAttributes = [];
     }
+  }
+
+  // ==================== SUPPLIER PRICES MANAGEMENT ====================
+
+  addSupplierPrice() {
+    this.variantSupplierPrices.push({
+      supplierId: 0,
+      costPrice: 0,
+      isPreferred: this.variantSupplierPrices.length === 0
+    });
+  }
+
+  removeSupplierPrice(supplierPrice: ProductSupplierPrice) {
+    const index = this.variantSupplierPrices.indexOf(supplierPrice);
+    if (index > -1) {
+      this.variantSupplierPrices.splice(index, 1);
+
+      if (supplierPrice.isPreferred && this.variantSupplierPrices.length > 0) {
+        this.variantSupplierPrices[0].isPreferred = true;
+      }
+    }
+  }
+
+  setPreferredSupplier(supplierPrice: ProductSupplierPrice) {
+    this.variantSupplierPrices.forEach(sp => sp.isPreferred = false);
+    supplierPrice.isPreferred = true;
+  }
+
+  onSupplierChange(supplierPrice: ProductSupplierPrice) {
+    const supplier = this.supplierOptions.find(s => s.value === supplierPrice.supplierId.toString());
+    if (supplier) {
+      supplierPrice.supplierName = supplier.label;
+    }
+  }
+
+  getBestSupplierPrice(): ProductSupplierPrice | null {
+    if (this.variantSupplierPrices.length === 0) return null;
+
+    const preferred = this.variantSupplierPrices.find(sp => sp.isPreferred && sp.supplierId > 0);
+    if (preferred && preferred.costPrice > 0) return preferred;
+
+    return this.variantSupplierPrices
+      .filter(sp => sp.costPrice > 0 && sp.supplierId > 0)
+      .reduce((best, current) =>
+        (!best || current.costPrice < best.costPrice) ? current : best
+      , null as ProductSupplierPrice | null);
+  }
+
+  getBestCostPrice(): number {
+    const best = this.getBestSupplierPrice();
+    return best?.costPrice || 0;
+  }
+
+  calculateCurrentMargin(): string {
+    const bestCostPrice = this.getBestCostPrice();
+    const salePrice = parseFloat(this.variantForm.get('salePrice')?.value) || 0;
+
+    if (bestCostPrice === 0 || salePrice === 0) return '0.00';
+
+    const margin = ((salePrice - bestCostPrice) / bestCostPrice) * 100;
+    return margin.toFixed(2);
+  }
+
+  calculateProfit(): number {
+    const bestCostPrice = this.getBestCostPrice();
+    const salePrice = parseFloat(this.variantForm.get('salePrice')?.value) || 0;
+
+    return salePrice - bestCostPrice;
   }
 
   // ==================== ATTRIBUTE MANAGEMENT ====================
@@ -229,7 +286,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     let key = '';
     let value = '';
 
-    // Determinar el key
     if (this.showCustomAttrInput) {
       key = this.customAttrKeyControl.value?.trim() || '';
     } else if (this.availableAttributes.length > 0) {
@@ -238,7 +294,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       key = this.variantForm.get('attrKey')?.value?.trim() || '';
     }
 
-    // Determinar el value
     if (this.showCustomValueInput) {
       value = this.customAttrValueControl.value?.trim() || '';
     } else if (this.selectedAttributeValues.length > 0) {
@@ -261,7 +316,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
 
     this.manualAttributes.push({ key, value });
 
-    // Resetear controles
     this.attrKeyControl.setValue('');
     this.attrValueControl.setValue('');
     this.customAttrKeyControl.setValue('');
@@ -271,15 +325,12 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     this.showCustomAttrInput = false;
     this.showCustomValueInput = false;
 
-    // Auto-generar nombre de variante
     this.autoGenerateVariantName();
-
     this.toast.success('Atributo agregado');
   }
 
   removeManualAttribute(index: number) {
     this.manualAttributes.splice(index, 1);
-    // Regenerar nombre de variante
     this.autoGenerateVariantName();
   }
 
@@ -316,7 +367,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     const baseFieldsValid =
       this.variantForm.get('sku')?.valid &&
       this.variantForm.get('variantName')?.valid &&
-      this.variantForm.get('costPrice')?.valid &&
       this.variantForm.get('salePrice')?.valid &&
       this.variantForm.get('currentStock')?.valid &&
       this.variantForm.get('minStock')?.valid &&
@@ -332,22 +382,13 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       return;
     }
 
-    const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
+    // Validar proveedores
+    const validSupplierPrices = this.variantSupplierPrices.filter(sp =>
+      Number(sp.supplierId) > 0 && Number(sp.costPrice) > 0
+    );
 
-    if (!supplierFormArray || supplierFormArray.length === 0) {
-      this.toast.error('Error: No se han cargado los proveedores correctamente');
-      return;
-    }
-
-    const selectedSuppliers = this.supplierOptions
-      .filter((_, index) => {
-        const control = supplierFormArray.at(index);
-        return control && control.value === true;
-      })
-      .map(option => Number(option.value));
-
-    if (selectedSuppliers.length === 0) {
-      this.toast.error('Debes seleccionar al menos un proveedor');
+    if (validSupplierPrices.length === 0) {
+      this.toast.error('⚠️ Debes agregar al menos un proveedor con precio válido');
       return;
     }
 
@@ -356,17 +397,31 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       attributes[attr.key] = attr.value;
     });
 
+    // Obtener mejor precio para compatibilidad legacy
+    const bestCostPrice = this.getBestCostPrice();
+    const preferredSupplier = this.getBestSupplierPrice();
+
     const variant: ProductVariant = {
       id: this.editingVariantIndex >= 0 ? this.variants[this.editingVariantIndex].id : null,
       sku: this.variantForm.value.sku.trim(),
       variantName: this.variantForm.value.variantName.trim(),
-      costPrice: Number(this.variantForm.value.costPrice),
+
+      // ⭐ NUEVO: Enviar precios por proveedor
+      supplierPrices: validSupplierPrices.map(sp => ({
+        supplierId: Number(sp.supplierId),
+        costPrice: Number(sp.costPrice),
+        isPreferred: sp.isPreferred || false
+      })),
+
+      // Legacy: compatibilidad con backend
+      costPrice: bestCostPrice,
+      supplierId: preferredSupplier ? [Number(preferredSupplier.supplierId)] : validSupplierPrices.map(sp => Number(sp.supplierId)),
+
       salePrice: Number(this.variantForm.value.salePrice),
       currentStock: Number(this.variantForm.value.currentStock),
       minStock: Number(this.variantForm.value.minStock),
       maxStock: Number(this.variantForm.value.maxStock),
       attributes: attributes,
-      supplierId: selectedSuppliers,
       active: this.variantForm.value.active
     };
 
@@ -399,7 +454,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     this.variantForm.patchValue({
       sku: variant.sku,
       variantName: variant.variantName,
-      costPrice: variant.costPrice,
       salePrice: variant.salePrice,
       currentStock: variant.currentStock,
       minStock: variant.minStock,
@@ -407,6 +461,7 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       active: variant.active
     });
 
+    // Cargar atributos
     this.manualAttributes = [];
     if (variant.attributes) {
       Object.keys(variant.attributes).forEach(key => {
@@ -417,7 +472,22 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       });
     }
 
-    this.setSuppliers(variant.supplierId);
+    // ⭐ Cargar precios por proveedor
+    this.variantSupplierPrices = [];
+    if (variant.supplierPrices && variant.supplierPrices.length > 0) {
+      this.variantSupplierPrices = variant.supplierPrices.map(sp => ({
+        ...sp,
+        supplierName: this.supplierOptions.find(opt => opt.value === sp.supplierId.toString())?.label
+      }));
+    } else if (variant.costPrice && variant.supplierId && variant.supplierId.length > 0) {
+      // Legacy: convertir formato antiguo
+      this.variantSupplierPrices = variant.supplierId.map((supplierId, idx) => ({
+        supplierId,
+        supplierName: this.supplierOptions.find(opt => opt.value === supplierId.toString())?.label,
+        costPrice: variant.costPrice || 0,
+        isPreferred: idx === 0
+      }));
+    }
   }
 
   deleteVariant(index: number) {
@@ -437,7 +507,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     this.variantForm.patchValue({
       sku: '',
       variantName: '',
-      costPrice: '',
       salePrice: '',
       currentStock: 0,
       minStock: 0,
@@ -448,6 +517,7 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     });
 
     this.manualAttributes = [];
+    this.variantSupplierPrices = []; // ⭐ Limpiar precios de proveedores
 
     this.attrKeyControl.setValue('');
     this.attrValueControl.setValue('');
@@ -456,30 +526,9 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     this.selectedAttributeValues = [];
     this.showCustomAttrInput = false;
     this.showCustomValueInput = false;
-
-    const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
-    if (supplierFormArray && supplierFormArray.length > 0) {
-      supplierFormArray.controls.forEach(control => control.setValue(false));
-    }
   }
 
   // ==================== HELPERS ====================
-
-  setSuppliers(supplierId: number[]) {
-    const supplierFormArray = this.variantForm.get('supplierId') as FormArray;
-
-    if (!supplierFormArray || supplierFormArray.length === 0) {
-      console.error('FormArray de proveedores no inicializado');
-      return;
-    }
-
-    this.supplierOptions.forEach((option, index) => {
-      if (index < supplierFormArray.length) {
-        const isSelected = supplierId.includes(Number(option.value));
-        supplierFormArray.at(index).setValue(isSelected);
-      }
-    });
-  }
 
   emitVariants() {
     this.variantsChange.emit([...this.variants]);
@@ -489,24 +538,21 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     return [...this.variants];
   }
 
-   hasVariants(): boolean {
+  hasVariants(): boolean {
     return this.variants.length > 0;
   }
 
-  // Método para verificar si hay cambios sin guardar
   hasUnsavedChanges(): boolean {
-    // Si ya hay variantes creadas, no hay "cambios sin guardar" que importen
     if (this.variants.length > 0) {
       return false;
     }
 
-    // Solo hay cambios sin guardar si está en proceso de crear la primera variante
     const formHasData =
       this.variantForm.get('sku')?.value?.trim() ||
       this.variantForm.get('variantName')?.value?.trim() ||
-      this.variantForm.get('costPrice')?.value ||
       this.variantForm.get('salePrice')?.value ||
-      this.manualAttributes.length > 0;
+      this.manualAttributes.length > 0 ||
+      this.variantSupplierPrices.length > 0;
 
     return !!formHasData;
   }
