@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -50,8 +50,18 @@ interface ProductOrder {
   })]
 })
 export class OrdersProductsSelectComponent implements OnInit {
+  // 🆕 Input para recibir productos existentes en modo edición
+  @Input() set existingProducts(products: ProductOrderSelect[]) {
+    if (products && products.length > 0) {
+      console.log('🔄 Recibiendo productos existentes:', products);
+      this._existingProducts = products;
+      this.loadExistingProducts();
+    }
+  }
+
+  private _existingProducts: ProductOrderSelect[] = [];
+
   @Output() changes = new EventEmitter<ProductOrderSelect[]>();
-  // ⚠️ ELIMINADO: @Output() finalized - Ya no se necesita
 
   products: Product[] = [];
   filteredProducts: Product[] = [];
@@ -83,11 +93,31 @@ export class OrdersProductsSelectComponent implements OnInit {
 
       this.products = response.filter(p => p.active);
       this.filteredProducts = [...this.products];
+
+      console.log('✅ Productos cargados:', this.products.length);
     } catch (error) {
       console.error('Error cargando productos:', error);
       this.toast.error('Error al cargar productos');
     } finally {
       this.load = false;
+    }
+  }
+
+  // 🆕 Cargar productos existentes en modo edición
+  private loadExistingProducts() {
+    if (this._existingProducts && this._existingProducts.length > 0) {
+      console.log('📦 Cargando productos existentes:', this._existingProducts);
+
+      this.selectedProducts = this._existingProducts.map(item => ({
+        product: item.product,
+        quantity: item.quantity,
+        variantId: item.variantId || null
+      }));
+
+      console.log('✅ Productos seleccionados cargados:', this.selectedProducts);
+
+      // Emitir los cambios iniciales
+      this.emitChanges();
     }
   }
 
@@ -237,11 +267,6 @@ export class OrdersProductsSelectComponent implements OnInit {
       }
     });
   }
-
-  /**
-   * ⚠️ ELIMINADO: finalizeSelection() - Ya no se necesita
-   */
-  // finalizeSelection() { ... }
 
   getVariantPriceRange(product: Product): string {
     if (!product.variants || product.variants.length === 0) return 'N/A';

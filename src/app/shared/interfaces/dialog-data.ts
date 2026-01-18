@@ -4,4 +4,5 @@ export interface DialogData {
   close: boolean,
   filters: any,
   record?: any
+   [key: string]: any;
 }

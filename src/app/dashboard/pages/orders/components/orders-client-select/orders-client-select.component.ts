@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -34,6 +34,17 @@ import { CrudClientsService } from '../../../../../shared/services/crud-clients.
 })
 export class OrdersClientSelectComponent extends BaseFormClients implements OnInit {
 
+  // ✅ NUEVO: Input para recibir cliente preseleccionado en modo edición
+  @Input() set preselectedClient(client: Client | null) {
+    if (client) {
+      console.log('🔄 Cliente preseleccionado recibido:', client);
+      this._preselectedClient = client;
+      this.setPreselectedClient();
+    }
+  }
+
+  private _preselectedClient: Client | null = null;
+
   form: FormGroup;
   client: Client;
   displayedColumns: string[] = ['name'];
@@ -66,6 +77,14 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
 
   ngOnInit(): void {
     this.filter();
+  }
+
+  // ✅ NUEVO: Establecer cliente preseleccionado
+  private setPreselectedClient(): void {
+    if (this._preselectedClient) {
+      this.selectedIdControl.setValue(this._preselectedClient.id);
+      console.log('✅ Cliente preseleccionado establecido:', this._preselectedClient.id);
+    }
   }
 
   initPage(){
@@ -143,10 +162,9 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
     this.changes.emit(client);
   }
 
-  // ✅ NUEVO: Continuar sin cliente
   continueWithoutClient() {
     const anonymousClient: Client = {
-      id: 0, // ID 0 indica venta sin cliente
+      id: 0,
       name: 'Cliente Anónimo',
       address: '',
       telephone: '',

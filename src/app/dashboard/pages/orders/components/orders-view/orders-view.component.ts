@@ -7,7 +7,15 @@ import { AuthService } from '../../../../../shared/services/auth.service';
 import { CrudService } from '../../../../../shared/services/crud.service';
 import BaseForm from '../../../../../shared/classes/base-form';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { matArrowBackOutline, matCalendarMonthOutline, matCancelOutline, matEditAttributesOutline, matLocationOnOutline, matPersonOutlineOutline } from '@ng-icons/material-icons/outline';
+import {
+  matArrowBackOutline,
+  matCalendarMonthOutline,
+  matEditAttributesOutline,
+  matLocationOnOutline,
+  matPersonOutlineOutline,
+  matEditOutline,
+  matVisibilityOutline
+} from '@ng-icons/material-icons/outline';
 import { URL_ORDERS } from '../../../../../shared/constants/endpoints';
 import { firstValueFrom } from 'rxjs';
 import { Order, ProductOrder } from '../../../../../shared/interfaces/order';
@@ -20,17 +28,29 @@ import { DecimalPipe, NgClass } from '@angular/common';
 @Component({
   selector: 'app-orders-view',
   standalone: true,
-  imports: [HeaderComponent, NgIconComponent, NgClass],
+  imports: [
+    HeaderComponent,
+    NgIconComponent,
+    NgClass
+  ],
   templateUrl: './orders-view.component.html',
   styleUrl: './orders-view.component.scss',
-  viewProviders: [ provideIcons({
-    matArrowBackOutline, bootstrapCheckCircleFill, bootstrapClockFill, bootstrapShop,
-    matLocationOnOutline, bootstrapCalculator, matCalendarMonthOutline, matPersonOutlineOutline,
-    matEditAttributesOutline, matCancelOutline })],
+  viewProviders: [provideIcons({
+    matArrowBackOutline,
+    bootstrapCheckCircleFill,
+    bootstrapClockFill,
+    bootstrapShop,
+    matLocationOnOutline,
+    bootstrapCalculator,
+    matCalendarMonthOutline,
+    matPersonOutlineOutline,
+    matEditAttributesOutline,
+    matEditOutline,
+    matVisibilityOutline
+  })],
   providers: [DecimalPipe]
 })
-export default class OrdersViewComponent extends BaseForm implements OnInit{
-
+export default class OrdersViewComponent extends BaseForm implements OnInit {
   order: Order;
   client: Client;
   products: ProductOrder[];
@@ -43,30 +63,60 @@ export default class OrdersViewComponent extends BaseForm implements OnInit{
     private route: ActivatedRoute,
     private auth: AuthService,
     private bpo: BreakpointObserver,
-    private decimalPipe: DecimalPipe,){
-      super(crud, toast, auth, bpo);
-      this.id = Number(this.route.snapshot.paramMap.get('id'));
-      this.crud.baseUrl = URL_ORDERS;
-      moment.locale('es');
-      this.darkmode = localStorage.getItem('theme');
-    }
-
-  ngOnInit(): void {
-    this.load = true;
-    firstValueFrom(this.crud.getId(this.id))
-    .then((order: any) => {
-      this.order = order;
-      this.client = order.client;
-      this.products = order.products;
-    })
-    .catch((error: any) => {
-      console.log('error id: ', error);
-    })
-    .finally(() => {
-      this.load = false;
-    });
+    private decimalPipe: DecimalPipe
+  ) {
+    super(crud, toast, auth, bpo);
+    this.id = Number(this.route.snapshot.paramMap.get('id'));
+    this.crud.baseUrl = URL_ORDERS;
+    moment.locale('es');
+    this.darkmode = localStorage.getItem('theme');
   }
 
+  ngOnInit(): void {
+    this.loadOrder();
+  }
+
+  // Verificar si la venta está finalizada
+  get isFinalized(): boolean {
+    return this.order?.status === 'FINALIZED';
+  }
+
+  // Verificar si se puede editar
+  get canEdit(): boolean {
+    return !this.isFinalized;
+  }
+
+  // Cargar la orden
+  loadOrder() {
+    this.load = true;
+    firstValueFrom(this.crud.getId(this.id))
+      .then((order: any) => {
+        this.order = order;
+        this.client = order.client;
+        this.products = order.products;
+      })
+      .catch((error: any) => {
+        console.error('Error al cargar la orden:', error);
+        this.toast.error('Error', 'No se pudo cargar la información de la venta');
+      })
+      .finally(() => {
+        this.load = false;
+      });
+  }
+
+  // Navegar a edición completa
+  async enableEditMode() {
+  if (this.isFinalized) {
+    this.toast.warning('Venta finalizada', 'No se puede editar una venta finalizada');
+    return;
+  }
+
+  // ✅ Navegación correcta a la ruta de edición
+  console.log('🔀 Navegando a edición, ID:', this.id);
+  this.router.navigate([`/dashboard/orders/detail/edit/${this.id}`]);
+}
+
+  // Regresar a la lista (SIN validación de cambios)
   async back() {
     this.router.navigate(['dashboard/orders']);
   }
@@ -80,7 +130,7 @@ export default class OrdersViewComponent extends BaseForm implements OnInit{
   }
 
   calculateTotal(): string {
-    if(this.products?.length > 0){
+    if (this.products?.length > 0) {
       const total = this.products.reduce((acc, order) => acc + order.subtotal, 0);
       return this.formatCurrency(total);
     }

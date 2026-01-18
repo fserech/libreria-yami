@@ -13,6 +13,12 @@ import { NgClass } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { matRefreshOutline } from '@ng-icons/material-icons/outline';
 
+// ✅ NUEVA INTERFAZ para datos preexistentes
+interface DataOrderDialogData extends DialogData {
+  existingBranchId?: number;
+  existingObservation?: string;
+}
+
 @Component({
   selector: 'app-data-order-dialog',
   standalone: true,
@@ -28,7 +34,6 @@ export class DataOrderDialogComponent implements OnInit {
   branches: { value: number, label: string, address: string, telephone: string }[] = [];
   branchesData: Branch[] = [];
 
-  // ✅ MENSAJES DE AGRADECIMIENTO PREDEFINIDOS
   thankYouMessages: string[] = [
     '¡Gracias por su compra!',
     '¡Gracias por preferirnos!',
@@ -43,7 +48,7 @@ export class DataOrderDialogComponent implements OnInit {
   ];
 
   constructor(
-    @Inject(DIALOG_DATA) public data: DialogData,
+    @Inject(DIALOG_DATA) public data: DataOrderDialogData,
     public dialogRef: DialogRef,
     private toast: ToastService,
     private crud: CrudService
@@ -54,10 +59,22 @@ export class DataOrderDialogComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.loadBranches();
-    // ✅ Establecer mensaje aleatorio al iniciar
-    this.setRandomThankYouMessage();
+  async ngOnInit(): Promise<void> {
+    await this.loadBranches();
+
+    // ✅ Establecer datos preexistentes si existen
+    if (this.data.existingBranchId) {
+      console.log('🔄 Estableciendo sucursal preexistente:', this.data.existingBranchId);
+      this.form.controls['idBranch'].setValue(this.data.existingBranchId);
+    }
+
+    if (this.data.existingObservation) {
+      console.log('🔄 Estableciendo observación preexistente:', this.data.existingObservation);
+      this.form.controls['observation'].setValue(this.data.existingObservation);
+    } else {
+      // Solo generar mensaje aleatorio si no hay observación preexistente
+      this.setRandomThankYouMessage();
+    }
   }
 
   /**
@@ -83,7 +100,6 @@ export class DataOrderDialogComponent implements OnInit {
       const response: any = await this.crud.getAll('');
       this.branchesData = response.data || response;
 
-      // Convertir las sucursales al formato que necesita el select
       this.branches = this.branchesData
         .filter((branch: Branch) => branch.active !== false)
         .map((branch: Branch) => ({
@@ -96,8 +112,10 @@ export class DataOrderDialogComponent implements OnInit {
       if (this.branches.length === 0) {
         this.toast.warning('No hay sucursales disponibles. Por favor, cree una sucursal primero.');
       }
+
+      console.log('✅ Sucursales cargadas:', this.branches.length);
     } catch (error: any) {
-      console.error('Error al cargar sucursales:', error);
+      console.error('❌ Error al cargar sucursales:', error);
       this.toast.error('Error al cargar las sucursales');
     } finally {
       this.load = false;
@@ -132,6 +150,7 @@ export class DataOrderDialogComponent implements OnInit {
         : ''
     };
 
+    console.log('✅ Datos del diálogo confirmados:', data);
     this.dialogRef.close(data);
   }
 }

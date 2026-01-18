@@ -1,5 +1,17 @@
 <div class="p-1 bg-white rounded dark:bg-slate-900">
 
+  <!-- 🆕 INDICADOR DE MODO EDICIÓN -->
+  @if (isEditMode) {
+    <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-2 border-yellow-400 dark:border-yellow-600">
+      <p class="text-sm font-bold text-yellow-800 dark:text-yellow-300">
+        ✏️ Modo Edición - ID Venta: {{ orderId }}
+      </p>
+      <p class="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
+        Los cambios se guardarán en la venta existente
+      </p>
+    </div>
+  }
+
   <!-- ✅ BOTONES DE ACCIÓN EN LA PARTE SUPERIOR -->
   <div class="flex flex-col sm:flex-row gap-3 mb-4">
     <!-- Botón Agregar Más Productos -->
@@ -18,7 +30,7 @@
       <button class="flex-1 h-12 bg-green-600 rounded-lg animate-pulse"></button>
     }
 
-    <!-- Botón Finalizar Venta -->
+    <!-- Botón Finalizar/Actualizar Venta -->
     @if (!load) {
       <button
         [disabled]="products.length === 0"
@@ -28,7 +40,7 @@
                disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors
                flex items-center justify-center gap-2">
         <ng-icon class="text-white" size="20" name="bootstrapCheckCircleFill"></ng-icon>
-        <span>Finalizar venta</span>
+        <span>{{ isEditMode ? 'Actualizar venta' : 'Finalizar venta' }}</span>
       </button>
     } @else {
       <button class="flex-1 h-12 bg-blue-600 rounded-lg animate-pulse"></button>
@@ -38,7 +50,7 @@
   <!-- Información del Cliente y Sucursal -->
   <div class="w-full p-0">
     <div class="bg-gray-50 dark:bg-slate-950 rounded-lg p-4">
-      <h2 class="text-sm text-gray-500 dark:text-gray-400"><b>ID </b>{{ client?.id }}</h2>
+      <h2 class="text-sm text-gray-500 dark:text-gray-400"><b>ID Cliente: </b>{{ client?.id }}</h2>
       <h2 class="text-lg font-semibold mb-1 text-gray-500 dark:text-gray-200">{{ client?.name }}</h2>
       <div class="mb-4 border-b border-gray-200 dark:border-gray-500 pb-2">
         <h3 class="text-sm text-gray-500 dark:text-gray-400">
@@ -82,12 +94,13 @@
 
   <!-- Encabezado de Productos -->
   <div class="bg-gray-100 dark:bg-slate-950 rounded-lg w-full mt-2 mb-0 h-10 flex items-center justify-center">
-    <p class="text-center font-bold text-lg text-gray-500 dark:text-gray-400">Productos seleccionados</p>
+    <p class="text-center font-bold text-lg text-gray-500 dark:text-gray-400">
+      Productos seleccionados ({{ products?.length || 0 }})
+    </p>
   </div>
 
   <!-- Lista de Productos con Scroll Profesional -->
   <div class="relative w-full mt-2">
-    <!-- ✅ CONTENEDOR CON SCROLL MEJORADO -->
     <div class="bg-gray-50 dark:bg-slate-950 w-full rounded-lg border border-gray-200 dark:border-slate-700
                 h-80 overflow-y-auto
                 scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-slate-600
@@ -155,7 +168,7 @@
         }@empty {
           <li class="flex items-center justify-center h-full p-8">
             <div class="text-center">
-              <ng-icon class="text-gray-400 dark:text-gray-600 mx-auto mb-2" size="48" name="matShoppingCartOutline"></ng-icon>
+              <ng-icon class="text-gray-400 dark:text-gray-600 mx-auto mb-2" size="48" name="matInventory2Outline"></ng-icon>
               <p class="text-gray-500 dark:text-gray-400">No hay productos seleccionados</p>
             </div>
           </li>
