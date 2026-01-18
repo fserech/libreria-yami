@@ -100,14 +100,22 @@ export class LowStockAlertsComponent implements OnInit {
     return this.filteredAlerts.filter(a => a.currentStock > 0 && a.belowMinStock).length;
   }
 
+  // ⭐ CORREGIDO: Contar solo productos únicos, no variantes duplicadas
   get totalProducts(): number {
-    return this.filteredStock.length;
+    const uniqueProducts = new Set<number>();
+    this.filteredStock.forEach(item => {
+      uniqueProducts.add(item.productId);
+    });
+    return uniqueProducts.size;
   }
 
+  // ⭐ CORREGIDO: Usar costPrice si averageCost no está disponible
   get totalStockValue(): number {
-    return this.filteredStock.reduce((sum, item) =>
-      sum + (item.currentStock * (item.averageCost || 0)), 0
-    );
+    return this.filteredStock.reduce((sum, item) => {
+      // Prioridad: averageCost > costPrice del producto > 0
+      const cost = item.averageCost || item.product?.costPrice || 0;
+      return sum + (item.currentStock * cost);
+    }, 0);
   }
 
   get paginatedItems(): ProductStock[] {
@@ -145,17 +153,11 @@ export class LowStockAlertsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // ✅ Cargar sucursales primero, luego datos
     this.loadBranches();
   }
 
-  /**
-   * ✅ Cargar todas las sucursales disponibles desde el backend
-   */
   private loadBranches(): void {
     this.loading = true;
-
-    // ✅ Cargar directamente desde el endpoint de branches
     const branchesUrl = `${environment.apiUrl}/api/v1/branches`;
 
     this.http.get<any[]>(branchesUrl).subscribe({
@@ -164,24 +166,16 @@ export class LowStockAlertsComponent implements OnInit {
           id: b.id,
           branchName: b.name
         }));
-
-
-
-        // Después de cargar sucursales, cargar datos
         this.loadInitialData();
       },
       error: (error) => {
-
+        console.error('Error cargando sucursales:', error);
         this.loading = false;
-        // Intentar cargar datos de todos modos
         this.loadInitialData();
       }
     });
   }
 
-  /**
-   * ✅ Cargar datos iniciales (alertas y stock)
-   */
   private loadInitialData(): void {
     forkJoin({
       alerts: this.inventoryService.getLowStockProducts(),
@@ -190,60 +184,45 @@ export class LowStockAlertsComponent implements OnInit {
       next: (results) => {
         this.alerts = results.alerts;
         this.allStock = results.stock;
-
-        // Sincronizar sucursales de los datos con las sucursales cargadas
         this.syncBranchesFromData();
-
         this.applyFilters();
         this.applyStockFilters();
         this.loading = false;
-
-
       },
       error: (error) => {
-
+        console.error('Error cargando datos:', error);
         this.loading = false;
       }
     });
   }
 
-  /**
-   * ✅ Sincronizar sucursales de los datos con el catálogo
-   */
   private syncBranchesFromData(): void {
     const branchMap = new Map<number, string>();
 
-    // Primero agregar las sucursales ya cargadas del backend
     this.branches.forEach(branch => {
       branchMap.set(branch.id, branch.branchName);
     });
 
-    // Agregar sucursales desde alertas (solo si no existen)
     this.alerts.forEach(alert => {
       if (alert.branchId && alert.branchName && !branchMap.has(alert.branchId)) {
         branchMap.set(alert.branchId, alert.branchName);
       }
     });
 
-    // Agregar sucursales desde stock (solo si no existen)
     this.allStock.forEach(item => {
       if (item.branchId && item.branchName && !branchMap.has(item.branchId)) {
         branchMap.set(item.branchId, item.branchName);
       }
     });
 
-    // Reconstruir array de sucursales
     this.branches = Array.from(branchMap.entries()).map(([id, branchName]) => ({
       id,
       branchName
     }));
 
-    // Ordenar por nombre
     this.branches.sort((a, b) =>
       a.branchName.localeCompare(b.branchName)
     );
-
-
   }
 
   switchView(view: 'alerts' | 'stock'): void {
@@ -266,19 +245,12 @@ export class LowStockAlertsComponent implements OnInit {
       .subscribe({
         next: (products: ProductStock[]) => {
           this.allStock = products;
-
-          // ✅ Actualizar sucursales si encontramos nuevas
           this.syncBranchesFromData();
-
           this.applyStockFilters();
           this.loading = false;
-
-          if (forceReload) {
-
-          }
         },
         error: (error) => {
-
+          console.error('Error cargando stock:', error);
           this.loading = false;
         }
       });
@@ -286,7 +258,6 @@ export class LowStockAlertsComponent implements OnInit {
 
   applyStockFilters(): void {
     this.filteredStock = this.allStock.filter(item => {
-      // Filtro por búsqueda
       if (this.searchTerm) {
         const searchLower = this.searchTerm.toLowerCase();
         const productName = this.getDisplayName(item).toLowerCase();
@@ -297,7 +268,6 @@ export class LowStockAlertsComponent implements OnInit {
         }
       }
 
-      // ✅ Filtro por sucursal
       if (this.selectedBranchId && this.selectedBranchId !== '') {
         if (item.branchId !== Number(this.selectedBranchId)) {
           return false;
@@ -339,19 +309,12 @@ export class LowStockAlertsComponent implements OnInit {
       .subscribe({
         next: (products: ProductStock[]) => {
           this.alerts = products;
-
-          // ✅ Actualizar sucursales si encontramos nuevas
           this.syncBranchesFromData();
-
           this.applyFilters();
           this.loading = false;
-
-          if (forceReload) {
-
-          }
         },
         error: (error) => {
-
+          console.error('Error cargando alertas:', error);
           this.loading = false;
         }
       });
@@ -359,7 +322,6 @@ export class LowStockAlertsComponent implements OnInit {
 
   applyFilters(): void {
     this.filteredAlerts = this.alerts.filter(alert => {
-      // Filtro por nivel de alerta
       if (this.selectedAlertLevel === 'critical' && alert.currentStock > 0) {
         return false;
       }
@@ -367,7 +329,6 @@ export class LowStockAlertsComponent implements OnInit {
         return false;
       }
 
-      // ✅ Filtro por búsqueda
       if (this.searchTerm) {
         const searchLower = this.searchTerm.toLowerCase();
         const productName = this.getDisplayName(alert).toLowerCase();
@@ -378,7 +339,6 @@ export class LowStockAlertsComponent implements OnInit {
         }
       }
 
-      // ✅ Filtro por sucursal
       if (this.selectedBranchId && this.selectedBranchId !== '') {
         if (alert.branchId !== Number(this.selectedBranchId)) {
           return false;
@@ -388,7 +348,6 @@ export class LowStockAlertsComponent implements OnInit {
       return true;
     });
 
-    // Ordenar: críticos primero, luego por stock
     this.filteredAlerts.sort((a, b) => {
       if (a.currentStock === 0 && b.currentStock > 0) return -1;
       if (a.currentStock > 0 && b.currentStock === 0) return 1;
@@ -402,10 +361,7 @@ export class LowStockAlertsComponent implements OnInit {
   }
 
   onBranchChange(): void {
-
     this.currentPage = 1;
-
-    // Recargar ambos conjuntos de datos
     this.loadAlerts();
     this.loadAllStock();
   }
@@ -573,33 +529,41 @@ export class LowStockAlertsComponent implements OnInit {
 
   exportToExcel(): void {
     const data = this.activeView === 'alerts'
-      ? this.filteredAlerts.map(alert => ({
-          'Tipo': this.getTypeBadge(alert),
-          'Producto': this.getDisplayName(alert),
-          'SKU': this.getDisplaySKU(alert),
-          'Atributos': this.getVariantAttributes(alert),
-          'Sucursal': alert.branchName || 'N/A',
-          'Stock Actual': alert.currentStock,
-          'Stock Mínimo': alert.minStock,
-          'Stock Máximo': alert.maxStock,
-          'Nivel': this.getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA',
-          'Costo Promedio': alert.averageCost
-        }))
-      : this.filteredStock.map(item => ({
-          'Tipo': this.getTypeBadge(item),
-          'Producto': this.getDisplayName(item),
-          'SKU': this.getDisplaySKU(item),
-          'Atributos': this.getVariantAttributes(item),
-          'Sucursal': item.branchName || 'N/A',
-          'Stock Actual': item.currentStock,
-          'Stock Mínimo': item.minStock,
-          'Stock Máximo': item.maxStock,
-          'Estado': this.getStockStatus(item).toUpperCase(),
-          'Costo Promedio': item.averageCost,
-          'Valor Total': item.currentStock * (item.averageCost || 0)
-        }));
+      ? this.filteredAlerts.map(alert => {
+          const cost = alert.averageCost || alert.product?.costPrice || 0;
+          return {
+            'Tipo': this.getTypeBadge(alert),
+            'Producto': this.getDisplayName(alert),
+            'SKU': this.getDisplaySKU(alert),
+            'Atributos': this.getVariantAttributes(alert),
+            'Sucursal': alert.branchName || 'N/A',
+            'Stock Actual': alert.currentStock,
+            'Stock Mínimo': alert.minStock,
+            'Stock Máximo': alert.maxStock,
+            'Nivel': this.getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA',
+            'Costo Unitario': cost,
+            'Valor Total': alert.currentStock * cost
+          };
+        })
+      : this.filteredStock.map(item => {
+          const cost = item.averageCost || item.product?.costPrice || 0;
+          return {
+            'Tipo': this.getTypeBadge(item),
+            'Producto': this.getDisplayName(item),
+            'SKU': this.getDisplaySKU(item),
+            'Atributos': this.getVariantAttributes(item),
+            'Sucursal': item.branchName || 'N/A',
+            'Stock Actual': item.currentStock,
+            'Stock Mínimo': item.minStock,
+            'Stock Máximo': item.maxStock,
+            'Estado': this.getStockStatus(item).toUpperCase(),
+            'Costo Unitario': cost,
+            'Valor Total': item.currentStock * cost
+          };
+        });
 
-    // TODO: Implementar exportación a Excel
+    console.log('📊 Datos para exportar:', data);
+    console.log('💰 Valor total del inventario: Q', this.totalStockValue.toFixed(2));
   }
 
   refresh(): void {
