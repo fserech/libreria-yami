@@ -1,4 +1,4 @@
-// ==================== INTERFACES DE PRODUCTO ====================
+// ==================== product.ts ====================
 
 export interface ProductSupplierPrice {
   supplierId: number;
@@ -36,6 +36,9 @@ export interface Product {
   supplierPrices?: ProductSupplierPrice[];
   desiredMargin?: number;
 
+  // 🆕 NUEVO: Costo promedio ponderado (calculado automáticamente)
+  averageCostPrice?: number;
+
   salePrice?: number;
   currentStock?: number;
   minStock?: number;
@@ -66,6 +69,9 @@ export interface ProductVariant {
   // ⭐ NUEVO: Precios por proveedor (opcional, para nuevas variantes)
   supplierPrices?: ProductSupplierPrice[];
   desiredMargin?: number;
+
+  // 🆕 NUEVO: Costo promedio ponderado (calculado automáticamente)
+  averageCostPrice?: number;
 
   salePrice: number;
   currentStock: number;
@@ -130,3 +136,4 @@ export interface ProductInventory {
   active: boolean;
   productType: 'SIMPLE' | 'VARIANT';
 }
+

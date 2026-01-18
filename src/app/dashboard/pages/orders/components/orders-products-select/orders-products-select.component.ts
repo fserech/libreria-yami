@@ -20,13 +20,20 @@ import { Product, ProductVariant } from '../../../../../shared/interfaces/produc
 import { environment } from '../../../../../../environments/environment';
 import { SelectProductQuantityDialogComponent } from '../select-product-quantity-dialog/select-product-quantity-dialog.component';
 import { OrdersProductsSelectListDialogComponent } from '../orders-products-select-list-dialog/orders-products-select-list-dialog.component';
-import { getProductCostPrice } from '../../../../../shared/utils/product-utils';
+import {
+  getProductCostPrice,
+  getProductAverageCostPrice,  // 🆕 NUEVO
+  calculateSaleProfit              // 🆕 NUEVO
+} from '../../../../../shared/utils/product-utils';
 import { ProductOrderSelect } from '../../../../../shared/interfaces/order';
 
 interface ProductOrder {
   product: Product;
   quantity: number;
   variantId?: number | null;
+
+  // 🆕 NUEVO: Capturar el costo promedio AL MOMENTO de agregar a la orden
+  costPriceAtSale?: number;
 }
 
 @Component({
@@ -50,7 +57,6 @@ interface ProductOrder {
   })]
 })
 export class OrdersProductsSelectComponent implements OnInit {
-  // 🆕 Input para recibir productos existentes en modo edición
   @Input() set existingProducts(products: ProductOrderSelect[]) {
     if (products && products.length > 0) {
       console.log('🔄 Recibiendo productos existentes:', products);
@@ -70,8 +76,10 @@ export class OrdersProductsSelectComponent implements OnInit {
   expandedProducts: Set<number> = new Set();
   load = false;
 
-  // Hacer disponible la función en el template
+  // Hacer disponibles las funciones en el template
   getProductCostPrice = getProductCostPrice;
+  getProductAverageCostPrice = getProductAverageCostPrice;  // 🆕 NUEVO
+  calculateSaleProfit = calculateSaleProfit;                // 🆕 NUEVO
 
   constructor(
     private crud: CrudService,
@@ -103,7 +111,6 @@ export class OrdersProductsSelectComponent implements OnInit {
     }
   }
 
-  // 🆕 Cargar productos existentes en modo edición
   private loadExistingProducts() {
     if (this._existingProducts && this._existingProducts.length > 0) {
       console.log('📦 Cargando productos existentes:', this._existingProducts);
@@ -111,12 +118,13 @@ export class OrdersProductsSelectComponent implements OnInit {
       this.selectedProducts = this._existingProducts.map(item => ({
         product: item.product,
         quantity: item.quantity,
-        variantId: item.variantId || null
+        variantId: item.variantId || null,
+
+        // 🆕 NUEVO: Cargar el costo congelado si existe
+        costPriceAtSale: item.costPriceAtSale || getProductAverageCostPrice(item.product)
       }));
 
       console.log('✅ Productos seleccionados cargados:', this.selectedProducts);
-
-      // Emitir los cambios iniciales
       this.emitChanges();
     }
   }
@@ -165,7 +173,10 @@ export class OrdersProductsSelectComponent implements OnInit {
       salePrice: variant.salePrice,
       costPrice: getProductCostPrice(variant),
       currentStock: variant.currentStock,
-      hasVariants: false
+      hasVariants: false,
+
+      // 🆕 NUEVO: Pasar el costo promedio si existe
+      averageCostPrice: (variant as any).averageCostPrice
     };
 
     this.openQuantityDialog(variantProduct, variant.id);
@@ -189,7 +200,13 @@ export class OrdersProductsSelectComponent implements OnInit {
     });
   }
 
+  /**
+   * 🆕 MODIFICADO: Ahora captura el costo promedio al momento de agregar
+   */
   addProductToOrder(product: Product, quantity: number, variantId?: number) {
+    // 🆕 CAPTURAR el costo promedio AHORA (antes de cualquier cambio futuro)
+    const costPriceAtSale = getProductAverageCostPrice(product);
+
     const existingProduct = this.selectedProducts.find(p =>
       p.product.id === product.id &&
       (variantId ? p.variantId === variantId : !p.variantId)
@@ -198,16 +215,24 @@ export class OrdersProductsSelectComponent implements OnInit {
     if (existingProduct) {
       existingProduct.quantity += quantity;
       existingProduct.product = product;
+      // 🆕 MANTENER el costo original, NO actualizarlo
+      // existingProduct.costPriceAtSale ya tiene el valor correcto
     } else {
       this.selectedProducts.push({
         product,
         quantity,
-        variantId: variantId || null
+        variantId: variantId || null,
+        costPriceAtSale  // 🆕 GUARDAR el costo promedio actual
       });
     }
 
     this.emitChanges();
-    this.toast.success(`${product.productName} agregado a la orden`);
+
+    // 🆕 OPCIONAL: Mostrar información de ganancia en el toast
+    const profit = calculateSaleProfit(product, quantity, product.salePrice || 0);
+    this.toast.success(
+      `${product.productName} agregado • Ganancia: Q${profit.profit.toFixed(2)} (${profit.margin.toFixed(1)}%)`
+    );
   }
 
   removeProduct(index: number) {
@@ -216,20 +241,21 @@ export class OrdersProductsSelectComponent implements OnInit {
   }
 
   /**
-   * Emite los cambios en el formato esperado por el componente padre
+   * 🆕 MODIFICADO: Incluir el costo congelado al emitir
    */
   private emitChanges() {
     const productsSelect: ProductOrderSelect[] = this.selectedProducts.map(item => ({
       product: item.product,
       quantity: item.quantity,
-      variantId: item.variantId || null
+      variantId: item.variantId || null,
+
+      // 🆕 NUEVO: Incluir el costo promedio congelado
+      costPriceAtSale: item.costPriceAtSale || getProductAverageCostPrice(item.product)
     }));
+
     this.changes.emit(productsSelect);
   }
 
-  /**
-   * Abre el diálogo para ver/editar la lista de productos seleccionados
-   */
   openProductListDialog() {
     if (this.selectedProducts.length === 0) {
       this.toast.info('No hay productos seleccionados');
@@ -239,7 +265,8 @@ export class OrdersProductsSelectComponent implements OnInit {
     const productsSelect: ProductOrderSelect[] = this.selectedProducts.map(item => ({
       product: item.product,
       quantity: item.quantity,
-      variantId: item.variantId || null
+      variantId: item.variantId || null,
+      costPriceAtSale: item.costPriceAtSale  // 🆕 INCLUIR
     }));
 
     const dialogRef = this.dialog.open(OrdersProductsSelectListDialogComponent, {
@@ -260,7 +287,8 @@ export class OrdersProductsSelectComponent implements OnInit {
         this.selectedProducts = result.map(item => ({
           product: item.product,
           quantity: item.quantity,
-          variantId: item.variantId || null
+          variantId: item.variantId || null,
+          costPriceAtSale: item.costPriceAtSale  // 🆕 PRESERVAR
         }));
         this.emitChanges();
         this.toast.success('Lista de productos actualizada');
