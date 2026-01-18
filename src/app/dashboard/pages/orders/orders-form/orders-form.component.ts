@@ -139,81 +139,94 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
     }
   }
 
-  async loadOrderData() {
-    console.log('🔄 Iniciando carga de orden ID:', this.id);
-    this.load = true;
+ // orders-form.component.ts - Método loadOrderData() CORREGIDO
 
-    try {
-      const response: any = await firstValueFrom(this.crud.getId(this.id));
-      const order = response;
+async loadOrderData() {
+  console.log('🔄 Iniciando carga de orden ID:', this.id);
+  this.load = true;
 
-      console.log('📦 Orden recibida:', order);
+  try {
+    const response: any = await firstValueFrom(this.crud.getId(this.id));
+    const order = response;
 
-      // ✅ Cargar cliente
-      if (order.client) {
-        this.clientForm.patchValue({
-          id: order.client.id || 0,
-          name: order.client.name || 'Cliente Anónimo',
-          address: order.client.address || '',
-          telephone: order.client.telephone || ''
-        });
+    console.log('📦 Orden recibida del backend:', order);
 
-        this.client = {
-          id: order.client.id || 0,
-          name: order.client.name || 'Cliente Anónimo',
-          address: order.client.address || '',
-          telephone: order.client.telephone || '',
-          idUser: this.getUserId()
-        };
+    // ✅ Cargar cliente
+    if (order.client) {
+      this.clientForm.patchValue({
+        id: order.client.id || 0,
+        name: order.client.name || 'Cliente Anónimo',
+        address: order.client.address || '',
+        telephone: order.client.telephone || ''
+      });
 
-        console.log('✅ Cliente cargado:', this.client);
-      }
+      this.client = {
+        id: order.client.id || 0,
+        name: order.client.name || 'Cliente Anónimo',
+        address: order.client.address || '',
+        telephone: order.client.telephone || '',
+        idUser: this.getUserId()
+      };
 
-      // ✅ Cargar sucursal
-      if (order.idBranch) {
-        this.stepTwoForm.patchValue({
-          idBranch: order.idBranch,
-          branchName: order.branchName || '',
-          observation: order.description || ''
-        });
-
-        this.branch = {
-          id: order.idBranch,
-          name: order.branchName || '',
-          address: '',
-          telephone: '',
-          idUser: this.getUserId(),
-          active: true
-        };
-
-        this.observation = order.description || '';
-        console.log('✅ Sucursal cargada:', this.branch);
-      }
-
-      // ✅ Cargar productos
-      if (order.products && order.products.length > 0) {
-        this.products = order.products.map((po: any) => ({
-          product: po.product,
-          quantity: po.quantity,
-          variantId: po.variantId || null
-        }));
-
-        console.log('✅ Productos transformados:', this.products);
-      }
-
-      this.load = false;
-      this.isLoadingData = false;
-
-      console.log('✅ Datos de orden cargados completamente');
-
-    } catch (error: any) {
-      console.error('❌ Error al cargar orden:', error);
-      this.toast.error('Error al cargar la orden');
-      this.load = false;
-      this.isLoadingData = false;
-      this.router.navigate(['dashboard/orders']);
+      console.log('✅ Cliente cargado:', this.client);
     }
+
+    // ✅ Cargar sucursal - MAPEO CORRECTO según backend
+    if (order.branchId) {  // ← Backend devuelve "branchId" no "idBranch"
+      this.stepTwoForm.patchValue({
+        idBranch: order.branchId,        // ← Mapear branchId → idBranch
+        branchName: order.branchName || '',
+        observation: order.observation || ''  // ← Backend devuelve "observation" no "description"
+      });
+
+      this.branch = {
+        id: order.branchId,              // ← Usar branchId
+        name: order.branchName || '',
+        address: '',
+        telephone: '',
+        idUser: this.getUserId(),
+        active: true
+      };
+
+      this.observation = order.observation || '';  // ← Usar observation
+
+      console.log('✅ Sucursal cargada:', {
+        id: this.branch.id,
+        name: this.branch.name,
+        observation: this.observation
+      });
+    }
+
+    // ✅ Cargar productos
+    if (order.products && order.products.length > 0) {
+      this.products = order.products.map((po: any) => ({
+        product: po.product,
+        quantity: po.quantity,
+        variantId: po.variantId || null
+      }));
+
+      console.log('✅ Productos transformados:', this.products);
+    }
+
+    this.load = false;
+    this.isLoadingData = false;
+
+    console.log('✅ Datos de orden cargados completamente');
+    console.log('📊 Estado final:', {
+      client: this.client?.name,
+      branch: this.branch?.name,
+      observation: this.observation,
+      products: this.products.length
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error al cargar orden:', error);
+    this.toast.error('Error al cargar la orden');
+    this.load = false;
+    this.isLoadingData = false;
+    this.router.navigate(['dashboard/orders']);
   }
+}
 
   onStepChange(event: StepperSelectionEvent): void {
     const newStepIndex = event.selectedIndex;

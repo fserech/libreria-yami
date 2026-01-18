@@ -13,7 +13,6 @@ import { NgClass } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { matRefreshOutline } from '@ng-icons/material-icons/outline';
 
-// ✅ NUEVA INTERFAZ para datos preexistentes
 interface DataOrderDialogData extends DialogData {
   existingBranchId?: number;
   existingObservation?: string;
@@ -60,12 +59,25 @@ export class DataOrderDialogComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    // ✅ PASO 1: Primero cargar las sucursales
     await this.loadBranches();
 
-    // ✅ Establecer datos preexistentes si existen
+    // ✅ PASO 2: Después de que las sucursales estén cargadas, establecer valores preexistentes
     if (this.data.existingBranchId) {
       console.log('🔄 Estableciendo sucursal preexistente:', this.data.existingBranchId);
-      this.form.controls['idBranch'].setValue(this.data.existingBranchId);
+
+      // Verificar que la sucursal existe en las opciones cargadas
+      const branchExists = this.branches.some(b => b.value === this.data.existingBranchId);
+
+      if (branchExists) {
+        // ✅ Usar setTimeout para asegurar que Angular haya renderizado el select
+        setTimeout(() => {
+          this.form.controls['idBranch'].setValue(this.data.existingBranchId);
+          console.log('✅ Sucursal establecida correctamente:', this.data.existingBranchId);
+        }, 0);
+      } else {
+        console.warn('⚠️ La sucursal preexistente no existe en las opciones:', this.data.existingBranchId);
+      }
     }
 
     if (this.data.existingObservation) {
@@ -77,18 +89,12 @@ export class DataOrderDialogComponent implements OnInit {
     }
   }
 
-  /**
-   * ✅ ESTABLECER MENSAJE DE AGRADECIMIENTO ALEATORIO
-   */
   setRandomThankYouMessage(): void {
     const randomIndex = Math.floor(Math.random() * this.thankYouMessages.length);
     const randomMessage = this.thankYouMessages[randomIndex];
     this.form.controls['observation'].setValue(randomMessage);
   }
 
-  /**
-   * ✅ GENERAR NUEVO MENSAJE ALEATORIO
-   */
   generateNewMessage(): void {
     this.setRandomThankYouMessage();
   }
@@ -96,6 +102,7 @@ export class DataOrderDialogComponent implements OnInit {
   async loadBranches(): Promise<void> {
     this.load = true;
     this.crud.baseUrl = URL_BRANCHES;
+
     try {
       const response: any = await this.crud.getAll('');
       this.branchesData = response.data || response;
@@ -113,7 +120,8 @@ export class DataOrderDialogComponent implements OnInit {
         this.toast.warning('No hay sucursales disponibles. Por favor, cree una sucursal primero.');
       }
 
-      console.log('✅ Sucursales cargadas:', this.branches.length);
+      console.log('✅ Sucursales cargadas:', this.branches.length, this.branches);
+
     } catch (error: any) {
       console.error('❌ Error al cargar sucursales:', error);
       this.toast.error('Error al cargar las sucursales');
