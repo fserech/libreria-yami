@@ -56,10 +56,9 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
   @ViewChild('stepper') stepper!: MatStepper;
   form: FormGroup;
 
-  // ✅ MODIFICADO: Hacer el formulario de cliente opcional
   clientForm = this._formBuilder.group({
-    id: [0], // Ya no es requerido
-    name: [''], // Ya no es requerido
+    id: [0],
+    name: [''],
     address: [''],
     telephone: ['']
   });
@@ -75,6 +74,10 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
   branch: Branch | null = null;
   observation: string;
 
+  // ✅ CRÍTICO: Inicializar ANTES del constructor
+  isEditMode: boolean = false;
+  isLoadingData: boolean = false; // ✅ Flag para controlar carga inicial
+
   constructor(
     private _formBuilder: FormBuilder,
     private crud: CrudService,
@@ -88,7 +91,12 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
       super(crud, toast, auth, bpo);
       this.mode = this.setMode(this.route.snapshot.paramMap.get('mode'));
 
-      if(this.mode !== 'new') this.id = Number(this.route.snapshot.paramMap.get('id'));
+      if(this.mode !== 'new') {
+        this.id = Number(this.route.snapshot.paramMap.get('id'));
+        this.isEditMode = true;
+        this.isLoadingData = true; // ✅ CRÍTICO: Marcar ANTES de iniciar carga
+      }
+
       this.crud.baseUrl = URL_ORDERS;
 
       this.form = new FormGroup({
@@ -102,7 +110,126 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
       }
   }
 
-  ngAfterViewInit(): void {}
+  ngOnInit(): void {
+    if (this.isEditMode && this.id) {
+      this.loadOrderData();
+    }
+  }
+
+  ngAfterViewInit(): void {
+    // Si ya se cargaron los datos antes de que el stepper se inicializara,
+    // intentar navegar ahora
+    if (this.isEditMode && this.products.length > 0 && this.stepper) {
+      setTimeout(() => {
+        if (this.stepper.selectedIndex === 0) { // Solo si aún está en paso 0
+          console.log('🔄 AfterViewInit: Navegando al paso 3');
+          this.stepper.selectedIndex = 2;
+          setTimeout(() => {
+            this.isLoadingData = false;
+          }, 200);
+        }
+      }, 150);
+    }
+  }
+
+  goToConfirmationStep(): void {
+    if (this.stepper && this.products.length > 0) {
+      console.log('🚀 Navegando al paso de confirmación (paso 3)');
+      this.stepper.selectedIndex = 2;
+    }
+  }
+
+  async loadOrderData() {
+    console.log('🔄 Iniciando carga de orden ID:', this.id);
+    this.load = true;
+    // isLoadingData ya está en true desde el constructor
+
+    try {
+      const response: any = await firstValueFrom(this.crud.getId(this.id));
+      const order = response.register;
+
+      console.log('📦 Orden recibida:', order);
+      console.log('👤 Cliente:', order.client);
+      console.log('🏪 Sucursal:', order.branch);
+      console.log('📦 ProductOrders:', order.productOrders);
+
+      // Cargar datos del cliente
+      if (order.client) {
+        this.clientForm.patchValue({
+          id: order.client.id || 0,
+          name: order.client.name || 'Cliente Anónimo',
+          address: order.client.address || '',
+          telephone: order.client.telephone || ''
+        });
+
+        this.client = {
+          id: order.client.id || 0,
+          name: order.client.name || 'Cliente Anónimo',
+          address: order.client.address || '',
+          telephone: order.client.telephone || '',
+          idUser: this.getUserId()
+        };
+      }
+
+      // Cargar datos de sucursal y observación
+      if (order.branch) {
+        this.stepTwoForm.patchValue({
+          idBranch: order.branch.id,
+          branchName: order.branch.name,
+          observation: order.description || ''
+        });
+
+        this.branch = {
+          id: order.branch.id,
+          name: order.branch.name,
+          address: order.branch.address || '',
+          telephone: order.branch.telephone || '',
+          idUser: this.getUserId(),
+          active: true
+        };
+
+        this.observation = order.description || '';
+      }
+
+      // Cargar productos con sus variantes
+      if (order.productOrders && order.productOrders.length > 0) {
+        this.products = order.productOrders.map((po: any) => ({
+          product: po.product,
+          quantity: po.quantity,
+          variantId: po.variantId || null,
+          variant: po.variant || null
+        }));
+      }
+
+      console.log('✅ Datos asignados. Cliente:', this.client);
+      console.log('✅ Productos:', this.products);
+      console.log('✅ Sucursal:', this.branch);
+
+      this.load = false;
+
+      // Navegar al paso 3 después de cargar los datos
+      setTimeout(() => {
+        console.log('🚀 Intentando navegar. Stepper existe:', !!this.stepper);
+        console.log('🚀 Productos.length:', this.products.length);
+        if (this.stepper && this.products.length > 0) {
+          this.stepper.selectedIndex = 2;
+          console.log('✅ Navegación completada al paso:', this.stepper.selectedIndex);
+
+          // ✅ Desmarcar carga después de navegar
+          setTimeout(() => {
+            this.isLoadingData = false;
+          }, 200);
+        }
+      }, 100);
+
+    } catch (error: any) {
+      console.error('❌ Error al cargar orden:', error);
+      this.toast.error('Error al cargar la orden');
+      this.load = false;
+      this.isLoadingData = false; // ✅ Desmarcar en caso de error
+      this.router.navigate(['dashboard/orders']);
+    }
+  }
 
   onStepChange(event: StepperSelectionEvent): void {
     const newStepIndex = event.selectedIndex;
@@ -110,8 +237,29 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
     console.log('📍 Cambio de paso:', {
       anterior: event.previouslySelectedIndex,
       nuevo: newStepIndex,
-      productosSeleccionados: this.products.length
+      productosSeleccionados: this.products.length,
+      modoEdicion: this.isEditMode,
+      cargandoDatos: this.isLoadingData
     });
+
+    // ✅ CRÍTICO: Si estamos cargando datos, permitir cualquier navegación
+    if (this.isLoadingData) {
+      console.log('⏩ Navegación permitida - Cargando datos');
+      return;
+    }
+
+    // Si estamos en modo edición, permitir navegación libre entre pasos
+    if (this.isEditMode) {
+      // Si va al paso 2, permitir sin restricciones
+      if (newStepIndex === 1) {
+        return;
+      }
+
+      // Si va al paso 3 y ya tenemos los datos cargados, permitir
+      if (newStepIndex === 2 && this.branch && this.branch.id > 0) {
+        return;
+      }
+    }
 
     if (newStepIndex === 2) {
       if (this.products.length === 0) {
@@ -122,6 +270,7 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
         return;
       }
 
+      // Si ya tenemos sucursal (modo edición), no abrir diálogo
       if (this.stepTwoForm.controls.idBranch.value && this.stepTwoForm.controls.idBranch.value > 0) {
         console.log('✅ Sucursal ya seleccionada, mostrando confirmación');
         return;
@@ -156,7 +305,6 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
         this.stepTwoForm.controls.branchName.setValue(data.branchName);
         this.stepTwoForm.controls.observation.setValue(data.observation);
 
-        // ✅ MODIFICADO: Manejar cliente anónimo
         this.client = {
           id: Number(this.clientForm.controls.id.value) || 0,
           name: this.clientForm.controls.name.value || 'Cliente Anónimo',
@@ -183,11 +331,12 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
       });
   }
 
-  ngOnInit(): void {}
-
-  // ✅ MODIFICADO: Permitir avanzar sin cliente
   isDirty(): boolean {
-    return true; // Siempre permite avanzar
+    // ✅ Si estamos cargando datos iniciales, no hay cambios
+    if (this.isLoadingData) {
+      return false;
+    }
+    return true;
   }
 
   introSearch(){
@@ -258,20 +407,39 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
     this.isSaving = true;
     this.crud.baseUrl = URL_ORDERS;
 
-    await firstValueFrom(this.crud.save(order))
-      .then((response: any) => {
-        this.toast.success(response.message);
-        this.load = false;
-      })
-      .catch((error: any) => {
-        console.log('err: ', error);
-        this.toast.error(error.message);
-        this.load = false;
-      })
-      .finally(() => {
-        this.load = false;
-        this.router.navigate(['dashboard/orders']);
-      });
+    // Si estamos en modo edición, usar updateId
+    if (this.isEditMode && this.id) {
+      await firstValueFrom(this.crud.updateId(this.id, order))
+        .then((response: any) => {
+          this.toast.success('Venta actualizada correctamente');
+          this.load = false;
+        })
+        .catch((error: any) => {
+          console.log('err: ', error);
+          this.toast.error(error.message);
+          this.load = false;
+        })
+        .finally(() => {
+          this.load = false;
+          this.router.navigate(['dashboard/orders']);
+        });
+    } else {
+      // Modo creación normal
+      await firstValueFrom(this.crud.save(order))
+        .then((response: any) => {
+          this.toast.success(response.message);
+          this.load = false;
+        })
+        .catch((error: any) => {
+          console.log('err: ', error);
+          this.toast.error(error.message);
+          this.load = false;
+        })
+        .finally(() => {
+          this.load = false;
+          this.router.navigate(['dashboard/orders']);
+        });
+    }
   }
 
   getUserId(){

@@ -6,7 +6,7 @@
     @if (mode==='new') {
       <p class="text-gray-500 dark:text-gray-300 font-bold">Nueva venta</p>
     }
-    @if (mode === 'edit'|| mode === 'view') {
+    @if (mode === 'edit' || mode === 'view') {
       <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID venta: </b>{{ id }}</p>
     }
     <button (click)="back()" class="btn-back">
@@ -15,10 +15,20 @@
     </button>
   </div>
 
-  <mat-stepper #stepper [linear]="true" (selectionChange)="onStepChange($event)" class="w-full">
+  <!-- ✅ STEPPER CON CONFIGURACIÓN PARA MODO EDICIÓN -->
+  <mat-stepper
+    #stepper
+    [linear]="!isEditMode && !isLoadingData"
+    [selectedIndex]="isLoadingData ? 0 : undefined"
+    (selectionChange)="onStepChange($event)"
+    class="w-full">
 
     <!-- PASO 1: Selección de Cliente -->
-    <mat-step [stepControl]="clientForm" [editable]="false" state="person">
+    <mat-step
+      [stepControl]="clientForm"
+      [editable]="isEditMode || isLoadingData"
+      [optional]="isLoadingData"
+      state="person">
       <ng-template matStepLabel>
         <p class="hidden sm:block">Cliente</p>
       </ng-template>
@@ -28,25 +38,28 @@
     </mat-step>
 
     <!-- PASO 2: Selección de Productos -->
-    <mat-step [stepControl]="stepTwoForm" [editable]="true" state="shopping_cart">
+    <mat-step
+      [stepControl]="stepTwoForm"
+      [editable]="true"
+      [optional]="isLoadingData"
+      state="shopping_cart">
       <ng-template matStepLabel>
         <p class="hidden sm:block">Productos y Sucursal</p>
       </ng-template>
-
       <app-orders-products-select
         #selectProducts
         (changes)="productsSelect($event)">
       </app-orders-products-select>
-
-      <!-- ⚠️ BOTONES ELIMINADOS - La navegación al paso 3 abre automáticamente el diálogo -->
     </mat-step>
 
     <!-- PASO 3: Confirmación de la Venta -->
-    <mat-step [editable]="false" state="checklist_rtl">
+    <mat-step
+      [editable]="isEditMode || isLoadingData"
+      [optional]="isLoadingData"
+      state="checklist_rtl">
       <ng-template matStepLabel>
         <p class="hidden sm:block">Confirmación</p>
       </ng-template>
-
       <app-orders-confirm
         #confirmOrder
         (confirmOrder)="submit($event)"
@@ -57,6 +70,5 @@
         [observation]="observation">
       </app-orders-confirm>
     </mat-step>
-
   </mat-stepper>
 </div>

@@ -334,6 +334,12 @@
                         <ng-icon class="text-blue-500 font-bold" size="20" name="matRemoveRedEyeOutline"></ng-icon>
                       </button>
                     }
+                     <!-- ✅ NUEVO: Editar orden - SOLO para PENDING -->
+                    @if (order.status === 'PENDING') {
+                      <button (click)="edit(order.id)" class="btn-action" title="Editar venta">
+                        <ng-icon class="text-yellow-500 font-bold" size="20" name="matModeEditOutline"></ng-icon>
+                      </button>
+                    }
 
                     <!-- Imprimir recibo - SOLO para órdenes FINALIZADAS -->
                     @if (order.status === 'FINALIZED') {

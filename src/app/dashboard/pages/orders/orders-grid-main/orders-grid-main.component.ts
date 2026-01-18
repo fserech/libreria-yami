@@ -13,7 +13,7 @@ import { firstValueFrom } from 'rxjs';
 import { OptionsChatBubble } from '../../../../shared/interfaces/options-chat-bubble';
 import { bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarLeft, bootstrapChevronBarRight, bootstrapXCircle, bootstrapBoxSeam, bootstrapCheckCircleFill } from '@ng-icons/bootstrap-icons';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { matSearchOutline, matFilterAltOutline, matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline, matDeleteOutline, matEditOutline, matReceiptLongOutline, matRemoveRedEyeOutline, matLocalShippingOutline, matPersonOutline, matPlaylistAddCheckCircleOutline, matShoppingBagOutline } from '@ng-icons/material-icons/outline';
+import { matSearchOutline, matFilterAltOutline, matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline, matDeleteOutline, matEditOutline, matReceiptLongOutline, matRemoveRedEyeOutline, matLocalShippingOutline, matPersonOutline, matPlaylistAddCheckCircleOutline, matShoppingBagOutline, matModeEditOutline } from '@ng-icons/material-icons/outline';
 import { NgClass } from '@angular/common';
 import { ChatBubbleComponent } from '../../../../shared/components/chat-bubble/chat-bubble.component';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -28,7 +28,7 @@ import { DatePickerComponent } from '../../../../shared/components/date-picker/d
 import { DatePickerSearchComponent } from '../../../../shared/components/date-picker-search/date-picker-search.component';
 import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 import { MIN_DATE, MAX_DATE } from '../../../../shared/constants/date-min-max';
-import { ReportsReceiptsService } from '../../../../shared/services/reports-receipts.service'; // ✅ IMPORTAR
+import { ReportsReceiptsService } from '../../../../shared/services/reports-receipts.service';
 
 @Component({
   selector: 'app-orders-grid-main',
@@ -41,7 +41,7 @@ import { ReportsReceiptsService } from '../../../../shared/services/reports-rece
   viewProviders: [ provideIcons({ matSearchOutline, matFilterAltOutline, matAddOutline, matArrowDownwardOutline, matArrowUpwardOutline,
     matDeleteOutline, matEditOutline, bootstrapChevronLeft, bootstrapChevronRight, bootstrapChevronBarLeft, bootstrapChevronBarRight,
     matReceiptLongOutline, bootstrapXCircle, bootstrapBoxSeam, bootstrapCheckCircleFill, matRemoveRedEyeOutline, matLocalShippingOutline,
-    matPersonOutline,matShoppingBagOutline }) ]
+    matPersonOutline, matShoppingBagOutline, matModeEditOutline }) ]
 })
 export default class OrdersGridMainComponent extends BaseForm implements OnInit {
 
@@ -61,7 +61,7 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     public dialog: Dialog,
     private bpo: BreakpointObserver,
     private auth: AuthService,
-    private reportsService: ReportsReceiptsService // ✅ INYECTAR SERVICIO
+    private reportsService: ReportsReceiptsService
   ){
       super(crud, toast, auth, bpo);
       moment.locale('es');
@@ -162,9 +162,14 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     });
   }
 
+  // ✅ ACTUALIZADO: Agregada acción EDIT_ORDER
   selectOption(option: OptionsChatBubble){
     if(option.action === 'VIEW_ORDER'){
       this.view(option.id);
+    }
+
+    if(option.action === 'EDIT_ORDER'){
+      this.edit(option.id);
     }
 
     if(option.action === 'FINALIZED'){
@@ -175,7 +180,6 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
       this.cancelOrder(option.id);
     }
 
-    // ✅✅✅ NUEVA ACCIÓN PARA IMPRIMIR RECIBO ✅✅✅
     if(option.action === 'PRINT_RECEIPT'){
       this.printReceipt(option.id);
     }
@@ -337,14 +341,10 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     this.router.navigate([`/dashboard/orders/view/${id}`]);
   }
 
-  // ✅✅✅ IMPLEMENTACIÓN DE printReceipt ✅✅✅
   async printReceipt(orderId: number) {
-
-
     this.load = true;
 
     try {
-      // Obtener la orden para verificar sus datos
       const order = this.ItemsList.find((o: any) => o.id === orderId);
 
       if (!order) {
@@ -353,20 +353,11 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
         return;
       }
 
-
-
-      // Generar el reporte usando el servicio
-      // NOTA: El backend espera order_id como parámetro
       await firstValueFrom(
         this.reportsService.getReceiptByOrderId(orderId)
       )
       .then((blob: Blob) => {
-
-
-        // Crear URL del blob
         const url = window.URL.createObjectURL(blob);
-
-        // Abrir en nueva ventana para imprimir
         const printWindow = window.open(url, '_blank');
 
         if (printWindow) {
@@ -375,7 +366,6 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
           };
         }
 
-        // Limpiar URL después de 1 minuto
         setTimeout(() => {
           window.URL.revokeObjectURL(url);
         }, 60000);
