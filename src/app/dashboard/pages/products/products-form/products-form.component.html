@@ -298,6 +298,15 @@
               </button>
             </div>
 
+            <!-- Mensaje informativo -->
+            <div class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+              <p class="text-xs text-blue-800 dark:text-blue-300">
+                <ng-icon name="matInfoOutline" size="14" class="inline mr-1"></ng-icon>
+                <strong>Importante:</strong> Puedes agregar múltiples proveedores con diferentes precios.
+                El sistema automáticamente seleccionará el mejor precio para tus cálculos.
+              </p>
+            </div>
+
             <!-- Lista de precios por proveedor -->
             @if (supplierPrices.length === 0) {
               <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
@@ -351,12 +360,12 @@
                       [(ngModel)]="supplierPrice.costPrice"
                       (ngModelChange)="calculateSuggestedPrice()"
                       step="0.01"
-                      min="0"
+                      min="0.01"
                       placeholder="0.00"
                       class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-gray-200"
-                      [class.border-red-500]="supplierPrice.costPrice <= 0">
-                    @if (supplierPrice.costPrice <= 0) {
-                      <p class="text-xs text-red-600 dark:text-red-400 mt-1">Debe ser mayor a 0</p>
+                      [class.border-red-500]="!supplierPrice.costPrice || supplierPrice.costPrice <= 0">
+                    @if (!supplierPrice.costPrice || supplierPrice.costPrice <= 0) {
+                      <p class="text-xs text-red-600 dark:text-red-400 mt-1">Ingresa el precio de este proveedor</p>
                     }
                   </div>
 

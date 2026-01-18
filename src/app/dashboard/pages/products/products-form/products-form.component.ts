@@ -309,13 +309,17 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   // ==================== SUPPLIER PRICES MANAGEMENT ====================
 
   addSupplierPrice() {
-    // Verificar si ya hay un proveedor sin seleccionar
-    const hasUnselected = this.supplierPrices.some(sp => sp.supplierId === 0);
-    if (hasUnselected) {
-      this.toast.error('Por favor completa el proveedor actual antes de agregar otro');
+    // Verificar si ya hay un proveedor sin seleccionar o sin precio
+    const hasIncomplete = this.supplierPrices.some(sp =>
+      sp.supplierId === 0 || sp.costPrice === 0
+    );
+
+    if (hasIncomplete) {
+      this.toast.error('Por favor completa el proveedor actual (selecciona proveedor Y agrega precio) antes de agregar otro');
       return;
     }
 
+    // Agregar nuevo proveedor vacío
     this.supplierPrices.push({
       supplierId: 0,
       costPrice: 0,
