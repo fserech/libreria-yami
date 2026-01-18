@@ -55,6 +55,9 @@ interface TopProductDisplay {
   sales: number;
   revenue: number;
   trend: number;
+  hasVariants: boolean;        // ✅ NUEVO
+  variantName?: string;         // ✅ NUEVO: Nombre de la variante si aplica
+  productType: 'simple' | 'variant'; // ✅ NUEVO
 }
 
 interface DashboardData {
@@ -138,12 +141,16 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async loadDashboardData() {
     this.loading = true;
+
+
     try {
+      // Cargar datos básicos
       const [products, categories, clients] = await Promise.all([
         firstValueFrom(this.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)),
         firstValueFrom(this.http.get<Category[]>(`${environment.apiUrl}/api/v1/categories`)),
         firstValueFrom(this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`))
       ]);
+
       let orders: Order[] = [];
       let ordersWithProducts: Order[] = [];
 
@@ -168,36 +175,55 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         orders = response?.content || [];
         this.orders = orders;
 
+
+        // ✅ CRÍTICO: Cargar detalles de productos para cada orden
         if (orders.length > 0) {
           const firstOrder = orders[0];
-          if (!firstOrder.products) {
+
+          // Si la primera orden no tiene productos, cargar detalles de todas
+          if (!firstOrder.products || firstOrder.products.length === 0) {
+
             const ordersWithDetailsPromises = orders.map(order =>
               firstValueFrom(this.crud.getId(order.id)).catch(err => {
-                console.error(`Error cargando orden ${order.id}:`, err);
+                console.error(`❌ Error cargando orden ${order.id}:`, err);
                 return order;
               })
             );
+
             ordersWithProducts = await Promise.all(ordersWithDetailsPromises);
+
           } else {
             ordersWithProducts = orders;
+
           }
+
+          // Mostrar resumen de productos en consola
+          const totalProductsInOrders = ordersWithProducts.reduce((sum, o) =>
+            sum + (o.products?.length || 0), 0
+          );
+
         }
       } catch (e) {
-        console.error('⚠️ Error cargando órdenes:', e);
+        console.error('❌ Error cargando órdenes:', e);
       }
+
+      // Calcular métricas del dashboard
 
       const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
 
+      // Actualizar componentes visuales
       this.updateStats(dashboardData, products, orders);
       this.updateKPIs(dashboardData, orders);
       this.calculateTopProductsFromOrders(ordersWithProducts, products);
 
+      // Actualizar gráficos
       if (this.pieChart) {
         this.updatePieChartWithRealData(products, categories);
       }
       if (this.lineChart) {
         this.updateLineChartWithRealData(orders);
       }
+
     } catch (error) {
       console.error('❌ Error cargando datos del dashboard:', error);
     } finally {
@@ -279,16 +305,19 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
-  updateStats(data: DashboardData, products: Product[], orders: Order[]) {
+ updateStats(data: DashboardData, products: Product[], orders: Order[]) {
     const goalAmount = this.goalsComponent ? this.goalsComponent.calculateCurrentMonthGoal(orders) : 20000;
     const progress = (data.totalSales / goalAmount) * 100;
+
     const salesChange = data.previousMonthSales > 0
       ? ((data.totalSales - data.previousMonthSales) / data.previousMonthSales) * 100
       : 0;
+
     const salesChangeText = data.previousMonthSales > 0
       ? `${salesChange >= 0 ? '+' : ''}${salesChange.toFixed(1)}% vs mes anterior`
-      : `${data.totalOrders} órdenes`;
+      : `${data.totalOrders} órdenes este mes`;
 
+    // Guardar la meta actual
     if (this.goalsComponent) {
       this.goalsComponent.saveCurrentMonthGoal(goalAmount);
     }
@@ -298,12 +327,12 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stats = [
       {
         label: 'Ventas del Mes',
-        value: `Q${data.totalSales.toLocaleString('es-GT', { minimumFractionDigits: 2 })}`,
+        value: `Q${data.totalSales.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         change: salesChangeText,
         trend: salesChange >= 0 ? 'up' : 'down',
         icon: 'DollarSign',
-        color: data.totalSales >= goalAmount ? 'bg-blue-500' : 'bg-orange-500',
-        subtitle: `Meta ${goalTypeLabel}: Q${goalAmount.toLocaleString('es-GT')}`,
+        color: data.totalSales >= goalAmount ? 'bg-green-500' : 'bg-blue-500',
+        subtitle: `Meta ${goalTypeLabel}: Q${goalAmount.toLocaleString('es-GT', { maximumFractionDigits: 0 })}`,
         progress: Math.min(progress, 100),
       },
       {
@@ -313,22 +342,21 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         trend: 'up',
         icon: 'ShoppingCart',
         color: 'bg-purple-500',
-        subtitle: 'En sistema',
+        subtitle: 'Disponibles para venta',
         progress: 0,
       },
       {
         label: 'Clientes Activos',
         value: data.totalClients.toString(),
-        change: data.totalClients > 0 ? 'Registrados' : 'Sin clientes',
+        change: data.totalClients > 0 ? 'Registrados en sistema' : 'Sin clientes',
         trend: 'up',
         icon: 'Users',
         color: 'bg-pink-500',
-        subtitle: 'En base de datos',
+        subtitle: 'Base de datos',
         progress: 0,
       }
     ];
   }
-
   updateKPIs(data: DashboardData, orders: Order[]) {
     this.kpis = [
       {
@@ -356,82 +384,155 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
-    const productSalesMap = new Map<number, {
-      quantity: number;
-      revenue: number;
-      ordersCount: number;
-    }>();
+   const productSalesMap = new Map<number, {
+    quantity: number;
+    revenue: number;
+    ordersCount: number;
+  }>();
+  const variantSalesMap = new Map<number, {
+    productId: number;
+    variantId: number;
+    quantity: number;
+    revenue: number;
+    ordersCount: number;
+  }>();
 
-    const isFinalized = (order: Order): boolean => {
-      if (!order.status) return false;
-      const status = order.status.toUpperCase().trim();
-      return status === 'FINALIZED' || status === 'FINALIZADO';
-    };
 
-    const finalizedOrders = orders.filter(order => isFinalized(order));
+   const isFinalized = (order: Order): boolean => {
+    if (!order.status) return false;
+    const status = order.status.toUpperCase().trim();
+    return status === 'FINALIZED' || status === 'FINALIZADO';
+  };
 
-    finalizedOrders.forEach((order) => {
-      if (!order.products || !Array.isArray(order.products)) {
-        return;
-      }
+  const finalizedOrders = orders.filter(order => isFinalized(order));
+
+   finalizedOrders.forEach((order) => {
+    if (!order.products || !Array.isArray(order.products)) {
+      return;
+    }
 
       order.products.forEach((productOrder: ProductOrder) => {
-        let productId: number | undefined;
+      let productId: number | undefined;
 
-        if (productOrder.productId) {
-          productId = productOrder.productId;
-        } else if (productOrder.product?.id) {
-          productId = productOrder.product.id;
-        }
+       if (productOrder.productId) {
+        productId = productOrder.productId;
+      } else if (productOrder.product?.id) {
+        productId = productOrder.product.id;
+      }
 
         if (!productId) {
-          return;
-        }
-
+        console.warn('⚠️ ProductOrder sin ID:', productOrder);
+        return;
+      }
         const current = productSalesMap.get(productId) || {
           quantity: 0,
           revenue: 0,
           ordersCount: 0
         };
 
-        productSalesMap.set(productId, {
+        if (productOrder.variantId) {
+        // Es una VARIANTE
+        const variantKey = productOrder.variantId;
+        const current = variantSalesMap.get(variantKey) || {
+          productId: productId,
+          variantId: productOrder.variantId,
+          quantity: 0,
+          revenue: 0,
+          ordersCount: 0
+        };
+
+         variantSalesMap.set(variantKey, {
+          ...current,
           quantity: current.quantity + (productOrder.quantity || 0),
           revenue: current.revenue + (productOrder.subtotal || 0),
           ordersCount: current.ordersCount + 1
         });
-      });
-    });
 
-    const topProductsData: TopProductDisplay[] = [];
+      } else {
+        // Es un PRODUCTO SIMPLE
+        const current = productSalesMap.get(productId) || {
+          quantity: 0,
+          revenue: 0,
+          ordersCount: 0
+        };
 
-    productSalesMap.forEach((sales, productId) => {
-      const product = products.find(p => p.id === productId);
+       productSalesMap.set(productId, {
+          quantity: current.quantity + (productOrder.quantity || 0),
+          revenue: current.revenue + (productOrder.subtotal || 0),
+          ordersCount: current.ordersCount + 1
+        });
 
-      if (!product) {
-        return;
       }
+    });
+  });
 
-      topProductsData.push({
-        name: product.productName,
-        sales: sales.quantity,
-        revenue: sales.revenue,
-        trend: sales.ordersCount
-      });
+
+  const topProductsData: TopProductDisplay[] = [];
+
+
+      productSalesMap.forEach((sales, productId) => {
+    const product = products.find(p => p.id === productId);
+
+    if (!product) {
+      console.warn(`⚠️ Producto no encontrado con ID: ${productId}`);
+      return;
+    }
+
+    topProductsData.push({
+      name: product.productName,
+      sales: sales.quantity,
+      revenue: sales.revenue,
+      trend: sales.ordersCount,
+      hasVariants: false,
+      productType: 'simple'
     });
 
-    this.topProducts = topProductsData
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 5);
+  });
 
-    if (this.topProducts.length === 0) {
-      this.topProducts = [{
-        name: 'Sin ventas registradas',
-        sales: 0,
-        revenue: 0,
-        trend: 0
-      }];
+   variantSalesMap.forEach((sales) => {
+    const product = products.find(p => p.id === sales.productId);
+
+    if (!product) {
+      console.warn(`⚠️ Producto no encontrado con ID: ${sales.productId}`);
+      return;
     }
+
+    const variant = product.variants?.find(v => v.id === sales.variantId);
+    const variantName = variant?.variantName || `Variante #${sales.variantId}`;
+
+    topProductsData.push({
+      name: product.productName,
+      variantName: variantName,
+      sales: sales.quantity,
+      revenue: sales.revenue,
+      trend: sales.ordersCount,
+      hasVariants: true,
+      productType: 'variant'
+    });
+
+  });
+
+   this.topProducts = topProductsData
+    .sort((a, b) => b.sales - a.sales)
+    .slice(0, 5);
+
+  if (this.topProducts.length === 0) {
+    this.topProducts = [{
+      name: 'Sin ventas registradas',
+      sales: 0,
+      revenue: 0,
+      trend: 0,
+      hasVariants: false,
+      productType: 'simple'
+    }];
+  } else {
+
+    this.topProducts.forEach((p, i) => {
+      const type = p.productType === 'simple' ? '📦 Simple' : '📌 Variante';
+      const name = p.variantName ? `${p.name} - ${p.variantName}` : p.name;
+    });
   }
+}
 
   updateLineChartWithRealData(orders: Order[]) {
     if (!this.lineChart || !this.goalsComponent) return;
@@ -559,88 +660,97 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  createPieChart() {
-    if (!this.pieChartRef) return;
+ createPieChart() {
+  if (!this.pieChartRef) return;
 
-    this.pieChart = new Chart(this.pieChartRef.nativeElement, {
-      type: 'pie',
-      data: {
-        labels: [],
-        datasets: [{
-          data: [],
-          backgroundColor: [
-            'rgb(59, 130, 246)',
-            'rgb(139, 92, 246)',
-            'rgb(236, 72, 153)',
-            'rgb(245, 158, 11)',
-            'rgb(16, 185, 129)',
-            'rgb(239, 68, 68)',
-            'rgb(20, 184, 166)',
-            'rgb(251, 146, 60)',
-          ],
-          borderWidth: 0,
-        }]
+  // ⭐ Detectar tema actual
+  const isDarkMode = document.documentElement.classList.contains('dark');
+  const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+
+  this.pieChart = new Chart(this.pieChartRef.nativeElement, {
+    type: 'pie',
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        backgroundColor: [
+          'rgb(59, 130, 246)',
+          'rgb(139, 92, 246)',
+          'rgb(236, 72, 153)',
+          'rgb(245, 158, 11)',
+          'rgb(16, 185, 129)',
+          'rgb(239, 68, 68)',
+          'rgb(20, 184, 166)',
+          'rgb(251, 146, 60)',
+        ],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: {
+          bottom: 20
+        }
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: {
-          padding: {
-            bottom: 20
-          }
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: 'bottom',
-            labels: {
-              usePointStyle: true,
-              pointStyle: 'circle',
-              padding: 12,
-              font: {
-                size: 10
-              },
-              boxWidth: 8,
-              boxHeight: 8,
-              generateLabels: function(chart) {
-                const data = chart.data;
-                if (data.labels && data.datasets.length) {
-                  return data.labels.map((label, i) => {
-                    const dataset = data.datasets[0];
-                    return {
-                      text: label as string,
-                      fillStyle: dataset.backgroundColor[i] as string,
-                      hidden: false,
-                      index: i,
-                      strokeStyle: dataset.backgroundColor[i] as string,
-                      pointStyle: 'circle'
-                    };
-                  });
-                }
-                return [];
-              }
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 12,
+            font: {
+              size: 10
             },
-            maxHeight: 200,
-            align: 'center'
+            boxWidth: 8,
+            boxHeight: 8,
+            color: textColor, // ⭐ Color aplicado aquí
+            generateLabels: function(chart) {
+  const data = chart.data;
+  const isDark = document.documentElement.classList.contains('dark');
+  const labelColor = isDark ? '#9CA3AF' : '#6B7280';
+
+  if (data.labels && data.datasets.length) {
+    return data.labels.map((label, i) => {
+      const dataset = data.datasets[0];
+      return {
+        text: label as string,
+        fillStyle: dataset.backgroundColor[i] as string,
+        hidden: false,
+        index: i,
+        strokeStyle: dataset.backgroundColor[i] as string,
+        pointStyle: 'circle',
+        fontColor: labelColor // ⭐ Agregar esto
+      };
+    });
+  }
+  return [];
+}
           },
-          tooltip: {
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            titleColor: '#000',
-            bodyColor: '#000',
-            borderColor: '#e5e7eb',
-            borderWidth: 1,
-            callbacks: {
-              label: function(context) {
-                const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
-              }
+          maxHeight: 200,
+          align: 'center'
+        },
+        tooltip: {
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          titleColor: '#000',
+          bodyColor: '#000',
+          borderColor: '#e5e7eb',
+          borderWidth: 1,
+          callbacks: {
+            label: function(context) {
+              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+              const percentage = ((context.parsed / total) * 100).toFixed(1);
+              return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
             }
           }
         }
       }
-    });
-  }
+    }
+  });
+}
 
   getCategoryDistribution(products: Product[], categories: Category[]) {
     const categoryCounts = new Map<number, number>();
@@ -665,16 +775,25 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
     return { labels, values };
   }
+updatePieChartWithRealData(products: Product[], categories: Category[]) {
+  if (!this.pieChart) return;
 
-  updatePieChartWithRealData(products: Product[], categories: Category[]) {
-    if (!this.pieChart) return;
+  const categoryData = this.getCategoryDistribution(products, categories);
 
-    const categoryData = this.getCategoryDistribution(products, categories);
+  // ⭐ Detectar tema actual y aplicar color
+  const isDarkMode = document.documentElement.classList.contains('dark');
+  const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
 
-    this.pieChart.data.labels = categoryData.labels;
-    this.pieChart.data.datasets[0].data = categoryData.values;
-    this.pieChart.update();
+  this.pieChart.data.labels = categoryData.labels;
+  this.pieChart.data.datasets[0].data = categoryData.values;
+
+  // ⭐ Actualizar el color de la leyenda
+  if (this.pieChart.options.plugins?.legend?.labels) {
+    this.pieChart.options.plugins.legend.labels.color = textColor;
   }
+
+  this.pieChart.update();
+}
 
   getIcon(iconName: string) {
     const icons: any = {

@@ -89,61 +89,119 @@
     </div>
   </div>
 
-  <!-- Top Products Table -->
-  <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-    <h3 class="text-xl font-bold mb-4 dark:text-white">Productos Más Vendidos</h3>
+<!-- Top Products Table -->
+<div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+  <h3 class="text-xl font-bold mb-4 dark:text-white">Productos Más Vendidos</h3>
 
-    @if (loading) {
-      <div class="flex justify-center items-center py-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    } @else if (topProducts.length === 0 || (topProducts.length === 1 && topProducts[0].sales === 0)) {
-      <div class="text-center py-8">
-        <p class="text-gray-500 dark:text-gray-400">No hay datos de ventas disponibles</p>
-      </div>
-    } @else {
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="border-b border-gray-200 dark:border-gray-700">
-              <th class="text-left py-3 px-4 text-sm font-medium dark:text-gray-300">Producto</th>
-              <th class="text-right py-3 px-4 text-sm font-medium dark:text-gray-300">Unidades</th>
-              <th class="text-right py-3 px-4 text-sm font-medium dark:text-gray-300">Ingresos</th>
-              <th class="text-right py-3 px-4 text-sm font-medium dark:text-gray-300">Órdenes</th>
-              <th class="text-right py-3 px-4 text-sm font-medium dark:text-gray-300">Progreso</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (product of topProducts; track product.name) {
-              <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                <td class="py-3 px-4 dark:text-gray-200 font-medium">{{ product.name }}</td>
-                <td class="text-right py-3 px-4 dark:text-gray-200 font-semibold text-blue-600 dark:text-blue-400">
-                  {{ product.sales }}
-                </td>
-                <td class="text-right py-3 px-4 dark:text-gray-200 font-medium text-green-600 dark:text-green-400">
-                  Q{{ product.revenue.toLocaleString('es-GT', { minimumFractionDigits: 2 }) }}
-                </td>
-                <td class="text-right py-3 px-4">
-                  <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium dark:text-gray-300">
-                    <lucide-icon [img]="ShoppingCart" class="w-3 h-3"></lucide-icon>
-                    {{ product.trend }}
+  @if (loading) {
+    <div class="flex justify-center items-center py-8">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  } @else if (topProducts.length === 0 || (topProducts.length === 1 && topProducts[0].sales === 0)) {
+    <div class="text-center py-8">
+      <p class="text-gray-500 dark:text-gray-400">No hay datos de ventas disponibles</p>
+    </div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <th class="text-left py-3 px-4 text-sm font-medium dark:text-gray-300">Producto</th>
+            <th class="text-center py-3 px-4 text-sm font-medium dark:text-gray-300">Tipo</th>
+            <th class="text-right py-3 px-4 text-sm font-medium dark:text-gray-300">Unidades</th>
+            <th class="text-right py-3 px-4 text-sm font-medium dark:text-gray-300">Ingresos</th>
+            <th class="text-right py-3 px-4 text-sm font-medium dark:text-gray-300">Órdenes</th>
+            <th class="text-right py-3 px-4 text-sm font-medium dark:text-gray-300">Progreso</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (product of topProducts; track $index) {
+            <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <!-- Nombre del Producto -->
+              <td class="py-3 px-4">
+                <div class="flex flex-col">
+                  <span class="dark:text-gray-200 font-medium">{{ product.name }}</span>
+                  @if (product.variantName) {
+                    <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {{ product.variantName }}
+                    </span>
+                  }
+                </div>
+              </td>
+
+              <!-- Tipo (Simple/Variante) -->
+              <td class="text-center py-3 px-4">
+                @if (product.productType === 'simple') {
+                  <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30
+                               text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 9a1 1 0 012 0v4a1 1 0 01-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z"/>
+                    </svg>
+                    Simple
                   </span>
-                </td>
-                <td class="py-3 px-4">
-                  <div class="flex items-center justify-end gap-2">
-                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ getProgressPercentage(product.sales).toFixed(0) }}%</span>
-                    <div class="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all"
-                           [style.width.%]="getProgressPercentage(product.sales)">
-                      </div>
+                } @else {
+                  <span class="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30
+                               text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                    </svg>
+                    Variante
+                  </span>
+                }
+              </td>
+
+              <!-- Unidades Vendidas -->
+              <td class="text-right py-3 px-4 dark:text-gray-200 font-semibold text-blue-600 dark:text-blue-400">
+                {{ product.sales }}
+              </td>
+
+              <!-- Ingresos -->
+              <td class="text-right py-3 px-4 dark:text-gray-200 font-medium text-green-600 dark:text-green-400">
+                Q{{ product.revenue.toLocaleString('es-GT', { minimumFractionDigits: 2 }) }}
+              </td>
+
+              <!-- Número de Órdenes -->
+              <td class="text-right py-3 px-4">
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium dark:text-gray-300">
+                  <lucide-icon [img]="ShoppingCart" class="w-3 h-3"></lucide-icon>
+                  {{ product.trend }}
+                </span>
+              </td>
+
+              <!-- Barra de Progreso -->
+              <td class="py-3 px-4">
+                <div class="flex items-center justify-end gap-2">
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ getProgressPercentage(product.sales).toFixed(0) }}%
+                  </span>
+                  <div class="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      [class]="product.productType === 'simple' ? 'bg-blue-600 dark:bg-blue-500' : 'bg-purple-600 dark:bg-purple-500'"
+                      class="h-2 rounded-full transition-all"
+                      [style.width.%]="getProgressPercentage(product.sales)">
                     </div>
                   </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-blue-600"></div>
+          <span>Producto Simple</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-purple-600"></div>
+          <span>Producto con Variante</span>
+        </div>
       </div>
-    }
-  </div>
+    </div>
+  }
+</div>
 </div>

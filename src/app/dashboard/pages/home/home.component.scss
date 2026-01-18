@@ -4,3 +4,23 @@
   left: 50%;
   transform: translateX(-50%);
 }
+/* Agregar al archivo styles.scss global o al componente home.component.scss */
+
+/* Tema claro */
+:root {
+  --chart-text-color: #4B5563; /* gray-600 */
+}
+
+/* Tema oscuro */
+.dark {
+  --chart-text-color: #9CA3AF; /* gray-400 */
+}
+
+/* Alternativamente, si prefieres que sea consistente con otros textos */
+:root {
+  --chart-text-color: #6B7280; /* gray-500 */
+}
+
+.dark {
+  --chart-text-color: #D1D5DB; /* gray-300 */
+}
