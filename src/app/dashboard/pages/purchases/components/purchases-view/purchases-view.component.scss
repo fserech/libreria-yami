@@ -1,0 +1,71 @@
+/* ===================================
+   SCROLLBAR PERSONALIZADO PROFESIONAL
+   =================================== */
+
+/* Para navegadores Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f1f1;
+}
+
+.dark * {
+  scrollbar-color: #475569 #1e293b;
+}
+
+/* ===================================
+   ANIMACIONES SUAVES
+   =================================== */
+
+.overflow-y-auto {
+  scroll-behavior: smooth;
+}
+
+/* ===================================
+   EFECTOS DE LISTA
+   =================================== */
+
+ul li {
+  transition: all 0.2s ease-in-out;
+}
+
+ul li:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark ul li:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

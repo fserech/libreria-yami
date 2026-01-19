@@ -1,9 +1,6 @@
 <div class="p-2 m-2 bg-white rounded dark:bg-slate-900 dark:border-slate-800">
   <div class="w-full sm:border-b text-lg dark:border-gray-500 mb-4 pb-2 flex justify-between">
-
-    @if (mode === 'edit'|| mode === 'view') {
-      <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID compra: </b>{{ id }}</p>
-    }
+    <p class="text-gray-500 dark:text-gray-300 text-base"><b>ID compra: </b>{{ id }}</p>
 
     <button (click)="back()" class="btn-back">
       <ng-icon class="btn-back-icon" size="20" name="matArrowBackOutline"></ng-icon>
@@ -11,15 +8,15 @@
     </button>
   </div>
 
+  <!-- ✅ Información del Proveedor y Sucursal -->
   <div class="w-full p-0">
     <div class="bg-gray-50 dark:bg-slate-950 rounded-lg p-4">
-      <!-- Información del Proveedor -->
-      <h2 class="text-sm text-gray-500 dark:text-gray-400"><b>ID Proveedor: </b>{{ supplier?.id }}</h2>
-      <h2 class="text-lg font-semibold mb-1 text-gray-500 dark:text-gray-200">{{ supplier?.supplierName }}</h2>
+      <h2 class="text-sm text-gray-500 dark:text-gray-400"><b>ID Proveedor: </b>{{ supplier?.id || 'N/A' }}</h2>
+      <h2 class="text-lg font-semibold mb-1 text-gray-500 dark:text-gray-200">{{ getSupplierName() }}</h2>
       <div class="mb-4 border-b border-gray-200 dark:border-gray-500 pb-2">
         <h3 class="text-sm text-gray-500 dark:text-gray-400">
           <ng-icon class="btn-back-icon" size="20" name="matLocationOnOutline"></ng-icon>
-          {{ supplier?.address }}
+          {{ supplier?.address || 'Sin dirección' }}
         </h3>
         @if (supplier?.phone) {
           <h3 class="text-sm text-gray-500 dark:text-gray-400">
@@ -50,7 +47,12 @@
             <ng-icon class="btn-back-icon" size="20" name="matCalendarTodayOutline"></ng-icon>
             Fecha de Entrega
           </h3>
-          <h3 class="text-sm text-blue-500 dark:text-blue-400 font-bold">{{ formatDateNotHour(purchase?.deliveryDate) }}</h3>
+          @if (purchase?.deliveryDate) {
+            <h3 class="text-sm text-blue-500 dark:text-blue-400 font-bold">{{ formatDateNotHour(purchase?.deliveryDate) }}</h3>
+          } @else {
+            <h3 class="text-sm text-amber-500 font-bold">⏳ Pendiente de recepción</h3>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Se registrará cuando se confirme la entrega</p>
+          }
         </div>
 
         <!-- Usuario -->
@@ -59,12 +61,12 @@
             <ng-icon class="btn-back-icon" size="20" name="matPersonOutlineOutline"></ng-icon>
             Usuario
           </h3>
-          <h3 class="text-sm text-gray-500 dark:text-gray-400">{{ purchase?.user }}</h3>
+          <h3 class="text-sm text-gray-500 dark:text-gray-400">{{ purchase?.user || 'N/A' }}</h3>
         </div>
       </div>
 
       <!-- Sucursal y Estado -->
-      <div class="mb-4 flex justify-between">
+      <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Información de Sucursal -->
         <div>
           <h3 class="text-sm text-gray-500 dark:text-gray-400 font-bold">
@@ -113,36 +115,61 @@
     </div>
   </div>
 
-  <!-- Título de Productos -->
-  <div class="w-full text-lg dark:border-slate-700 mb-4 p-2 m-2 bg-gray-100 dark:bg-slate-950 rounded-lg ml-0">
-    <p class="text-gray-500 dark:text-gray-300 text-base text-center font-bold">Productos de la Compra</p>
+  <!-- Encabezado de Productos -->
+  <div class="bg-gray-100 dark:bg-slate-950 rounded-lg w-full mt-2 mb-0 h-10 flex items-center justify-center">
+    <p class="text-center font-bold text-lg text-gray-500 dark:text-gray-300">Productos de la Compra</p>
   </div>
 
   <!-- Lista de Productos -->
-  <div class="bg-gray-100 dark:bg-slate-800 w-full m-0 grid grid-cols-1 sm:grid-cols-1 p-0 rounded-lg h-80 overflow-y-scroll scrollbar-thumb-rounded scrollbar-track-rounded">
-    <ul class="p-1 w-full text-gray-500 dark:text-gray-500">
+  <div class="bg-gray-100 dark:bg-slate-800 w-full m-0 grid grid-cols-1 sm:grid-cols-1 p-2 rounded-lg max-h-96 overflow-y-auto
+              scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600
+              scrollbar-track-gray-200 dark:scrollbar-track-slate-700
+              hover:scrollbar-thumb-gray-500 dark:hover:scrollbar-thumb-gray-500">
+    <ul class="p-1 w-full text-gray-500 dark:text-gray-500 space-y-2">
       @for(item of products; track $index) {
         <li [ngClass]="{'bg-gray-100 dark:bg-slate-950 text-gray-500': $odd }"
             class="flex py-4 rounded-lg justify-between p-4 mt-1">
-          <div class="overflow-hidden float-start">
+          <div class="overflow-hidden float-start flex-1">
+            <!-- Nombre del Producto -->
             <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark'}"
-               class="text-md font-bold">{{item?.product?.productName}}</p>
+               class="text-md font-bold">{{ getProductName(item) }}</p>
 
+            <!-- SKU del Producto -->
+            @if (getProductSku(item)) {
+              <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
+                 class="text-xs font-mono mb-1">
+                 <b>SKU:</b> {{ getProductSku(item) }}
+              </p>
+            }
+
+            <!-- Precio y Cantidad -->
             <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
                class="text-sm truncate">
-               <b>Precio costo: </b><b class="text-sm font-bold text-blue-500">Q {{ formatCurrency(item?.priceCost) }}</b> x <b class="text-blue-500">{{ item?.quantity }}</b><b> Unidades</b>
+               <b class="text-sm">Precio de costo: </b>
+               <b class="text-sm font-bold text-blue-500">Q {{ formatCurrency(item?.priceCost) }}</b>
+               <b> x </b>
+               <b class="text-blue-500">{{ item?.quantity }}</b>
+               <b> Unidades</b>
             </p>
 
+            <!-- Subtotal -->
             <p [ngClass]="{'text-gray-500': $odd && darkmode !== 'dark', 'text-gray-400': $odd && darkmode === 'dark' }"
                class="text-sm truncate">
                <b class="text-sm font-bold text-emerald-500">Subtotal: Q {{ formatCurrency(item?.subtotal) }}</b>
             </p>
           </div>
+
+          <!-- Cantidad en un badge -->
+          <div class="flex items-center">
+            <div class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full px-3 py-1">
+              <span class="font-bold">{{ item?.quantity }}</span>
+            </div>
+          </div>
         </li>
       }@empty {
-        <li class="flex py-4 first:pt-0 last:pb-0">
-          <div class="ml-3 overflow-hidden">
-            <p>No hay productos en esta compra</p>
+        <li class="flex py-4 first:pt-0 last:pb-0 justify-center">
+          <div class="ml-3 overflow-hidden text-center">
+            <p class="text-gray-400 dark:text-gray-500">No hay productos en esta compra</p>
           </div>
         </li>
       }

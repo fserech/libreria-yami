@@ -51,23 +51,45 @@ export default class PurchasesViewComponent extends BaseForm implements OnInit{
     this.darkmode = localStorage.getItem('theme');
   }
 
-  ngOnInit(): void {
-    this.load = true;
-    firstValueFrom(this.crud.getId(this.id))
-      .then((purchase: any) => {
-        this.purchase = purchase;
-        this.supplier = purchase.supplier;
-        this.products = purchase.products;
-      })
-      .catch((error: any) => {
-        console.log('error id: ', error);
-        this.toast.error('Error al cargar la compra');
-      })
-      .finally(() => {
-        this.load = false;
-      });
-  }
+ngOnInit(): void {
+  this.load = true;
+  firstValueFrom(this.crud.getId(this.id))
+    .then((purchase: any) => {
+      console.log('📦 Compra completa:', purchase);
+      console.log('🏢 Proveedor:', purchase.supplier);
+      console.log('📦 Productos:', purchase.products);
 
+      // Log del proveedor
+      console.log('Proveedor detalles:', {
+        id: purchase.supplier?.id,
+        supplierName: purchase.supplier?.supplierName,
+        name: purchase.supplier?.name
+      });
+
+      // Log detallado de cada producto
+      purchase.products?.forEach((p: any, index: number) => {
+        console.log(`Producto ${index + 1}:`, {
+          id: p.id,
+          productId: p.productId,
+          product: p.product,
+          productName: p.product?.productName,
+          name: p.product?.name,
+          sku: p.product?.sku
+        });
+      });
+
+      this.purchase = purchase;
+      this.supplier = purchase.supplier;
+      this.products = purchase.products;
+    })
+    .catch((error: any) => {
+      console.error('❌ Error al cargar la compra:', error);
+      this.toast.error('Error al cargar la compra');
+    })
+    .finally(() => {
+      this.load = false;
+    });
+}
   async back() {
     this.router.navigate(['dashboard/purchases']);
   }
@@ -104,4 +126,43 @@ export default class PurchasesViewComponent extends BaseForm implements OnInit{
       default: return status;
     }
   }
+
+  /**
+   * ⭐ Obtiene el nombre del producto manejando diferentes formatos del backend
+   */
+  getProductName(item: ProductPurchase): string {
+    if (!item || !item.product) {
+      return 'Sin nombre';
+    }
+
+    // Intentar obtener el nombre de diferentes propiedades
+    const product = item.product as any;
+    return product.productName || product.name || 'Sin nombre';
+  }
+
+  /**
+   * ⭐ Obtiene el SKU del producto manejando diferentes formatos del backend
+   */
+  getProductSku(item: ProductPurchase): string | null {
+    if (!item || !item.product) {
+      return null;
+    }
+
+    const product = item.product as any;
+    return product.sku || null;
+  }
+
+
+  getSupplierName(): string {
+  if (!this.supplier) {
+    return 'Sin nombre';
+  }
+
+  const supplier = this.supplier as any;
+  return supplier.supplierName || supplier.name || 'Sin nombre';
+}
+
+
+
+
 }
