@@ -1,9 +1,12 @@
+// crud.service.ts - AGREGAR MÉTODO ESPECÍFICO PARA PATCH
+
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { User } from '../interfaces/user-data';
 import { URL_USERS } from '../constants/endpoints';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -22,9 +25,9 @@ export class CrudService {
     return await firstValueFrom(this.http.get<any>(`${this.baseUrl}/page?sortOrder=${sortOrder}&sortBy=${sortBy}&pageSize=${pageSize}&page=${page}`));
   }
 
- async getAll(endpoint: string): Promise<any[]> {
+  async getAll(endpoint: string): Promise<any[]> {
     return await firstValueFrom(
-    this.http.get<any[]>(`${this.baseUrl}${endpoint}`)
+      this.http.get<any[]>(`${this.baseUrl}${endpoint}`)
     );
   }
 
@@ -33,8 +36,7 @@ export class CrudService {
     if (id_users !== undefined) params = params.set('id', id_users.toString());
     if (name) params = params.set('name', name);
     if (email) params = params.set('email', email);
-
- return await firstValueFrom(this.http.get<any>(`${this.baseUrl}`));
+    return await firstValueFrom(this.http.get<any>(`${this.baseUrl}`));
   }
 
   getUser(id: number): Observable<User> {
@@ -61,24 +63,26 @@ export class CrudService {
     if (id_users !== undefined) params = params.set('id', id_users.toString());
     if (name) params = params.set('name', name);
     if (email) params = params.set('email', email);
-
-  return await firstValueFrom(this.http.get<any>(`${URL_USERS}`));
+    return await firstValueFrom(this.http.get<any>(`${URL_USERS}`));
   }
 
   updateUser(id: number, data: any): Observable<User> {
     return this.http.put<User>(`${this.baseUrl}`, data);
-}
-
-
+  }
 
   getId(id: number){
     return this.http.get<any>(`${this.baseUrl}/${id}`);
   }
 
+  // ✅ PUT - Actualización completa de un recurso
   updateId(id: number, data: any){
     return this.http.put<any>(`${this.baseUrl}/${id}`, data);
   }
 
+  // ✅ NUEVO: PATCH - Actualización parcial (solo estado)
+  patchId(id: number, endpoint: string, data: any){
+    return this.http.patch<any>(`${this.baseUrl}/${id}${endpoint}`, data);
+  }
 
   async deleteId(id: any): Promise<any> {
     return await firstValueFrom(this.http.delete<any>(`${this.baseUrl}/${id}`))
@@ -87,5 +91,4 @@ export class CrudService {
   save(data: any){
     return this.http.post<any>(`${this.baseUrl}`, data);
   }
-
 }

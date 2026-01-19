@@ -291,51 +291,60 @@ export default class OrdersGridMainComponent extends BaseForm implements OnInit 
     return STATUS_ORDERS.find((item: OrdersStatus) => item.key === key)?.label || 'Desconocido';
   }
 
-  async finalizedOrder(id: number){
-    this.load = true;
-    this.toast.confirm('¿Seguro que desea finalizar la venta?', null, null, 'El registro se finalizará de forma permanente.', 'question')
-    .then(async (result) => {
-      if (result.isConfirmed) {
-        await firstValueFrom(this.crud.updateId(id, { id: id, status: 'FINALIZED' }))
-        .then((response: any) => {
-          this.toast.success(response.message);
-          this.load = false;
-        })
-        .catch((error: any) => {
-          this.toast.error(error.message);
-          this.load = false;
-        })
-        .finally(() => {
-          this.loadOrdersByTimeRange(this.activeTimeTab);
-          this.load = false;
-        });
-      }
-      this.load = false;
-    });
-  }
+// orders-grid-main.component.ts
 
-  async cancelOrder(id: number){
-    this.load = true;
-    this.toast.confirm('¿Seguro que desea anular la venta?', null, null, 'El registro se anulará de forma permanente.', 'question')
-    .then(async (result) => {
-      if (result.isConfirmed) {
-        await firstValueFrom(this.crud.updateId(id, { id: id, status: 'CANCEL' }))
-        .then((response: any) => {
-          this.toast.success(response.message);
-          this.load = false;
-        })
-        .catch((error: any) => {
-          this.toast.error(error.message);
-          this.load = false;
-        })
-        .finally(() => {
-          this.loadOrdersByTimeRange(this.activeTimeTab);
-          this.load = false;
-        });
-      }
-      this.load = false;
-    });
-  }
+// orders-grid-main.component.ts
+
+async finalizedOrder(id: number){
+  this.load = true;
+  this.toast.confirm('¿Seguro que desea finalizar la venta?', null, null, 'El registro se finalizará de forma permanente.', 'question')
+  .then(async (result) => {
+    if (result.isConfirmed) {
+      // ✅ CAMBIO: Usar patchId() en lugar de updateId()
+      // Esto llamará a PATCH /api/v1/orders/{id}/status
+      await firstValueFrom(this.crud.patchId(id, '/status', { status: 'FINALIZED' }))
+      .then((response: any) => {
+        this.toast.success(response.message);
+        this.load = false;
+      })
+      .catch((error: any) => {
+        this.toast.error(error.message);
+        this.load = false;
+      })
+      .finally(() => {
+        this.loadOrdersByTimeRange(this.activeTimeTab);
+        this.load = false;
+      });
+    }
+    this.load = false;
+  });
+}
+
+async cancelOrder(id: number){
+  this.load = true;
+  this.toast.confirm('¿Seguro que desea anular la venta?', null, null, 'El registro se anulará de forma permanente.', 'question')
+  .then(async (result) => {
+    if (result.isConfirmed) {
+      // ✅ CAMBIO: Usar patchId() en lugar de updateId()
+      // Esto llamará a PATCH /api/v1/orders/{id}/status
+      await firstValueFrom(this.crud.patchId(id, '/status', { status: 'CANCEL' }))
+      .then((response: any) => {
+        this.toast.success(response.message);
+        this.load = false;
+      })
+      .catch((error: any) => {
+        this.toast.error(error.message);
+        this.load = false;
+      })
+      .finally(() => {
+        this.loadOrdersByTimeRange(this.activeTimeTab);
+        this.load = false;
+      });
+    }
+    this.load = false;
+  });
+}
+
 
   view(id:number){
     this.router.navigate([`/dashboard/orders/view/${id}`]);
