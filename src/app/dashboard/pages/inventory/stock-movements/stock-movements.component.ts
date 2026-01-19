@@ -5,6 +5,8 @@ import { StockMovement, ProductStock, MovementFilter, MovementType } from '../..
 import { InventoryService } from '../../../../shared/services/inventory.service';
 import { MovementDetailModalComponent } from '../Components/movement-detail-modal/movement-detail-modal.component';
 import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustment-modal.component';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { saveAs } from 'file-saver';
 
 // ⭐ NUEVO: Enum para períodos
 export enum TimePeriod {
@@ -20,12 +22,15 @@ export enum TimePeriod {
     FormsModule,
     CommonModule,
     MovementDetailModalComponent,
-    AdjustmentModalComponent
-  ],
+    AdjustmentModalComponent,
+    HeaderComponent
+],
   templateUrl: './stock-movements.component.html',
   styleUrl: './stock-movements.component.scss'
 })
 export class StockMovementsComponent implements OnInit {
+
+   viewMode: 'table' | 'cards' = 'table';
   Math = Math;
 
   movements: StockMovement[] = [];
@@ -55,6 +60,10 @@ export class StockMovementsComponent implements OnInit {
     // ⭐ Inicia con el período por defecto (MES)
     this.applyPeriodFilter(this.selectedPeriod);
     this.loadLowStockProducts();
+  }
+
+  toggleViewMode(): void {
+    this.viewMode = this.viewMode === 'table' ? 'cards' : 'table';
   }
 
   // ⭐ NUEVO: Aplicar filtro de período (CÓDIGO CORREGIDO)
@@ -336,21 +345,46 @@ export class StockMovementsComponent implements OnInit {
     return movement.quantity > 0;
   }
 
-  exportToExcel(): void {
-    this.inventoryService.exportMovements(this.filter)
-      .subscribe({
-        next: (blob) => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `movimientos-inventario-${new Date().toISOString()}.xlsx`;
-          a.click();
-        },
-        error: (error) => {
-          console.error('Error exportando a Excel:', error);
-        }
-      });
+ exportToExcel(): void {
+  if (this.loading || this.filteredMovements.length === 0) {
+    console.warn('⚠️ No hay datos para exportar');
+    return;
   }
+
+  console.log('📊 ========================================');
+  console.log('📊 Exportando a Excel...');
+  console.log('📅 Período:', this.getPeriodLabel(this.selectedPeriod));
+  console.log('📄 Registros:', this.filteredMovements.length);
+  console.log('🔍 Filtros:', this.filter);
+
+  this.loading = true;
+
+  this.inventoryService.exportMovements(this.filter)
+    .subscribe({
+      next: (blob) => {
+        // Generar nombre de archivo descriptivo
+        const period = this.getPeriodLabel(this.selectedPeriod).replace(/\s/g, '_');
+        const fecha = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const fileName = `Movimientos_Inventario_${period}_${fecha}.xlsx`;
+
+        // Descargar archivo
+        saveAs(blob, fileName);
+
+        console.log('✅ Archivo exportado:', fileName);
+        console.log('📊 ========================================');
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error exportando a Excel:', error);
+        console.error('   Detalles:', error.error);
+        console.log('📊 ========================================');
+        this.loading = false;
+
+        // Aquí puedes agregar un toast de error
+        // this.toast.error('Error al exportar el archivo');
+      }
+    });
+}
 
   nextPage(): void {
     if (this.currentPage * this.itemsPerPage < this.totalItems) {

@@ -89,19 +89,42 @@ export class InventoryService {
     );
   }
 
-  exportMovements(filter: MovementFilter): Observable<Blob> {
-    let params = new HttpParams();
+ exportMovements(filter: MovementFilter): Observable<Blob> {
+  let params = new HttpParams();
 
-    if (filter.branchId) params = params.set('branchId', filter.branchId.toString());
-    if (filter.startDate) params = params.set('startDate', filter.startDate);
-    if (filter.endDate) params = params.set('endDate', filter.endDate);
-
-    // ✅ CORREGIDO: Agregado paréntesis
-    return this.http.get(`${this.apiUrl}/export`, {
-      params,
-      responseType: 'blob'
-    });
+  // Agregar todos los filtros disponibles
+  if (filter.branchId) {
+    params = params.set('branchId', filter.branchId.toString());
   }
+  if (filter.productId) {
+    params = params.set('productId', filter.productId.toString());
+  }
+  if (filter.movementType) {
+    params = params.set('movementType', filter.movementType);
+  }
+  if (filter.startDate) {
+    params = params.set('startDate', filter.startDate);
+  }
+  if (filter.endDate) {
+    params = params.set('endDate', filter.endDate);
+  }
+  if (filter.userId) {
+    params = params.set('userId', filter.userId.toString());
+  }
+
+  console.log('📤 Exportando con parámetros:', params.toString());
+
+  return this.http.get(`${this.apiUrl}/export`, {
+    params,
+    responseType: 'blob',
+    observe: 'response' // Para obtener headers si es necesario
+  }).pipe(
+    map(response => {
+      console.log('📥 Respuesta recibida:', response.headers.get('content-type'));
+      return response.body as Blob;
+    })
+  );
+}
 
   getProductHistory(
     productId: number,

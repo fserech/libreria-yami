@@ -1,48 +1,35 @@
 <!-- inventory.component.html -->
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6">
-  <!-- Header -->
-  <div class="mb-6">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-        </svg>
-      </div>
-      <div>
-        <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Gestión de Inventario</h1>
-        <p class="text-slate-600 dark:text-slate-400">Control completo de stock y movimientos</p>
-      </div>
-    </div>
+
+   <app-header headerTitle="Movimientos de Inventario" headerDescription="se cargara de movimientos de compras y ventas"></app-header>
 
     <!-- Tabs de navegación -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md p-2">
-      <div class="flex gap-2 overflow-x-auto">
-        <a
-          routerLink="/dashboard/inventory"
-          [routerLinkActiveOptions]="{exact: true}"
-          routerLinkActive="bg-blue-600 text-white shadow-lg"
-          (click)="setActiveTab('movements')"
-          class="px-4 py-2.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all whitespace-nowrap flex items-center gap-2 font-medium">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-          </svg>
-          Movimientos
-        </a>
-        <a
-          routerLink="/dashboard/inventory/low-stock"
-          routerLinkActive="bg-blue-600 text-white shadow-lg"
-          (click)="setActiveTab('low-stock')"
-          class="px-4 py-2.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all whitespace-nowrap flex items-center gap-2 font-medium">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-          </svg>
-          Alertas de Stock
-        </a>
-
-      </div>
+   <div class="md:p-1 m-2 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-md p-2">
+    <div class="flex gap-2 overflow-x-auto ml-2">
+      <a
+        routerLink="/dashboard/inventory"
+        [routerLinkActiveOptions]="{exact: true}"
+        routerLinkActive="bg-blue-600 text-white shadow-lg"
+        (click)="setActiveTab('movements')"
+        class="px-4 py-2.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all whitespace-nowrap flex items-center gap-2 font-medium">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+        </svg>
+        Movimientos
+      </a>
+      <a
+        routerLink="/dashboard/inventory/low-stock"
+        routerLinkActive="bg-blue-600 text-white shadow-lg"
+        (click)="setActiveTab('low-stock')"
+        class="px-4 py-2.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all whitespace-nowrap flex items-center gap-2 font-medium">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        Alertas de Stock
+      </a>
     </div>
   </div>
 
+
   <!-- Contenido dinámico (router-outlet) -->
   <router-outlet></router-outlet>
-</div>
+
