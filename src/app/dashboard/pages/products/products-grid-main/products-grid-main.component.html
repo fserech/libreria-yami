@@ -133,6 +133,19 @@
             </button>
           </th>
 
+          <!-- ⭐ NUEVA COLUMNA SKU -->
+          <th class="content-desktop-custom hidden sm:table-cell">
+            <button (click)="changeSortOrderBy('sku')">
+              <p>SKU</p>
+              @if(sortConfig.sortBy === 'sku' && sortConfig.sortOrder === 'asc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'sku' && sortConfig.sortOrder === 'desc'){
+                <ng-icon class="p-0 m-0" size="22" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
           <th class="content-desktop-custom hidden sm:table-cell">
             <button (click)="changeSortOrderBy('brandRef')">
               <p>Marca</p>
@@ -160,7 +173,7 @@
 
       </thead>
 
-<!-- TBODY CON VARIANTES EXPANDIBLES - MANTENIENDO ESTILOS ORIGINALES -->
+<!-- TBODY CON VARIANTES EXPANDIBLES Y SKU -->
 <tbody>
   @for (product of ItemsList; track $index) {
     @defer {
@@ -204,6 +217,15 @@
               </span>
             }
           </div>
+        </td>
+
+        <!-- ⭐ COLUMNA SKU (Desktop) -->
+        <td class="hidden sm:table-cell">
+          @if (!product.hasVariants) {
+            <p class="text-sm font-mono text-gray-700 dark:text-gray-300">{{ product.sku || 'N/A' }}</p>
+          } @else {
+            <p class="text-xs text-gray-400 italic">Ver variantes</p>
+          }
         </td>
 
         <!-- COLUMNA MARCA (Desktop) -->
@@ -253,6 +275,13 @@
               <p class="text-xs text-wrap text-gray-600 dark:text-gray-400">
                 {{ product.productDesc }}
               </p>
+
+              <!-- ⭐ SKU EN MOBILE -->
+              @if (!product.hasVariants && product.sku) {
+                <p class="text-xs font-mono text-gray-500 dark:text-gray-400 mt-1">
+                  SKU: {{ product.sku }}
+                </p>
+              }
 
               <p class="text-xs text-wrap text-gray-500 dark:text-gray-400">
                 {{ getBrandNames(product.brandRef) }}
@@ -308,7 +337,7 @@
         }
       </tr>
 
-      <!-- FILAS DE VARIANTES EXPANDIDAS - MISMO ESTILO QUE PRODUCTO PRINCIPAL -->
+      <!-- FILAS DE VARIANTES EXPANDIDAS CON SKU -->
       @if (product.hasVariants && isProductExpanded(product.id) && product.variants?.length > 0) {
         @for (variant of product.variants; track variant.id) {
           <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
@@ -332,6 +361,11 @@
                   Variante de: {{ product.productName }}
                 </span>
               </div>
+            </td>
+
+            <!-- ⭐ COLUMNA SKU DE VARIANTE (Desktop) -->
+            <td class="hidden sm:table-cell">
+              <p class="text-sm font-mono text-gray-700 dark:text-gray-300">{{ variant.sku || 'N/A' }}</p>
             </td>
 
             <!-- COLUMNA MARCA (Desktop) - Heredada del producto padre -->
@@ -363,6 +397,13 @@
                   @if (variant.variantDesc) {
                     <p class="text-xs text-wrap text-gray-600 dark:text-gray-400">
                       {{ variant.variantDesc }}
+                    </p>
+                  }
+
+                  <!-- ⭐ SKU DE VARIANTE EN MOBILE -->
+                  @if (variant.sku) {
+                    <p class="text-xs font-mono text-gray-500 dark:text-gray-400 mt-1">
+                      SKU: {{ variant.sku }}
                     </p>
                   }
 
@@ -412,6 +453,15 @@
     } @loading {
       <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd }">
         <td class="content-desktop">
+          <div class="rounded pt-2 pb-2 p-1">
+            <div class="animate-pulse flex space-x-4">
+              <div class="flex-1 space-y-6 py-1">
+                <div class="h-2 bg-gray-400 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </td>
+        <td>
           <div class="rounded pt-2 pb-2 p-1">
             <div class="animate-pulse flex space-x-4">
               <div class="flex-1 space-y-6 py-1">

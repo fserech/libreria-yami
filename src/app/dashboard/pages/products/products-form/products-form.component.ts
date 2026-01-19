@@ -433,16 +433,59 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   }
 
   // ==================== SKU GENERATION ====================
+async generateSKU() {
+  try {
+    // ✅ CORRECCIÓN: Usar baseProductName en lugar de productName
+    const productName = this.productForm.value.baseProductName || '';
+    const namePrefix = productName.substring(0, 3).toUpperCase().replace(/\s/g, '');
 
-  generateSKU() {
+    // Obtener las primeras 3 letras de la marca
     const brand = this.brandOptions.find(b => b.value === this.productForm.value.brandRef)?.label || 'UNK';
-    const category = this.categoryOptions.find(c => c.value === this.productForm.value.categoryId)?.label || 'UNK';
-    const timestamp = Date.now().toString().slice(-6);
+    const brandPrefix = brand.substring(0, 3).toUpperCase().replace(/\s/g, '');
 
-    const sku = `${brand.substring(0, 3).toUpperCase()}-${category.substring(0, 3).toUpperCase()}-${timestamp}`;
+    let productId = 0;
+
+    // Si estamos editando, usar el ID actual
+    if (this.mode === 'edit' && this.id) {
+      productId = this.id;
+    }
+    // Si estamos creando, obtener el siguiente ID
+    else if (this.mode === 'new') {
+      const currentBaseUrl = this.crud.baseUrl;
+      this.crud.baseUrl = URL_PRODUCTS;
+
+      try {
+        const response: any = await this.crud.getAll('');
+        const maxId = response && response.length > 0
+          ? Math.max(...response.map((p: any) => p.id || 0))
+          : 0;
+        productId = maxId + 1;
+      } finally {
+        this.crud.baseUrl = currentBaseUrl;
+      }
+    }
+
+    // Generar SKU con formato: NOM-MAR-0001
+    const correlativo = productId.toString().padStart(4, '0');
+    const sku = `${namePrefix}-${brandPrefix}-${correlativo}`;
+
+    console.log('✅ SKU generado:', {
+      baseProductName: productName,  // ← Cambiado para claridad
+      namePrefix,
+      brand,
+      brandPrefix,
+      id: productId,
+      sku
+    });
+
     this.stockForm.patchValue({ sku });
-  }
 
+  } catch (error) {
+    console.error('❌ Error al generar SKU:', error);
+    const timestamp = Date.now().toString().slice(-6);
+    this.stockForm.patchValue({ sku: `ERR-UNK-${timestamp}` });
+  }
+}
   // ==================== HELPERS ====================
 
   validateStockMinMax() {
