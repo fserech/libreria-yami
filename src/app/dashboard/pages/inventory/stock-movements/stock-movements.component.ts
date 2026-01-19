@@ -168,77 +168,121 @@ export class StockMovementsComponent implements OnInit {
 
   // ⭐ NUEVO: Filtrar movimientos por fecha en el frontend
   private filterMovementsByDate(movements: StockMovement[]): StockMovement[] {
-    if (!this.filter.startDate || !this.filter.endDate) {
-      return movements;
+  if (!this.filter.startDate || !this.filter.endDate) {
+    console.log('⚠️ No hay filtro de fechas, retornando todos');
+    return movements;
+  }
+
+  // Crear fechas sin considerar zona horaria
+  const startDate = new Date(this.filter.startDate + 'T00:00:00');
+  const endDate = new Date(this.filter.endDate + 'T23:59:59');
+
+  console.log('🔍 ========================================');
+  console.log('🔍 Filtrando movimientos en frontend:');
+  console.log('📅 Rango: ', startDate.toLocaleString('es-GT'), 'a', endDate.toLocaleString('es-GT'));
+  console.log('📊 Total movimientos antes de filtrar:', movements.length);
+
+  const filtered = movements.filter(movement => {
+    const movementDate = new Date(movement.dateCreated);
+    const isInRange = movementDate >= startDate && movementDate <= endDate;
+
+    // Debug para ver qué se excluye
+    if (!isInRange) {
+      console.log('   ❌ Excluido:',
+        movement.movementType,
+        '|', movement.dateCreated,
+        '→', movementDate.toLocaleString('es-GT')
+      );
     }
 
-    // Crear fechas de inicio y fin del rango
-    const startDate = new Date(this.filter.startDate + 'T00:00:00');
-    const endDate = new Date(this.filter.endDate + 'T23:59:59');
+    return isInRange;
+  });
 
-    console.log('🔍 Filtrando movimientos en frontend:');
-    console.log('   - Rango: ', startDate.toLocaleString('es-GT'), 'a', endDate.toLocaleString('es-GT'));
+  console.log('✅ Movimientos válidos:', filtered.length, 'de', movements.length);
+  console.log('🔍 ========================================');
 
-    // Filtrar movimientos que estén dentro del rango
-    const filtered = movements.filter(movement => {
-      const movementDate = new Date(movement.dateCreated);
-      const isInRange = movementDate >= startDate && movementDate <= endDate;
+  return filtered;
+}
+loadMovements(): void {
+  this.loading = true;
 
-      if (!isInRange) {
-        console.log('   ❌ Excluido:', movement.dateCreated, '→', movementDate.toLocaleString('es-GT'));
-      }
+  console.log('📡 ========================================');
+  console.log('📡 Cargando movimientos...');
+  console.log('📅 Período seleccionado:', this.getPeriodLabel(this.selectedPeriod));
+  console.log('🔍 Filtro completo:', JSON.stringify(this.filter, null, 2));
+  console.log('📄 Página:', this.currentPage, '| Items por página:', this.itemsPerPage);
 
-      return isInRange;
-    });
+  // ⭐ CRÍTICO: NO enviar las fechas al backend, solo otros filtros
+  const backendFilter: MovementFilter = {
+    movementType: this.filter.movementType,
+    branchId: this.filter.branchId,
+    productId: this.filter.productId,
+    userId: this.filter.userId
+    // ❌ NO enviar startDate ni endDate al backend
+  };
 
-    console.log('   ✅ Movimientos válidos:', filtered.length, 'de', movements.length);
-    return filtered;
-  }
+  // Solicitar MUCHOS más registros para filtrar localmente
+  const largeLimit = 1000; // Aumentar para obtener más datos
 
-  loadMovements(): void {
-    this.loading = true;
+  this.inventoryService.getMovements(backendFilter, 1, largeLimit)
+    .subscribe({
+      next: (response) => {
+        console.log('✅ Respuesta del backend:', response.data.length, 'movimientos');
 
-    console.log('📡 ========================================');
-    console.log('📡 Cargando movimientos...');
-    console.log('📅 Período seleccionado:', this.getPeriodLabel(this.selectedPeriod));
-    console.log('🔍 Filtro completo:', JSON.stringify(this.filter, null, 2));
-    console.log('📄 Página:', this.currentPage, '| Items por página:', this.itemsPerPage);
+        // ⭐ CRÍTICO: Filtrar por fechas SOLO en el frontend
+        this.movements = response.data;
+        this.filteredMovements = this.filterMovementsByDate(response.data);
 
-    this.inventoryService.getMovements(this.filter, this.currentPage, this.itemsPerPage)
-      .subscribe({
-        next: (response) => {
-          this.movements = response.data;
+        // Ordenar por fecha descendente
+        this.filteredMovements.sort((a, b) => {
+          const dateA = new Date(a.dateCreated).getTime();
+          const dateB = new Date(b.dateCreated).getTime();
+          return dateB - dateA;
+        });
 
-          // ⭐ CRÍTICO: Filtrar en el frontend por las fechas correctas
-          this.filteredMovements = this.filterMovementsByDate(response.data);
-          this.totalItems = this.filteredMovements.length;
-          this.loading = false;
+        // Aplicar paginación local
+        this.totalItems = this.filteredMovements.length;
+        const start = (this.currentPage - 1) * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+        this.filteredMovements = this.filteredMovements.slice(start, end);
 
-          console.log('✅ Respuesta recibida:');
-          console.log('   - Movimientos del backend:', response.data.length);
-          console.log('   - Movimientos después del filtro:', this.filteredMovements.length);
-          console.log('   - Total items:', this.totalItems);
+        this.loading = false;
 
-          // ⭐ Verificar fechas de los movimientos filtrados
-          if (this.filteredMovements.length > 0) {
-            const firstDate = new Date(this.filteredMovements[0].dateCreated);
-            const lastDate = new Date(this.filteredMovements[this.filteredMovements.length - 1].dateCreated);
-            console.log('   - Primera fecha:', firstDate.toLocaleDateString('es-GT'));
-            console.log('   - Última fecha:', lastDate.toLocaleDateString('es-GT'));
-            console.log('   - Fecha esperada:', new Date().toLocaleDateString('es-GT'));
-          } else {
-            console.log('⚠️ No se encontraron movimientos para:', this.getPeriodLabel(this.selectedPeriod));
-          }
+        console.log('✅ Movimientos después del filtro:', this.filteredMovements.length);
+        console.log('📊 Total items:', this.totalItems);
 
-          console.log('📡 ========================================');
-        },
-        error: (error) => {
-          this.loading = false;
-          console.error('❌ Error cargando movimientos:', error);
+        // Mostrar resumen por tipo
+        const movementsByType = response.data.reduce((acc: any, mov: StockMovement) => {
+          acc[mov.movementType] = (acc[mov.movementType] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('📊 Resumen por tipo (TOTAL en BD):', movementsByType);
+
+        const filteredByType = this.filteredMovements.reduce((acc: any, mov: StockMovement) => {
+          acc[mov.movementType] = (acc[mov.movementType] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('📊 Resumen por tipo (FILTRADO):', filteredByType);
+
+        // Verificar fechas
+        if (this.filteredMovements.length > 0) {
+          const firstDate = new Date(this.filteredMovements[0].dateCreated);
+          const lastDate = new Date(this.filteredMovements[this.filteredMovements.length - 1].dateCreated);
+          console.log('📅 Primera fecha:', firstDate.toLocaleString('es-GT'));
+          console.log('📅 Última fecha:', lastDate.toLocaleString('es-GT'));
+        } else {
+          console.log('⚠️ No se encontraron movimientos para:', this.getPeriodLabel(this.selectedPeriod));
         }
-      });
-  }
 
+        console.log('📡 ========================================');
+      },
+      error: (error) => {
+        this.loading = false;
+        console.error('❌ Error cargando movimientos:', error);
+        console.log('📡 ========================================');
+      }
+    });
+}
   loadLowStockProducts(): void {
     this.inventoryService.getLowStockProducts()
       .subscribe({
