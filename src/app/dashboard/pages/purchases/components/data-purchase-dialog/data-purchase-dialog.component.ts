@@ -8,6 +8,9 @@ import { ToastService } from '../../../../../shared/services/toast.service';
 import { Branch } from '../../../../../shared/interfaces/branch';
 import { CrudService } from '../../../../../shared/services/crud.service';
 import { URL_BRANCHES } from '../../../../../shared/constants/endpoints';
+import { provideIcons } from '@ng-icons/core';
+import { matRefreshOutline } from '@ng-icons/material-icons/outline';
+
 
 @Component({
   selector: 'app-data-purchase-dialog',
@@ -15,7 +18,8 @@ import { URL_BRANCHES } from '../../../../../shared/constants/endpoints';
   imports: [FormsModule, ReactiveFormsModule, InputComponent, SelectComponent], // ✅ Agregar ReactiveFormsModule
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './data-purchase-dialog.component.html',
-  styleUrl: './data-purchase-dialog.component.scss'
+  styleUrl: './data-purchase-dialog.component.scss',
+  viewProviders: [provideIcons({ matRefreshOutline })]
 })
 export class DataPurchaseDialogComponent implements OnInit {
   form: FormGroup;

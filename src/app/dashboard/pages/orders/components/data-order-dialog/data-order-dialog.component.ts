@@ -11,7 +11,7 @@ import { URL_BRANCHES } from '../../../../../shared/constants/endpoints';
 import { firstValueFrom } from 'rxjs';
 import { NgClass } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { matRefreshOutline } from '@ng-icons/material-icons/outline';
+import { matAddBusinessOutline, matRefreshOutline } from '@ng-icons/material-icons/outline';
 
 interface DataOrderDialogData extends DialogData {
   existingBranchId?: number;
@@ -25,7 +25,7 @@ interface DataOrderDialogData extends DialogData {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './data-order-dialog.component.html',
   styleUrl: './data-order-dialog.component.scss',
-  viewProviders: [provideIcons({ matRefreshOutline })]
+  viewProviders: [provideIcons({ matRefreshOutline,matAddBusinessOutline })]
 })
 export class DataOrderDialogComponent implements OnInit {
   form: FormGroup;
