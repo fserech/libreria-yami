@@ -133,10 +133,13 @@ export class ViewModeComponent implements OnChanges {
   getAlertLevel(item: StockItem): AlertLevel {
     const { currentStock, minStock } = item;
 
-    if (currentStock === 0 || currentStock < minStock) {
+    // 🔴 CRÍTICO: Solo cuando el stock es 0
+    // Un producto con 15/20 NO es crítico, solo está bajo
+    if (currentStock === 0) {
       return 'critical';
     }
 
+    // 🟡 ADVERTENCIA: Cualquier otro caso de stock bajo
     return 'warning';
   }
 

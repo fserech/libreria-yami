@@ -96,15 +96,13 @@ export class LowStockAlertsComponent implements OnInit {
   }
 
   get criticalCount(): number {
-    return this.filteredAlerts.filter(a => a.currentStock === 0 || a.currentStock < a.minStock).length;
+    // 🔴 CRÍTICO: Solo productos con stock = 0
+    return this.filteredAlerts.filter(a => a.currentStock === 0).length;
   }
 
   get warningCount(): number {
-    return this.filteredAlerts.filter(a => {
-      const isCritical = a.currentStock === 0 || a.currentStock < a.minStock;
-      const isWarning = a.currentStock >= a.minStock && a.currentStock <= (a.minStock * 1.2);
-      return !isCritical && isWarning;
-    }).length;
+    // 🟡 ADVERTENCIA: Productos con stock bajo pero > 0
+    return this.filteredAlerts.filter(a => a.currentStock > 0).length;
   }
 
   get totalProducts(): number {
@@ -266,12 +264,8 @@ export class LowStockAlertsComponent implements OnInit {
           alertasBackend: results.alerts.length,
           alertasFiltradas: this.alerts.length,
           stock: this.allStock.length,
-          criticas: this.alerts.filter(a => a.currentStock === 0 || a.currentStock < a.minStock).length,
-          advertencias: this.alerts.filter(a => {
-            const notCritical = a.currentStock >= a.minStock;
-            const isNearMin = a.currentStock <= (a.minStock * 1.2);
-            return notCritical && isNearMin;
-          }).length
+          criticas: this.alerts.filter(a => a.currentStock === 0).length,
+          advertencias: this.alerts.filter(a => a.currentStock > 0).length
         });
 
         this.syncBranchesFromData();
@@ -408,7 +402,8 @@ export class LowStockAlertsComponent implements OnInit {
           console.log('📊 Alertas recargadas:', {
             backend: products.length,
             filtradas: this.alerts.length,
-            criticas: this.alerts.filter(a => a.currentStock === 0 || a.currentStock < a.minStock).length
+            criticas: this.alerts.filter(a => a.currentStock === 0).length,
+            advertencias: this.alerts.filter(a => a.currentStock > 0).length
           });
 
           this.syncBranchesFromData();
@@ -429,14 +424,13 @@ export class LowStockAlertsComponent implements OnInit {
 
       // Filtro por nivel de alerta (crítico/advertencia)
       if (this.selectedAlertLevel === 'critical') {
-        const isCritical = alert.currentStock === 0 || alert.currentStock < alert.minStock;
-        if (!isCritical) return false;
+        // 🔴 CRÍTICO: Solo stock = 0
+        if (alert.currentStock !== 0) return false;
       }
 
       if (this.selectedAlertLevel === 'warning') {
-        const isCritical = alert.currentStock === 0 || alert.currentStock < alert.minStock;
-        const isWarning = alert.currentStock >= alert.minStock && alert.currentStock <= (alert.minStock * 1.2);
-        if (isCritical || !isWarning) return false;
+        // 🟡 ADVERTENCIA: Solo stock bajo pero > 0
+        if (alert.currentStock === 0) return false;
       }
 
       // Filtro por búsqueda
@@ -461,10 +455,10 @@ export class LowStockAlertsComponent implements OnInit {
       return true;
     });
 
-    // Ordenar: críticos primero, luego por cantidad
+    // Ordenar: críticos primero (stock = 0), luego por cantidad ascendente
     this.filteredAlerts.sort((a, b) => {
-      const aCritical = a.currentStock === 0 || a.currentStock < a.minStock;
-      const bCritical = b.currentStock === 0 || b.currentStock < b.minStock;
+      const aCritical = a.currentStock === 0;
+      const bCritical = b.currentStock === 0;
 
       if (aCritical && !bCritical) return -1;
       if (!aCritical && bCritical) return 1;
