@@ -31,6 +31,13 @@ export const routes: Routes =
         loadComponent: () => import('./dashboard/pages/my-profile/my-profile.component')
       },
       {
+        path: 'menu-customizer',
+        title: 'Personalizar Menú',
+        canMatch: [authGuard],
+        loadComponent: () => import('./dashboard/pages/menu-customizer/menu-customizer.component')
+          .then(m => m.MenuCustomizerComponent)
+      },
+      {
         path: 'clients',
         title: 'Clientes',
         // loadComponent: () => import('./dashboard/pages/clients/clients.component'),

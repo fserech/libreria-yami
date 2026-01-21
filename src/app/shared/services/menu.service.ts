@@ -2,7 +2,6 @@ import { Injectable, OnDestroy, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
 import { MenuItem, SubMenuItem } from '../interfaces/menu.model';
-import { Menu } from '../constants/menu';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from './auth.service';
 import { UserProfile } from '../interfaces/user-profile';
@@ -16,33 +15,38 @@ export class MenuService implements OnDestroy {
   private _showMobileMenu = signal(false);
   private _pagesMenu = signal<MenuItem[]>([]);
   private _subscription = new Subscription();
-  private user: UserProfile = null;
+  private user: UserProfile | null = null;
 
-  constructor(private router: Router, private http: HttpClient, private auth: AuthService) {
+  constructor(
+    private router: Router,
+    private http: HttpClient,
+    private auth: AuthService
+  ) {
     this.setPermissions();
   }
 
-  setPermissions(){
+  setPermissions() {
+    this._pagesMenu.set([]);
 
-        this._pagesMenu.set([]);
-        let permissionSub = this.getPermissions().subscribe({
-          next: (response: any) => {
-            this.user = this.auth.decodeToken();
-            this._pagesMenu.set(response.pages);
+    // Decodificar el usuario antes de llamar getPermissions
+    this.user = this.auth.decodeToken();
 
-            let sub = this.router.events.subscribe((event) => {
-              if (event instanceof NavigationEnd) {
-                this.expandMenuOnNavigation();
-              }
-            });
-            this._subscription.add(sub);
+    let permissionSub = this.getPermissions().subscribe({
+      next: (response: any) => {
+        this._pagesMenu.set(response.pages);
 
-          },
-          error: (error: any) => {
-            console.log(error)
+        let sub = this.router.events.subscribe((event) => {
+          if (event instanceof NavigationEnd) {
+            this.expandMenuOnNavigation();
           }
         });
-        this._subscription.add(permissionSub);
+        this._subscription.add(sub);
+      },
+      error: (error: any) => {
+        console.error('❌ Error al cargar permisos:', error);
+      }
+    });
+    this._subscription.add(permissionSub);
   }
 
   private expandMenuOnNavigation() {
@@ -61,18 +65,51 @@ export class MenuService implements OnDestroy {
     });
   }
 
+  /**
+   * Obtiene los permisos del usuario desde el backend
+   * IMPORTANTE: Ahora incluye el userId como parámetro
+   */
   getPermissions(): Observable<any> {
-    this.user = this.auth.decodeToken();
-    const role: string = this.user.role === 'ROLE_ADMIN' ? 'admin' : 'user';
-    return this.http.get<any>(`${URL_PERMISSIONS}${role}`);
+    if (!this.user) {
+      this.user = this.auth.decodeToken();
+    }
+
+    const role: string = this.user?.role === 'ROLE_ADMIN' ? 'admin' : 'user';
+    const userId = this.getUserId();
+
+    // ✅ CLAVE: Pasar userId para que el backend devuelva el menú personalizado
+    return this.http.get<any>(`${URL_PERMISSIONS}${role}?userId=${userId}`);
+  }
+
+  /**
+   * Obtiene el ID del usuario actual
+   * Ajusta este método según tu implementación
+   */
+  private getUserId(): number {
+    // Opción 1: Si está en el token
+    if (this.user && (this.user as any).userId) {
+      return (this.user as any).userId;
+    }
+
+    // Opción 2: Si lo guardas en localStorage cuando el usuario hace login
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId) {
+      return parseInt(storedUserId);
+    }
+
+    // Opción 3: ID por defecto (CAMBIAR por el ID real del usuario logueado)
+    console.warn('⚠️ No se encontró userId en MenuService, usando ID por defecto: 1');
+    return 1;
   }
 
   get showSideBar() {
     return this._showSidebar();
   }
+
   get showMobileMenu() {
     return this._showMobileMenu();
   }
+
   get pagesMenu() {
     return this._pagesMenu();
   }
@@ -80,6 +117,7 @@ export class MenuService implements OnDestroy {
   set showSideBar(value: boolean) {
     this._showSidebar.set(value);
   }
+
   set showMobileMenu(value: boolean) {
     this._showMobileMenu.set(value);
   }

@@ -1,3 +1,187 @@
-.active-item-menu{
-@apply bg-gray-200 text-slate-600 dark:bg-slate-700 dark:text-gray-100 dark:hover:text-white;
+.edit-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+  border: 1.5px solid rgba(59, 130, 246, 0.3);
+  border-radius: 0.75rem;
+  color: #3b82f6;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.8rem;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15));
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+
+    &::before {
+      width: 300px;
+      height: 300px;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-color: #3b82f6;
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+
+    &:hover {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+    }
+  }
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
+
+  ng-icon {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.draggable-item {
+  position: relative;
+  transition: all 0.2s ease;
+
+  &:hover {
+    .drag-indicator {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
+  }
+}
+
+.drag-indicator {
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%) scale(0.9);
+  color: #3b82f6;
+  z-index: 10;
+  cursor: grab;
+  opacity: 0;
+  transition: all 0.2s ease;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 0.25rem;
+  padding: 0.25rem;
+
+  &:active {
+    cursor: grabbing;
+    opacity: 1;
+    transform: translateY(-50%) scale(1.05);
+  }
+
+  &:hover {
+    background: rgba(59, 130, 246, 0.2);
+  }
+}
+
+// Estilos CDK Drag & Drop mejorados
+:host ::ng-deep {
+  .cdk-drag-preview {
+    box-sizing: border-box;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(59, 130, 246, 0.5);
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    opacity: 0.95;
+    z-index: 1000;
+    transform: rotate(2deg);
+
+    .drag-indicator {
+      opacity: 1;
+    }
+  }
+
+  .cdk-drag-placeholder {
+    opacity: 0;
+    background: linear-gradient(90deg,
+      rgba(59, 130, 246, 0.1) 0%,
+      rgba(59, 130, 246, 0.2) 50%,
+      rgba(59, 130, 246, 0.1) 100%);
+    border-radius: 0.5rem;
+    border: 2px dashed rgba(59, 130, 246, 0.3);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .cdk-drag-animating {
+    transition: transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .cdk-drop-list-dragging .cdk-drag {
+    transition: transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+}
+
+// Sistema de notificaciones Toast
+:host ::ng-deep {
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 250px;
+
+    &.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    &.toast-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    &.toast-error {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    &.toast-info {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+  }
 }
