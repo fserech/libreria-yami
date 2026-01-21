@@ -29,6 +29,7 @@ import { CrudService } from '../../../../shared/services/crud.service';
 import { forkJoin } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-low-stock-alerts',
@@ -88,19 +89,22 @@ export class LowStockAlertsComponent implements OnInit {
   showAdjustmentModal = false;
   editingMovement: any;
 
+  // ⭐ MODIFICADO: Ahora usa filteredAlerts que ya considera la sucursal
   get totalAlertsCount(): number {
     return this.filteredAlerts.length;
   }
 
+  // ⭐ MODIFICADO: Ahora usa filteredAlerts que ya considera la sucursal
   get criticalCount(): number {
     return this.filteredAlerts.filter(a => a.currentStock === 0).length;
   }
 
+  // ⭐ MODIFICADO: Ahora usa filteredAlerts que ya considera la sucursal
   get warningCount(): number {
     return this.filteredAlerts.filter(a => a.currentStock > 0 && a.belowMinStock).length;
   }
 
-  // ⭐ CORREGIDO: Contar solo productos únicos, no variantes duplicadas
+  // ⭐ MODIFICADO: Contar solo productos únicos de filteredStock (ya incluye filtro de sucursal)
   get totalProducts(): number {
     const uniqueProducts = new Set<number>();
     this.filteredStock.forEach(item => {
@@ -109,10 +113,9 @@ export class LowStockAlertsComponent implements OnInit {
     return uniqueProducts.size;
   }
 
-  // ⭐ CORREGIDO: Usar costPrice si averageCost no está disponible
+  // ⭐ MODIFICADO: Usar filteredStock que ya incluye filtro de sucursal
   get totalStockValue(): number {
     return this.filteredStock.reduce((sum, item) => {
-      // Prioridad: averageCost > costPrice del producto > 0
       const cost = item.averageCost || item.product?.costPrice || 0;
       return sum + (item.currentStock * cost);
     }, 0);
@@ -528,42 +531,60 @@ export class LowStockAlertsComponent implements OnInit {
   }
 
   exportToExcel(): void {
-    const data = this.activeView === 'alerts'
-      ? this.filteredAlerts.map(alert => {
-          const cost = alert.averageCost || alert.product?.costPrice || 0;
-          return {
-            'Tipo': this.getTypeBadge(alert),
-            'Producto': this.getDisplayName(alert),
-            'SKU': this.getDisplaySKU(alert),
-            'Atributos': this.getVariantAttributes(alert),
-            'Sucursal': alert.branchName || 'N/A',
-            'Stock Actual': alert.currentStock,
-            'Stock Mínimo': alert.minStock,
-            'Stock Máximo': alert.maxStock,
-            'Nivel': this.getAlertLevel(alert) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA',
-            'Costo Unitario': cost,
-            'Valor Total': alert.currentStock * cost
-          };
-        })
-      : this.filteredStock.map(item => {
-          const cost = item.averageCost || item.product?.costPrice || 0;
-          return {
-            'Tipo': this.getTypeBadge(item),
-            'Producto': this.getDisplayName(item),
-            'SKU': this.getDisplaySKU(item),
-            'Atributos': this.getVariantAttributes(item),
-            'Sucursal': item.branchName || 'N/A',
-            'Stock Actual': item.currentStock,
-            'Stock Mínimo': item.minStock,
-            'Stock Máximo': item.maxStock,
-            'Estado': this.getStockStatus(item).toUpperCase(),
-            'Costo Unitario': cost,
-            'Valor Total': item.currentStock * cost
-          };
-        });
+    if (this.loading || (this.activeView === 'alerts' && this.filteredAlerts.length === 0) ||
+        (this.activeView === 'stock' && this.filteredStock.length === 0)) {
+      console.warn('⚠️ No hay datos para exportar');
+      return;
+    }
 
-    console.log('📊 Datos para exportar:', data);
-    console.log('💰 Valor total del inventario: Q', this.totalStockValue.toFixed(2));
+    console.log('📊 ========================================');
+    console.log('📊 Exportando a Excel...');
+    console.log('📅 Vista:', this.activeView === 'alerts' ? 'Alertas' : 'Existencias');
+    console.log('📄 Registros:', this.activeView === 'alerts' ? this.filteredAlerts.length : this.filteredStock.length);
+    console.log('🔍 Sucursal:', this.selectedBranchId || 'Todas');
+
+    this.loading = true;
+
+    // Preparar filtros para el servicio
+    const exportFilter: any = {};
+
+    if (this.selectedBranchId) {
+      exportFilter.branchId = Number(this.selectedBranchId);
+    }
+
+    if (this.activeView === 'alerts') {
+      exportFilter.alertLevel = this.selectedAlertLevel !== 'all' ? this.selectedAlertLevel : undefined;
+    }
+
+    // Llamar al servicio de exportación
+    const exportObservable = this.activeView === 'alerts'
+      ? this.inventoryService.exportLowStockAlerts(exportFilter)
+      : this.inventoryService.exportAllStock(exportFilter);
+
+    exportObservable.subscribe({
+      next: (blob) => {
+        // Generar nombre de archivo descriptivo
+        const viewType = this.activeView === 'alerts' ? 'Alertas_Stock' : 'Existencias';
+        const branchName = this.selectedBranchId
+          ? `_${this.branches.find(b => b.id === Number(this.selectedBranchId))?.branchName || 'Sucursal'}`
+          : '_Todas_Sucursales';
+        const fecha = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const fileName = `${viewType}${branchName}_${fecha}.xlsx`;
+
+        // Descargar archivo usando FileSaver
+        saveAs(blob, fileName);
+
+        console.log('✅ Archivo exportado:', fileName);
+        console.log('📊 ========================================');
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error exportando a Excel:', error);
+        console.error('   Detalles:', error.error);
+        console.log('📊 ========================================');
+        this.loading = false;
+      }
+    });
   }
 
   refresh(): void {

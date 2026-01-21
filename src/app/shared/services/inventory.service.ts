@@ -1,3 +1,7 @@
+// ======================================================
+// ARCHIVO COMPLETO: inventory.service.ts
+// ======================================================
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -29,7 +33,6 @@ export class InventoryService {
     if (filter.endDate) params = params.set('endDate', filter.endDate);
     if (filter.userId) params = params.set('userId', filter.userId.toString());
 
-    // ✅ CORREGIDO: Agregado paréntesis
     return this.http.get<any>(`${this.apiUrl}/movements`, { params }).pipe(
       map(response => ({
         data: response.data || [],
@@ -55,28 +58,25 @@ export class InventoryService {
     );
   }
 
-  // ✅ CORREGIDO: URL y estructura de datos
   createAdjustment(adjustmentData: any): Observable<any> {
-  // Transformar los datos al formato esperado por el backend
-  const payload = {
-    productId: Number(adjustmentData.productId),
-    variantId: adjustmentData.variantId ? Number(adjustmentData.variantId) : null,
-    branchId: Number(adjustmentData.branchId),
-    quantity: Number(adjustmentData.quantity),
-    reason: adjustmentData.reason,
-    notes: adjustmentData.notes || '',
-    movementType: 'ADJUSTMENT'
-  };
+    const payload = {
+      productId: Number(adjustmentData.productId),
+      variantId: adjustmentData.variantId ? Number(adjustmentData.variantId) : null,
+      branchId: Number(adjustmentData.branchId),
+      quantity: Number(adjustmentData.quantity),
+      reason: adjustmentData.reason,
+      notes: adjustmentData.notes || '',
+      movementType: 'ADJUSTMENT'
+    };
 
-  // Determinar el endpoint según si es variante o producto simple
-  const endpoint = payload.variantId
-    ? `${this.apiUrl}/adjustments/variant`
-    : `${this.apiUrl}/adjustments`;
+    const endpoint = payload.variantId
+      ? `${this.apiUrl}/adjustments/variant`
+      : `${this.apiUrl}/adjustments`;
 
-  console.log('📤 Enviando ajuste a:', endpoint, payload);
+    console.log('📤 Enviando ajuste a:', endpoint, payload);
 
-  return this.http.post<any>(endpoint, payload);
-}
+    return this.http.post<any>(endpoint, payload);
+  }
 
   getInventorySummary(branchId?: number): Observable<InventorySummary> {
     const params = branchId
@@ -89,42 +89,88 @@ export class InventoryService {
     );
   }
 
- exportMovements(filter: MovementFilter): Observable<Blob> {
-  let params = new HttpParams();
+  exportMovements(filter: MovementFilter): Observable<Blob> {
+    let params = new HttpParams();
 
-  // Agregar todos los filtros disponibles
-  if (filter.branchId) {
-    params = params.set('branchId', filter.branchId.toString());
-  }
-  if (filter.productId) {
-    params = params.set('productId', filter.productId.toString());
-  }
-  if (filter.movementType) {
-    params = params.set('movementType', filter.movementType);
-  }
-  if (filter.startDate) {
-    params = params.set('startDate', filter.startDate);
-  }
-  if (filter.endDate) {
-    params = params.set('endDate', filter.endDate);
-  }
-  if (filter.userId) {
-    params = params.set('userId', filter.userId.toString());
+    if (filter.branchId) {
+      params = params.set('branchId', filter.branchId.toString());
+    }
+    if (filter.productId) {
+      params = params.set('productId', filter.productId.toString());
+    }
+    if (filter.movementType) {
+      params = params.set('movementType', filter.movementType);
+    }
+    if (filter.startDate) {
+      params = params.set('startDate', filter.startDate);
+    }
+    if (filter.endDate) {
+      params = params.set('endDate', filter.endDate);
+    }
+    if (filter.userId) {
+      params = params.set('userId', filter.userId.toString());
+    }
+
+    console.log('📤 Exportando movimientos con parámetros:', params.toString());
+
+    return this.http.get(`${this.apiUrl}/export`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => {
+        console.log('📥 Respuesta recibida:', response.headers.get('content-type'));
+        return response.body as Blob;
+      })
+    );
   }
 
-  console.log('📤 Exportando con parámetros:', params.toString());
+  // ⭐ NUEVO: Exportar alertas de stock bajo
+  exportLowStockAlerts(filter?: any): Observable<Blob> {
+    let params = new HttpParams();
 
-  return this.http.get(`${this.apiUrl}/export`, {
-    params,
-    responseType: 'blob',
-    observe: 'response' // Para obtener headers si es necesario
-  }).pipe(
-    map(response => {
-      console.log('📥 Respuesta recibida:', response.headers.get('content-type'));
-      return response.body as Blob;
-    })
-  );
-}
+    if (filter?.branchId) {
+      params = params.set('branchId', filter.branchId.toString());
+    }
+    if (filter?.alertLevel && filter.alertLevel !== 'all') {
+      params = params.set('alertLevel', filter.alertLevel);
+    }
+
+    console.log('📤 Exportando alertas con parámetros:', params.toString());
+
+    return this.http.get(`${this.apiUrl}/export/low-stock`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => {
+        console.log('📥 Respuesta recibida:', response.headers.get('content-type'));
+        return response.body as Blob;
+      })
+    );
+  }
+
+  // ⭐ NUEVO: Exportar todas las existencias
+  exportAllStock(filter?: any): Observable<Blob> {
+    let params = new HttpParams();
+
+    if (filter?.branchId) {
+      params = params.set('branchId', filter.branchId.toString());
+    }
+
+    console.log('📤 Exportando existencias con parámetros:', params.toString());
+
+    return this.http.get(`${this.apiUrl}/export/all-stock`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => {
+        console.log('📥 Respuesta recibida:', response.headers.get('content-type'));
+        return response.body as Blob;
+      })
+    );
+  }
 
   getProductHistory(
     productId: number,
@@ -140,14 +186,13 @@ export class InventoryService {
     );
   }
 
-  // En inventory.service.ts
-getAllProductStock(branchId?: number): Observable<ProductStock[]> {
-  let url = `${this.apiUrl}/stock`;
+  getAllProductStock(branchId?: number): Observable<ProductStock[]> {
+    let url = `${this.apiUrl}/stock`;
 
-  if (branchId) {
-    url += `?branchId=${branchId}`;
+    if (branchId) {
+      url += `?branchId=${branchId}`;
+    }
+
+    return this.http.get<ProductStock[]>(url);
   }
-
-  return this.http.get<ProductStock[]>(url);
-}
 }
