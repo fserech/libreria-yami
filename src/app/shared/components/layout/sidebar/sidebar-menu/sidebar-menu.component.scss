@@ -1,68 +1,94 @@
-.edit-mode-btn {
+// Botón de edición solo con ícono (en línea con Dashboard)
+.edit-mode-btn-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1rem;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
   border: 1.5px solid rgba(59, 130, 246, 0.3);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   color: #3b82f6;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 0.8rem;
-  font-weight: 600;
   position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(59, 130, 246, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
+  flex-shrink: 0;
 
   &:hover {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15));
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
     border-color: #3b82f6;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 
-    &::before {
-      width: 300px;
-      height: 300px;
+    .tooltip-edit-icon .tooltip-text {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
   &:active {
-    transform: translateY(0);
+    transform: scale(0.95);
   }
 
   &.active {
     background: linear-gradient(135deg, #3b82f6, #8b5cf6);
     border-color: #3b82f6;
     color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
 
     &:hover {
       background: linear-gradient(135deg, #2563eb, #7c3aed);
     }
   }
 
-  span {
-    position: relative;
-    z-index: 1;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   ng-icon {
     position: relative;
     z-index: 1;
+  }
+}
+
+// Tooltip para el botón de edición
+.tooltip-edit-icon {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
+
+  .tooltip-text {
+    display: block;
+    background: #1f2937;
+    color: white;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.375rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.2s ease;
+
+    // Flecha del tooltip
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid #1f2937;
+    }
   }
 }
 
