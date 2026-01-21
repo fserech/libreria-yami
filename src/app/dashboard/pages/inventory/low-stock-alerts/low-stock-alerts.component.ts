@@ -30,6 +30,7 @@ import { forkJoin } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { saveAs } from 'file-saver';
+import { ViewModeComponent, StockItem, ViewMode, ActiveView } from '../Components/view-mode/view-mode.component';
 
 @Component({
   selector: 'app-low-stock-alerts',
@@ -39,7 +40,8 @@ import { saveAs } from 'file-saver';
     FormsModule,
     NgIcon,
     NgClass,
-    AdjustmentModalComponent
+    AdjustmentModalComponent,
+    ViewModeComponent
   ],
   templateUrl: './low-stock-alerts.component.html',
   styleUrl: './low-stock-alerts.component.scss',
@@ -65,7 +67,8 @@ import { saveAs } from 'file-saver';
 export class LowStockAlertsComponent implements OnInit {
   Math = Math;
 
-  activeView: 'alerts' | 'stock' = 'alerts';
+  activeView: ActiveView = 'alerts';
+  viewMode: ViewMode = 'table';
 
   alerts: ProductStock[] = [];
   allStock: ProductStock[] = [];
@@ -78,7 +81,6 @@ export class LowStockAlertsComponent implements OnInit {
   searchTerm: string = '';
 
   loading = false;
-  viewMode: 'table' | 'cards' = 'table';
 
   currentPage = 1;
   itemsPerPage = 10;
@@ -89,22 +91,22 @@ export class LowStockAlertsComponent implements OnInit {
   showAdjustmentModal = false;
   editingMovement: any;
 
-  // ⭐ MODIFICADO: Ahora usa filteredAlerts que ya considera la sucursal
   get totalAlertsCount(): number {
     return this.filteredAlerts.length;
   }
 
-  // ⭐ MODIFICADO: Ahora usa filteredAlerts que ya considera la sucursal
   get criticalCount(): number {
-    return this.filteredAlerts.filter(a => a.currentStock === 0).length;
+    return this.filteredAlerts.filter(a => a.currentStock === 0 || a.currentStock < a.minStock).length;
   }
 
-  // ⭐ MODIFICADO: Ahora usa filteredAlerts que ya considera la sucursal
   get warningCount(): number {
-    return this.filteredAlerts.filter(a => a.currentStock > 0 && a.belowMinStock).length;
+    return this.filteredAlerts.filter(a => {
+      const isCritical = a.currentStock === 0 || a.currentStock < a.minStock;
+      const isWarning = a.currentStock >= a.minStock && a.currentStock <= (a.minStock * 1.2);
+      return !isCritical && isWarning;
+    }).length;
   }
 
-  // ⭐ MODIFICADO: Contar solo productos únicos de filteredStock (ya incluye filtro de sucursal)
   get totalProducts(): number {
     const uniqueProducts = new Set<number>();
     this.filteredStock.forEach(item => {
@@ -113,7 +115,6 @@ export class LowStockAlertsComponent implements OnInit {
     return uniqueProducts.size;
   }
 
-  // ⭐ MODIFICADO: Usar filteredStock que ya incluye filtro de sucursal
   get totalStockValue(): number {
     return this.filteredStock.reduce((sum, item) => {
       const cost = item.averageCost || item.product?.costPrice || 0;
@@ -147,6 +148,10 @@ export class LowStockAlertsComponent implements OnInit {
     return this.currentPage;
   }
 
+  get stockItemsForView(): StockItem[] {
+    return this.paginatedItems.map(item => this.convertToStockItem(item));
+  }
+
   constructor(
     private inventoryService: InventoryService,
     private router: Router,
@@ -157,6 +162,73 @@ export class LowStockAlertsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadBranches();
+  }
+
+  // ⭐ MÉTODO AUXILIAR: Determina si un producto tiene stock bajo
+  private hasLowStock(item: ProductStock): boolean {
+    const isBelowMin = item.currentStock < item.minStock;
+    const isNearMin = item.currentStock <= (item.minStock * 1.2); // 20% sobre el mínimo
+    return isBelowMin || (isNearMin && item.belowMinStock);
+  }
+
+  private convertToStockItem(productStock: ProductStock): StockItem {
+    const isVariant = productStock.variantId != null;
+    let displayName = '';
+    let sku = '';
+    let attributes: { [key: string]: string } | undefined;
+
+    if (isVariant && productStock.product?.variants) {
+      const variant = productStock.product.variants.find(v => v.id === productStock.variantId);
+      displayName = variant?.variantName || productStock.product?.productName || 'N/A';
+      sku = variant?.sku || 'N/A';
+      attributes = variant?.attributes;
+    } else {
+      displayName = productStock.product?.productName || 'N/A';
+      sku = productStock.product?.sku || 'N/A';
+    }
+
+    return {
+      id: `${productStock.productId}-${productStock.variantId || 0}-${productStock.branchId}`,
+      productId: productStock.productId.toString(),
+      variantId: productStock.variantId?.toString(),
+      productName: productStock.product?.productName,
+      variantName: isVariant ? displayName : undefined,
+      sku: sku,
+      currentStock: productStock.currentStock,
+      minStock: productStock.minStock,
+      maxStock: productStock.maxStock,
+      branchName: productStock.branchName,
+      branchId: productStock.branchId.toString(),
+      attributes: attributes
+    };
+  }
+
+  handleAdjustStock(item: StockItem): void {
+    const originalItem = this.paginatedItems.find(ps =>
+      ps.productId.toString() === item.productId &&
+      (item.variantId ? ps.variantId?.toString() === item.variantId : !ps.variantId) &&
+      ps.branchId.toString() === item.branchId
+    );
+
+    if (originalItem) {
+      this.adjustStock(originalItem);
+    }
+  }
+
+  handleCreatePurchaseOrder(item: StockItem): void {
+    const originalItem = this.paginatedItems.find(ps =>
+      ps.productId.toString() === item.productId &&
+      (item.variantId ? ps.variantId?.toString() === item.variantId : !ps.variantId) &&
+      ps.branchId.toString() === item.branchId
+    );
+
+    if (originalItem) {
+      this.createPurchaseOrder(originalItem);
+    }
+  }
+
+  handleViewModeChange(mode: ViewMode): void {
+    this.viewMode = mode;
   }
 
   private loadBranches(): void {
@@ -179,14 +251,29 @@ export class LowStockAlertsComponent implements OnInit {
     });
   }
 
+  // ⭐ MODIFICADO: Filtra productos con stock bajo al cargar
   private loadInitialData(): void {
     forkJoin({
       alerts: this.inventoryService.getLowStockProducts(),
       stock: this.inventoryService.getAllProductStock()
     }).subscribe({
       next: (results) => {
-        this.alerts = results.alerts;
+        // ⭐ FILTRO: Solo productos que realmente tienen stock bajo
+        this.alerts = results.alerts.filter(p => this.hasLowStock(p));
         this.allStock = results.stock;
+
+        console.log('📊 Datos iniciales cargados:', {
+          alertasBackend: results.alerts.length,
+          alertasFiltradas: this.alerts.length,
+          stock: this.allStock.length,
+          criticas: this.alerts.filter(a => a.currentStock === 0 || a.currentStock < a.minStock).length,
+          advertencias: this.alerts.filter(a => {
+            const notCritical = a.currentStock >= a.minStock;
+            const isNearMin = a.currentStock <= (a.minStock * 1.2);
+            return notCritical && isNearMin;
+          }).length
+        });
+
         this.syncBranchesFromData();
         this.applyFilters();
         this.applyStockFilters();
@@ -228,7 +315,7 @@ export class LowStockAlertsComponent implements OnInit {
     );
   }
 
-  switchView(view: 'alerts' | 'stock'): void {
+  switchView(view: ActiveView): void {
     this.activeView = view;
     this.currentPage = 1;
     this.searchTerm = '';
@@ -263,8 +350,9 @@ export class LowStockAlertsComponent implements OnInit {
     this.filteredStock = this.allStock.filter(item => {
       if (this.searchTerm) {
         const searchLower = this.searchTerm.toLowerCase();
-        const productName = this.getDisplayName(item).toLowerCase();
-        const sku = this.getDisplaySKU(item).toLowerCase();
+        const stockItem = this.convertToStockItem(item);
+        const productName = (stockItem.variantName || stockItem.productName || '').toLowerCase();
+        const sku = stockItem.sku.toLowerCase();
 
         if (!productName.includes(searchLower) && !sku.includes(searchLower)) {
           return false;
@@ -280,9 +368,11 @@ export class LowStockAlertsComponent implements OnInit {
       return true;
     });
 
-    this.filteredStock.sort((a, b) =>
-      this.getDisplayName(a).localeCompare(this.getDisplayName(b))
-    );
+    this.filteredStock.sort((a, b) => {
+      const nameA = this.convertToStockItem(a).variantName || this.convertToStockItem(a).productName || '';
+      const nameB = this.convertToStockItem(b).variantName || this.convertToStockItem(b).productName || '';
+      return nameA.localeCompare(nameB);
+    });
 
     this.totalPages = Math.ceil(this.filteredStock.length / this.itemsPerPage);
     if (this.currentPage > this.totalPages && this.totalPages > 0) {
@@ -299,6 +389,7 @@ export class LowStockAlertsComponent implements OnInit {
     }
   }
 
+  // ⭐ MODIFICADO: Filtra productos con stock bajo al cargar
   loadAlerts(forceReload: boolean = false): void {
     this.loading = true;
     const branchId = this.selectedBranchId ? Number(this.selectedBranchId) : undefined;
@@ -311,7 +402,15 @@ export class LowStockAlertsComponent implements OnInit {
     this.inventoryService.getLowStockProducts(branchId)
       .subscribe({
         next: (products: ProductStock[]) => {
-          this.alerts = products;
+          // ⭐ FILTRO: Solo productos que realmente tienen stock bajo
+          this.alerts = products.filter(p => this.hasLowStock(p));
+
+          console.log('📊 Alertas recargadas:', {
+            backend: products.length,
+            filtradas: this.alerts.length,
+            criticas: this.alerts.filter(a => a.currentStock === 0 || a.currentStock < a.minStock).length
+          });
+
           this.syncBranchesFromData();
           this.applyFilters();
           this.loading = false;
@@ -323,25 +422,36 @@ export class LowStockAlertsComponent implements OnInit {
       });
   }
 
+  // ⭐ MODIFICADO: Aplica filtros adicionales sobre alertas ya filtradas
   applyFilters(): void {
     this.filteredAlerts = this.alerts.filter(alert => {
-      if (this.selectedAlertLevel === 'critical' && alert.currentStock > 0) {
-        return false;
-      }
-      if (this.selectedAlertLevel === 'warning' && (alert.currentStock === 0 || !alert.belowMinStock)) {
-        return false;
+      // Ya sabemos que todos tienen stock bajo, ahora aplicar filtros de UI
+
+      // Filtro por nivel de alerta (crítico/advertencia)
+      if (this.selectedAlertLevel === 'critical') {
+        const isCritical = alert.currentStock === 0 || alert.currentStock < alert.minStock;
+        if (!isCritical) return false;
       }
 
+      if (this.selectedAlertLevel === 'warning') {
+        const isCritical = alert.currentStock === 0 || alert.currentStock < alert.minStock;
+        const isWarning = alert.currentStock >= alert.minStock && alert.currentStock <= (alert.minStock * 1.2);
+        if (isCritical || !isWarning) return false;
+      }
+
+      // Filtro por búsqueda
       if (this.searchTerm) {
         const searchLower = this.searchTerm.toLowerCase();
-        const productName = this.getDisplayName(alert).toLowerCase();
-        const sku = this.getDisplaySKU(alert).toLowerCase();
+        const stockItem = this.convertToStockItem(alert);
+        const productName = (stockItem.variantName || stockItem.productName || '').toLowerCase();
+        const sku = stockItem.sku.toLowerCase();
 
         if (!productName.includes(searchLower) && !sku.includes(searchLower)) {
           return false;
         }
       }
 
+      // Filtro por sucursal
       if (this.selectedBranchId && this.selectedBranchId !== '') {
         if (alert.branchId !== Number(this.selectedBranchId)) {
           return false;
@@ -351,9 +461,13 @@ export class LowStockAlertsComponent implements OnInit {
       return true;
     });
 
+    // Ordenar: críticos primero, luego por cantidad
     this.filteredAlerts.sort((a, b) => {
-      if (a.currentStock === 0 && b.currentStock > 0) return -1;
-      if (a.currentStock > 0 && b.currentStock === 0) return 1;
+      const aCritical = a.currentStock === 0 || a.currentStock < a.minStock;
+      const bCritical = b.currentStock === 0 || b.currentStock < b.minStock;
+
+      if (aCritical && !bCritical) return -1;
+      if (!aCritical && bCritical) return 1;
       return a.currentStock - b.currentStock;
     });
 
@@ -400,79 +514,6 @@ export class LowStockAlertsComponent implements OnInit {
 
   private scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  getStockStatus(item: ProductStock): 'critical' | 'warning' | 'good' | 'excess' {
-    if (item.currentStock === 0) return 'critical';
-    if (item.belowMinStock) return 'warning';
-    if (item.currentStock > item.maxStock) return 'excess';
-    return 'good';
-  }
-
-  getStockStatusClass(item: ProductStock): string {
-    const status = this.getStockStatus(item);
-    switch (status) {
-      case 'critical': return 'text-red-600 dark:text-red-400';
-      case 'warning': return 'text-yellow-600 dark:text-yellow-400';
-      case 'excess': return 'text-orange-600 dark:text-orange-400';
-      default: return 'text-green-600 dark:text-green-400';
-    }
-  }
-
-  isVariant(alert: ProductStock): boolean {
-    return alert.variantId != null;
-  }
-
-  getDisplayName(alert: ProductStock): string {
-    if (this.isVariant(alert) && alert.product?.variants) {
-      const variant = alert.product.variants.find(v => v.id === alert.variantId);
-      return variant?.variantName || alert.product?.productName || 'N/A';
-    }
-    return alert.product?.productName || 'N/A';
-  }
-
-  getDisplaySKU(alert: ProductStock): string {
-    if (this.isVariant(alert) && alert.product?.variants) {
-      const variant = alert.product.variants.find(v => v.id === alert.variantId);
-      return variant?.sku || 'N/A';
-    }
-    return alert.product?.sku || 'N/A';
-  }
-
-  getVariantAttributes(alert: ProductStock): string {
-    if (!this.isVariant(alert) || !alert.product?.variants) {
-      return '';
-    }
-
-    const variant = alert.product.variants.find(v => v.id === alert.variantId);
-    if (!variant?.attributes || Object.keys(variant.attributes).length === 0) {
-      return '';
-    }
-
-    return Object.entries(variant.attributes)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(' • ');
-  }
-
-  getTypeBadge(alert: ProductStock): string {
-    return this.isVariant(alert) ? 'Variante' : 'Producto simple';
-  }
-
-  getTypeBadgeClass(alert: ProductStock): string {
-    return this.isVariant(alert)
-      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
-  }
-
-  getAlertLevel(alert: ProductStock): 'critical' | 'warning' | 'normal' {
-    if (alert.currentStock === 0) return 'critical';
-    if (alert.belowMinStock) return 'warning';
-    return 'normal';
-  }
-
-  getStockPercentage(alert: ProductStock): number {
-    if (alert.maxStock === 0) return 0;
-    return Math.min(100, (alert.currentStock / alert.maxStock) * 100);
   }
 
   viewProductHistory(alert: ProductStock): void {
@@ -545,7 +586,6 @@ export class LowStockAlertsComponent implements OnInit {
 
     this.loading = true;
 
-    // Preparar filtros para el servicio
     const exportFilter: any = {};
 
     if (this.selectedBranchId) {
@@ -556,22 +596,19 @@ export class LowStockAlertsComponent implements OnInit {
       exportFilter.alertLevel = this.selectedAlertLevel !== 'all' ? this.selectedAlertLevel : undefined;
     }
 
-    // Llamar al servicio de exportación
     const exportObservable = this.activeView === 'alerts'
       ? this.inventoryService.exportLowStockAlerts(exportFilter)
       : this.inventoryService.exportAllStock(exportFilter);
 
     exportObservable.subscribe({
       next: (blob) => {
-        // Generar nombre de archivo descriptivo
         const viewType = this.activeView === 'alerts' ? 'Alertas_Stock' : 'Existencias';
         const branchName = this.selectedBranchId
           ? `_${this.branches.find(b => b.id === Number(this.selectedBranchId))?.branchName || 'Sucursal'}`
           : '_Todas_Sucursales';
-        const fecha = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const fecha = new Date().toISOString().split('T')[0];
         const fileName = `${viewType}${branchName}_${fecha}.xlsx`;
 
-        // Descargar archivo usando FileSaver
         saveAs(blob, fileName);
 
         console.log('✅ Archivo exportado:', fileName);
