@@ -26,7 +26,6 @@ import { AuthService } from '../../../shared/services/auth.service';
 import { CrudService } from '../../../shared/services/crud.service';
 import { URL_ORDERS } from '../../../shared/constants/endpoints';
 import { GoalConfig, GoalsComponent } from './component/goals/goals.component';
-// ⭐ IMPORTAR UTILIDAD
 import { getProductCostPrice } from '../../../shared/utils/product-utils';
 
 Chart.register(...registerables);
@@ -55,9 +54,9 @@ interface TopProductDisplay {
   sales: number;
   revenue: number;
   trend: number;
-  hasVariants: boolean;        // ✅ NUEVO
-  variantName?: string;         // ✅ NUEVO: Nombre de la variante si aplica
-  productType: 'simple' | 'variant'; // ✅ NUEVO
+  hasVariants: boolean;
+  variantName?: string;
+  productType: 'simple' | 'variant';
 }
 
 interface DashboardData {
@@ -121,15 +120,20 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private crud: CrudService
   ) {}
 
-  async ngOnInit() {
-    await this.loadDashboardData();
+  ngOnInit() {
+    // ⭐ OPTIMIZACIÓN: Iniciar carga de datos inmediatamente
+    this.loadDashboardData();
   }
 
   ngAfterViewInit() {
-    setTimeout(() => {
-      this.createLineChart();
-      this.createPieChart();
-    }, 100);
+    // ⭐ OPTIMIZACIÓN: Crear gráficos sin delay
+    this.createLineChart();
+    this.createPieChart();
+
+    // Si los datos ya están cargados, actualizar gráficos
+    if (!this.loading && this.orders.length > 0) {
+      this.refreshCharts();
+    }
   }
 
   onGoalCalculated(newGoal: number) {
@@ -142,73 +146,19 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   async loadDashboardData() {
     this.loading = true;
 
-
     try {
-      // Cargar datos básicos
-      const [products, categories, clients] = await Promise.all([
+      // ⭐ OPTIMIZACIÓN: Cargar TODO en paralelo
+      const [products, categories, clients, ordersResponse] = await Promise.all([
         firstValueFrom(this.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)),
         firstValueFrom(this.http.get<Category[]>(`${environment.apiUrl}/api/v1/categories`)),
-        firstValueFrom(this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`))
+        firstValueFrom(this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`)),
+        this.loadOrders() // ⭐ Método separado para órdenes
       ]);
 
-      let orders: Order[] = [];
-      let ordersWithProducts: Order[] = [];
+      const { orders, ordersWithProducts } = ordersResponse;
+      this.orders = orders;
 
-      try {
-        this.crud.baseUrl = URL_ORDERS;
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 12);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-
-        let filter = '';
-        filter += `&dateCreatedInit=${startDate.toISOString()}`;
-        filter += `&dateCreatedEnd=${endDate.toISOString()}`;
-
-        const userData = this.auth.getUserData();
-        if (userData && userData.role === 'ROLE_USER') {
-          filter += `&userId=${userData.id}`;
-        }
-
-        const response: any = await this.crud.getPage('asc', 'id', 10000, 1, filter);
-        orders = response?.content || [];
-        this.orders = orders;
-
-
-        // ✅ CRÍTICO: Cargar detalles de productos para cada orden
-        if (orders.length > 0) {
-          const firstOrder = orders[0];
-
-          // Si la primera orden no tiene productos, cargar detalles de todas
-          if (!firstOrder.products || firstOrder.products.length === 0) {
-
-            const ordersWithDetailsPromises = orders.map(order =>
-              firstValueFrom(this.crud.getId(order.id)).catch(err => {
-                console.error(`❌ Error cargando orden ${order.id}:`, err);
-                return order;
-              })
-            );
-
-            ordersWithProducts = await Promise.all(ordersWithDetailsPromises);
-
-          } else {
-            ordersWithProducts = orders;
-
-          }
-
-          // Mostrar resumen de productos en consola
-          const totalProductsInOrders = ordersWithProducts.reduce((sum, o) =>
-            sum + (o.products?.length || 0), 0
-          );
-
-        }
-      } catch (e) {
-        console.error('❌ Error cargando órdenes:', e);
-      }
-
-      // Calcular métricas del dashboard
-
+      // Calcular métricas
       const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
 
       // Actualizar componentes visuales
@@ -216,18 +166,72 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       this.updateKPIs(dashboardData, orders);
       this.calculateTopProductsFromOrders(ordersWithProducts, products);
 
-      // Actualizar gráficos
-      if (this.pieChart) {
-        this.updatePieChartWithRealData(products, categories);
-      }
-      if (this.lineChart) {
-        this.updateLineChartWithRealData(orders);
-      }
+      // Actualizar gráficos (solo si ya están creados)
+      this.refreshCharts(products, categories, orders);
 
     } catch (error) {
       console.error('❌ Error cargando datos del dashboard:', error);
     } finally {
       this.loading = false;
+    }
+  }
+
+  // ⭐ NUEVO: Método separado para cargar órdenes
+  private async loadOrders(): Promise<{ orders: Order[], ordersWithProducts: Order[] }> {
+    try {
+      this.crud.baseUrl = URL_ORDERS;
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 12);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+
+      let filter = `&dateCreatedInit=${startDate.toISOString()}&dateCreatedEnd=${endDate.toISOString()}`;
+
+      const userData = this.auth.getUserData();
+      if (userData && userData.role === 'ROLE_USER') {
+        filter += `&userId=${userData.id}`;
+      }
+
+      const response: any = await this.crud.getPage('asc', 'id', 10000, 1, filter);
+      const orders: Order[] = response?.content || [];
+
+      // ⭐ OPTIMIZACIÓN: Solo cargar detalles si es necesario
+      let ordersWithProducts: Order[] = orders;
+
+      if (orders.length > 0) {
+        const firstOrder = orders[0];
+
+        // Si la primera orden no tiene productos, cargar detalles en paralelo
+        if (!firstOrder.products || firstOrder.products.length === 0) {
+          // ⭐ OPTIMIZACIÓN: Limitar a 50 órdenes más recientes para detalles
+          const recentOrders = orders.slice(0, 50);
+
+          const ordersWithDetailsPromises = recentOrders.map(order =>
+            firstValueFrom(this.crud.getId(order.id)).catch(() => order)
+          );
+
+          const detailedOrders = await Promise.all(ordersWithDetailsPromises);
+
+          // Combinar órdenes con detalles y el resto sin detalles
+          ordersWithProducts = [...detailedOrders, ...orders.slice(50)];
+        }
+      }
+
+      return { orders, ordersWithProducts };
+    } catch (e) {
+      console.error('❌ Error cargando órdenes:', e);
+      return { orders: [], ordersWithProducts: [] };
+    }
+  }
+
+  // ⭐ NUEVO: Método para refrescar gráficos
+  private refreshCharts(products?: Product[], categories?: Category[], orders?: Order[]) {
+    if (this.pieChart && products && categories) {
+      this.updatePieChartWithRealData(products, categories);
+    }
+    if (this.lineChart && orders) {
+      this.updateLineChartWithRealData(orders);
     }
   }
 
@@ -267,14 +271,13 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const totalSales = currentMonthOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
     const previousMonthSales = previousMonthOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
 
-    // ⭐ USAR UTILIDAD para obtener costPrice
     const productsWithPrices = products.filter(p =>
       p.active && (p.salePrice || 0) > 0 && getProductCostPrice(p) > 0
     );
 
     const totalMargin = productsWithPrices.reduce((sum, p) => {
       const price = p.salePrice || 0;
-      const cost = getProductCostPrice(p); // ⭐ USAR UTILIDAD
+      const cost = getProductCostPrice(p);
       return sum + ((price - cost) / price) * 100;
     }, 0);
 
@@ -305,7 +308,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
- updateStats(data: DashboardData, products: Product[], orders: Order[]) {
+  updateStats(data: DashboardData, products: Product[], orders: Order[]) {
     const goalAmount = this.goalsComponent ? this.goalsComponent.calculateCurrentMonthGoal(orders) : 20000;
     const progress = (data.totalSales / goalAmount) * 100;
 
@@ -317,7 +320,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       ? `${salesChange >= 0 ? '+' : ''}${salesChange.toFixed(1)}% vs mes anterior`
       : `${data.totalOrders} órdenes este mes`;
 
-    // Guardar la meta actual
     if (this.goalsComponent) {
       this.goalsComponent.saveCurrentMonthGoal(goalAmount);
     }
@@ -357,6 +359,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     ];
   }
+
   updateKPIs(data: DashboardData, orders: Order[]) {
     this.kpis = [
       {
@@ -384,158 +387,134 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
-   const productSalesMap = new Map<number, {
-    quantity: number;
-    revenue: number;
-    ordersCount: number;
-  }>();
-  const variantSalesMap = new Map<number, {
-    productId: number;
-    variantId: number;
-    quantity: number;
-    revenue: number;
-    ordersCount: number;
-  }>();
+    const productSalesMap = new Map<number, {
+      quantity: number;
+      revenue: number;
+      ordersCount: number;
+    }>();
+    const variantSalesMap = new Map<number, {
+      productId: number;
+      variantId: number;
+      quantity: number;
+      revenue: number;
+      ordersCount: number;
+    }>();
 
+    const isFinalized = (order: Order): boolean => {
+      if (!order.status) return false;
+      const status = order.status.toUpperCase().trim();
+      return status === 'FINALIZED' || status === 'FINALIZADO';
+    };
 
-   const isFinalized = (order: Order): boolean => {
-    if (!order.status) return false;
-    const status = order.status.toUpperCase().trim();
-    return status === 'FINALIZED' || status === 'FINALIZADO';
-  };
+    const finalizedOrders = orders.filter(order => isFinalized(order));
 
-  const finalizedOrders = orders.filter(order => isFinalized(order));
-
-   finalizedOrders.forEach((order) => {
-    if (!order.products || !Array.isArray(order.products)) {
-      return;
-    }
+    finalizedOrders.forEach((order) => {
+      if (!order.products || !Array.isArray(order.products)) return;
 
       order.products.forEach((productOrder: ProductOrder) => {
-      let productId: number | undefined;
+        let productId: number | undefined;
 
-       if (productOrder.productId) {
-        productId = productOrder.productId;
-      } else if (productOrder.product?.id) {
-        productId = productOrder.product.id;
-      }
+        if (productOrder.productId) {
+          productId = productOrder.productId;
+        } else if (productOrder.product?.id) {
+          productId = productOrder.product.id;
+        }
 
-        if (!productId) {
-        console.warn('⚠️ ProductOrder sin ID:', productOrder);
-        return;
-      }
-        const current = productSalesMap.get(productId) || {
-          quantity: 0,
-          revenue: 0,
-          ordersCount: 0
-        };
+        if (!productId) return;
 
         if (productOrder.variantId) {
-        // Es una VARIANTE
-        const variantKey = productOrder.variantId;
-        const current = variantSalesMap.get(variantKey) || {
-          productId: productId,
-          variantId: productOrder.variantId,
-          quantity: 0,
-          revenue: 0,
-          ordersCount: 0
-        };
+          const variantKey = productOrder.variantId;
+          const current = variantSalesMap.get(variantKey) || {
+            productId: productId,
+            variantId: productOrder.variantId,
+            quantity: 0,
+            revenue: 0,
+            ordersCount: 0
+          };
 
-         variantSalesMap.set(variantKey, {
-          ...current,
-          quantity: current.quantity + (productOrder.quantity || 0),
-          revenue: current.revenue + (productOrder.subtotal || 0),
-          ordersCount: current.ordersCount + 1
-        });
+          variantSalesMap.set(variantKey, {
+            ...current,
+            quantity: current.quantity + (productOrder.quantity || 0),
+            revenue: current.revenue + (productOrder.subtotal || 0),
+            ordersCount: current.ordersCount + 1
+          });
 
-      } else {
-        // Es un PRODUCTO SIMPLE
-        const current = productSalesMap.get(productId) || {
-          quantity: 0,
-          revenue: 0,
-          ordersCount: 0
-        };
+        } else {
+          const current = productSalesMap.get(productId) || {
+            quantity: 0,
+            revenue: 0,
+            ordersCount: 0
+          };
 
-       productSalesMap.set(productId, {
-          quantity: current.quantity + (productOrder.quantity || 0),
-          revenue: current.revenue + (productOrder.subtotal || 0),
-          ordersCount: current.ordersCount + 1
-        });
-
-      }
+          productSalesMap.set(productId, {
+            quantity: current.quantity + (productOrder.quantity || 0),
+            revenue: current.revenue + (productOrder.subtotal || 0),
+            ordersCount: current.ordersCount + 1
+          });
+        }
+      });
     });
-  });
 
+    const topProductsData: TopProductDisplay[] = [];
 
-  const topProductsData: TopProductDisplay[] = [];
+    productSalesMap.forEach((sales, productId) => {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
 
+      topProductsData.push({
+        name: product.productName,
+        sales: sales.quantity,
+        revenue: sales.revenue,
+        trend: sales.ordersCount,
+        hasVariants: false,
+        productType: 'simple'
+      });
+    });
 
-      productSalesMap.forEach((sales, productId) => {
-    const product = products.find(p => p.id === productId);
+    variantSalesMap.forEach((sales) => {
+      const product = products.find(p => p.id === sales.productId);
+      if (!product) return;
 
-    if (!product) {
-      console.warn(`⚠️ Producto no encontrado con ID: ${productId}`);
-      return;
+      const variant = product.variants?.find(v => v.id === sales.variantId);
+      const variantName = variant?.variantName || `Variante #${sales.variantId}`;
+
+      topProductsData.push({
+        name: product.productName,
+        variantName: variantName,
+        sales: sales.quantity,
+        revenue: sales.revenue,
+        trend: sales.ordersCount,
+        hasVariants: true,
+        productType: 'variant'
+      });
+    });
+
+    this.topProducts = topProductsData
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5);
+
+    if (this.topProducts.length === 0) {
+      this.topProducts = [{
+        name: 'Sin ventas registradas',
+        sales: 0,
+        revenue: 0,
+        trend: 0,
+        hasVariants: false,
+        productType: 'simple'
+      }];
     }
-
-    topProductsData.push({
-      name: product.productName,
-      sales: sales.quantity,
-      revenue: sales.revenue,
-      trend: sales.ordersCount,
-      hasVariants: false,
-      productType: 'simple'
-    });
-
-  });
-
-   variantSalesMap.forEach((sales) => {
-    const product = products.find(p => p.id === sales.productId);
-
-    if (!product) {
-      console.warn(`⚠️ Producto no encontrado con ID: ${sales.productId}`);
-      return;
-    }
-
-    const variant = product.variants?.find(v => v.id === sales.variantId);
-    const variantName = variant?.variantName || `Variante #${sales.variantId}`;
-
-    topProductsData.push({
-      name: product.productName,
-      variantName: variantName,
-      sales: sales.quantity,
-      revenue: sales.revenue,
-      trend: sales.ordersCount,
-      hasVariants: true,
-      productType: 'variant'
-    });
-
-  });
-
-   this.topProducts = topProductsData
-    .sort((a, b) => b.sales - a.sales)
-    .slice(0, 5);
-
-  if (this.topProducts.length === 0) {
-    this.topProducts = [{
-      name: 'Sin ventas registradas',
-      sales: 0,
-      revenue: 0,
-      trend: 0,
-      hasVariants: false,
-      productType: 'simple'
-    }];
-  } else {
-
-    this.topProducts.forEach((p, i) => {
-      const type = p.productType === 'simple' ? '📦 Simple' : '📌 Variante';
-      const name = p.variantName ? `${p.name} - ${p.variantName}` : p.name;
-    });
   }
-}
 
   updateLineChartWithRealData(orders: Order[]) {
-    if (!this.lineChart || !this.goalsComponent) return;
+    if (!this.lineChart) {
+      console.warn('⚠️ Line chart no está inicializado aún');
+      return;
+    }
+
+    if (!this.goalsComponent) {
+      console.warn('⚠️ Goals component no está disponible');
+      return;
+    }
 
     const months = this.getLast6Months();
     const salesData = new Array(6).fill(0);
@@ -660,97 +639,96 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
- createPieChart() {
-  if (!this.pieChartRef) return;
+  createPieChart() {
+    if (!this.pieChartRef) return;
 
-  // ⭐ Detectar tema actual
-  const isDarkMode = document.documentElement.classList.contains('dark');
-  const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
 
-  this.pieChart = new Chart(this.pieChartRef.nativeElement, {
-    type: 'pie',
-    data: {
-      labels: [],
-      datasets: [{
-        data: [],
-        backgroundColor: [
-          'rgb(59, 130, 246)',
-          'rgb(139, 92, 246)',
-          'rgb(236, 72, 153)',
-          'rgb(245, 158, 11)',
-          'rgb(16, 185, 129)',
-          'rgb(239, 68, 68)',
-          'rgb(20, 184, 166)',
-          'rgb(251, 146, 60)',
-        ],
-        borderWidth: 0,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: {
-        padding: {
-          bottom: 20
-        }
+    this.pieChart = new Chart(this.pieChartRef.nativeElement, {
+      type: 'pie',
+      data: {
+        labels: [],
+        datasets: [{
+          data: [],
+          backgroundColor: [
+            'rgb(59, 130, 246)',
+            'rgb(139, 92, 246)',
+            'rgb(236, 72, 153)',
+            'rgb(245, 158, 11)',
+            'rgb(16, 185, 129)',
+            'rgb(239, 68, 68)',
+            'rgb(20, 184, 166)',
+            'rgb(251, 146, 60)',
+          ],
+          borderWidth: 0,
+        }]
       },
-      plugins: {
-        legend: {
-          display: true,
-          position: 'bottom',
-          labels: {
-            usePointStyle: true,
-            pointStyle: 'circle',
-            padding: 12,
-            font: {
-              size: 10
-            },
-            boxWidth: 8,
-            boxHeight: 8,
-            color: textColor, // ⭐ Color aplicado aquí
-            generateLabels: function(chart) {
-  const data = chart.data;
-  const isDark = document.documentElement.classList.contains('dark');
-  const labelColor = isDark ? '#9CA3AF' : '#6B7280';
-
-  if (data.labels && data.datasets.length) {
-    return data.labels.map((label, i) => {
-      const dataset = data.datasets[0];
-      return {
-        text: label as string,
-        fillStyle: dataset.backgroundColor[i] as string,
-        hidden: false,
-        index: i,
-        strokeStyle: dataset.backgroundColor[i] as string,
-        pointStyle: 'circle',
-        fontColor: labelColor // ⭐ Agregar esto
-      };
-    });
-  }
-  return [];
-}
-          },
-          maxHeight: 200,
-          align: 'center'
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            bottom: 20
+          }
         },
-        tooltip: {
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          titleColor: '#000',
-          bodyColor: '#000',
-          borderColor: '#e5e7eb',
-          borderWidth: 1,
-          callbacks: {
-            label: function(context) {
-              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-              const percentage = ((context.parsed / total) * 100).toFixed(1);
-              return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              pointStyle: 'circle',
+              padding: 12,
+              font: {
+                size: 10
+              },
+              boxWidth: 8,
+              boxHeight: 8,
+              color: textColor,
+              generateLabels: function(chart) {
+                const data = chart.data;
+                const isDark = document.documentElement.classList.contains('dark');
+                const labelColor = isDark ? '#9CA3AF' : '#6B7280';
+
+                if (data.labels && data.datasets.length) {
+                  return data.labels.map((label, i) => {
+                    const dataset = data.datasets[0];
+                    return {
+                      text: label as string,
+                      fillStyle: dataset.backgroundColor[i] as string,
+                      hidden: false,
+                      index: i,
+                      strokeStyle: dataset.backgroundColor[i] as string,
+                      pointStyle: 'circle',
+                      fontColor: labelColor
+                    };
+                  });
+                }
+                return [];
+              }
+            },
+            maxHeight: 200,
+            align: 'center'
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#000',
+            bodyColor: '#000',
+            borderColor: '#e5e7eb',
+            borderWidth: 1,
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+              }
             }
           }
         }
       }
-    }
-  });
-}
+    });
+  }
 
   getCategoryDistribution(products: Product[], categories: Category[]) {
     const categoryCounts = new Map<number, number>();
@@ -775,25 +753,26 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
     return { labels, values };
   }
-updatePieChartWithRealData(products: Product[], categories: Category[]) {
-  if (!this.pieChart) return;
 
-  const categoryData = this.getCategoryDistribution(products, categories);
+  updatePieChartWithRealData(products: Product[], categories: Category[]) {
+    if (!this.pieChart) {
+      console.warn('⚠️ Pie chart no está inicializado aún');
+      return;
+    }
 
-  // ⭐ Detectar tema actual y aplicar color
-  const isDarkMode = document.documentElement.classList.contains('dark');
-  const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+    const categoryData = this.getCategoryDistribution(products, categories);
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
 
-  this.pieChart.data.labels = categoryData.labels;
-  this.pieChart.data.datasets[0].data = categoryData.values;
+    this.pieChart.data.labels = categoryData.labels;
+    this.pieChart.data.datasets[0].data = categoryData.values;
 
-  // ⭐ Actualizar el color de la leyenda
-  if (this.pieChart.options.plugins?.legend?.labels) {
-    this.pieChart.options.plugins.legend.labels.color = textColor;
+    if (this.pieChart.options.plugins?.legend?.labels) {
+      this.pieChart.options.plugins.legend.labels.color = textColor;
+    }
+
+    this.pieChart.update();
   }
-
-  this.pieChart.update();
-}
 
   getIcon(iconName: string) {
     const icons: any = {
