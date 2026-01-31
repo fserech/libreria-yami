@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { StockMovement, ProductStock, MovementFilter, MovementType } from '../../../../shared/interfaces/inventory';
 import { InventoryService } from '../../../../shared/services/inventory.service';
@@ -7,12 +7,19 @@ import { MovementDetailModalComponent } from '../Components/movement-detail-moda
 import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustment-modal.component';
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 import { saveAs } from 'file-saver';
+import { Subject } from 'rxjs';
+import { takeUntil, debounceTime } from 'rxjs/operators';
 
-// ⭐ NUEVO: Enum para períodos
 export enum TimePeriod {
   DAY = 'DAY',
   WEEK = 'WEEK',
   MONTH = 'MONTH'
+}
+
+// ⭐ Cache estático con TTL
+interface CacheData {
+  movements: StockMovement[];
+  timestamp: number;
 }
 
 @Component({
@@ -24,13 +31,16 @@ export enum TimePeriod {
     MovementDetailModalComponent,
     AdjustmentModalComponent,
     HeaderComponent
-],
+  ],
   templateUrl: './stock-movements.component.html',
   styleUrl: './stock-movements.component.scss'
 })
-export class StockMovementsComponent implements OnInit {
+export class StockMovementsComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+  private static cache: CacheData | null = null;
 
-   viewMode: 'table' | 'cards' = 'table';
+  viewMode: 'table' | 'cards' = 'table';
   Math = Math;
 
   movements: StockMovement[] = [];
@@ -40,9 +50,8 @@ export class StockMovementsComponent implements OnInit {
   filter: MovementFilter = {};
   movementTypes = Object.values(MovementType);
 
-  // ⭐ NUEVO: Control de períodos
   TimePeriod = TimePeriod;
-  selectedPeriod: TimePeriod = TimePeriod.MONTH; // ⭐ Default: MES
+  selectedPeriod: TimePeriod = TimePeriod.MONTH;
 
   loading = false;
   selectedMovement?: StockMovement;
@@ -57,24 +66,111 @@ export class StockMovementsComponent implements OnInit {
   constructor(private inventoryService: InventoryService) {}
 
   ngOnInit(): void {
-    // ⭐ Inicia con el período por defecto (MES)
     this.applyPeriodFilter(this.selectedPeriod);
-    this.loadLowStockProducts();
+    // ⭐ Cargar low stock en paralelo sin bloquear
+    this.loadLowStockProductsAsync();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   toggleViewMode(): void {
     this.viewMode = this.viewMode === 'table' ? 'cards' : 'table';
   }
 
-  // ⭐ NUEVO: Aplicar filtro de período (CÓDIGO CORREGIDO)
+  // ⭐ NUEVO: Método para obtener el nombre completo del producto (incluyendo variantes)
+  getProductDisplayName(movement: StockMovement): string {
+    if (!movement.product) {
+      return 'Producto no disponible';
+    }
+
+    const baseProductName = movement.product.productName || 'Sin nombre';
+
+    // Si tiene variantId, buscar la información de la variante
+    if (movement.variantId && movement.product.variants) {
+      const variant = movement.product.variants.find(v => v.id === movement.variantId);
+
+      if (variant) {
+        // Si la variante tiene un nombre específico, usarlo
+        if (variant.variantName) {
+          return variant.variantName;
+        }
+
+        // Si no, construir el nombre con los atributos
+        if (variant.attributes && Object.keys(variant.attributes).length > 0) {
+          const attributesStr = Object.entries(variant.attributes)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(', ');
+          return `${baseProductName} (${attributesStr})`;
+        }
+      }
+    }
+
+    // Si no tiene variante o no se encontró, retornar el nombre base
+    return baseProductName;
+  }
+
+  // ⭐ NUEVO: Método para obtener el SKU (considerando variantes)
+  getProductSKU(movement: StockMovement): string {
+    if (!movement.product) {
+      return 'N/A';
+    }
+
+    // Si tiene variantId, buscar el SKU de la variante
+    if (movement.variantId && movement.product.variants) {
+      const variant = movement.product.variants.find(v => v.id === movement.variantId);
+      if (variant && variant.sku) {
+        return variant.sku;
+      }
+    }
+
+    // Si no tiene variante o no se encontró SKU, retornar el SKU del producto base
+    return movement.product.sku || 'N/A';
+  }
+
+  // ⭐ NUEVO: Método para verificar si el movimiento es de una variante
+  isVariantMovement(movement: StockMovement): boolean {
+    return movement.variantId != null && movement.variantId !== undefined;
+  }
+
+  // ⭐ NUEVO: Método para obtener los atributos de la variante
+  getVariantAttributes(movement: StockMovement): string {
+    if (!movement.variantId || !movement.product?.variants) {
+      return '';
+    }
+
+    const variant = movement.product.variants.find(v => v.id === movement.variantId);
+
+    if (variant?.attributes && Object.keys(variant.attributes).length > 0) {
+      return Object.entries(variant.attributes)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(' | ');
+    }
+
+    return '';
+  }
+
+  // ⭐ OPTIMIZACIÓN: Carga asíncrona en background
+  private loadLowStockProductsAsync(): void {
+    this.inventoryService.getLowStockProducts()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (products) => {
+          this.lowStockProducts = products;
+        },
+        error: (error) => {
+          console.error('Error cargando productos con stock bajo:', error);
+        }
+      });
+  }
+
   applyPeriodFilter(period: TimePeriod): void {
     this.selectedPeriod = period;
     this.currentPage = 1;
 
-    // ⭐ CRÍTICO: Obtener la fecha actual del sistema
     const now = new Date();
-
-    // ⭐ NUEVO: Resetear a medianoche para asegurar fecha correcta
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     let startDate: Date;
@@ -82,14 +178,12 @@ export class StockMovementsComponent implements OnInit {
 
     switch (period) {
       case TimePeriod.DAY:
-        // ⭐ HOY: Solo el día actual (00:00:00 a 23:59:59)
         startDate = new Date(today);
         endDate = new Date(today);
         endDate.setHours(23, 59, 59, 999);
         break;
 
       case TimePeriod.WEEK:
-        // ⭐ ESTA SEMANA: Desde el lunes hasta hoy
         const dayOfWeek = today.getDay();
         const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         startDate = new Date(today);
@@ -100,14 +194,12 @@ export class StockMovementsComponent implements OnInit {
         break;
 
       case TimePeriod.MONTH:
-        // ⭐ ESTE MES: Desde el día 1 hasta hoy
         startDate = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
         endDate = new Date(today);
         endDate.setHours(23, 59, 59, 999);
         break;
     }
 
-    // ⭐ CRÍTICO: Formatear fechas en formato ISO (YYYY-MM-DD)
     const formatDateString = (date: Date): string => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -118,7 +210,6 @@ export class StockMovementsComponent implements OnInit {
     const startDateStr = formatDateString(startDate);
     const endDateStr = formatDateString(endDate);
 
-    // ⭐ CRÍTICO: Limpiar filtros anteriores y establecer SOLO las fechas del período
     this.filter = {
       movementType: undefined,
       branchId: undefined,
@@ -126,17 +217,12 @@ export class StockMovementsComponent implements OnInit {
       endDate: endDateStr
     };
 
-    console.log('🔍 ========================================');
     console.log('🔍 Filtrando período:', this.getPeriodLabel(period));
-    console.log('📅 Fecha actual del sistema:', now.toLocaleString('es-GT'));
-    console.log('📅 Desde:', startDateStr, '→', startDate.toLocaleString('es-GT'));
-    console.log('📅 Hasta:', endDateStr, '→', endDate.toLocaleString('es-GT'));
-    console.log('🔍 ========================================');
+    console.log('📅 Desde:', startDateStr, 'Hasta:', endDateStr);
 
     this.loadMovements();
   }
 
-  // ⭐ NUEVO: Obtener label del período
   getPeriodLabel(period: TimePeriod): string {
     const labels = {
       [TimePeriod.DAY]: 'Hoy',
@@ -146,7 +232,6 @@ export class StockMovementsComponent implements OnInit {
     return labels[period];
   }
 
-  // ⭐ NUEVO: Obtener descripción del período (MEJORADO)
   getPeriodDays(period: TimePeriod): string {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -166,144 +251,113 @@ export class StockMovementsComponent implements OnInit {
     return descriptions[period];
   }
 
-  // ⭐ NUEVO: Filtrar movimientos por fecha en el frontend
+  // ⭐ OPTIMIZACIÓN: Filtro en memoria más eficiente
   private filterMovementsByDate(movements: StockMovement[]): StockMovement[] {
-  if (!this.filter.startDate || !this.filter.endDate) {
-    console.log('⚠️ No hay filtro de fechas, retornando todos');
-    return movements;
-  }
-
-  // Crear fechas sin considerar zona horaria
-  const startDate = new Date(this.filter.startDate + 'T00:00:00');
-  const endDate = new Date(this.filter.endDate + 'T23:59:59');
-
-  console.log('🔍 ========================================');
-  console.log('🔍 Filtrando movimientos en frontend:');
-  console.log('📅 Rango: ', startDate.toLocaleString('es-GT'), 'a', endDate.toLocaleString('es-GT'));
-  console.log('📊 Total movimientos antes de filtrar:', movements.length);
-
-  const filtered = movements.filter(movement => {
-    const movementDate = new Date(movement.dateCreated);
-    const isInRange = movementDate >= startDate && movementDate <= endDate;
-
-    // Debug para ver qué se excluye
-    if (!isInRange) {
-      console.log('   ❌ Excluido:',
-        movement.movementType,
-        '|', movement.dateCreated,
-        '→', movementDate.toLocaleString('es-GT')
-      );
+    if (!this.filter.startDate || !this.filter.endDate) {
+      return movements;
     }
 
-    return isInRange;
-  });
+    const startTime = new Date(this.filter.startDate + 'T00:00:00').getTime();
+    const endTime = new Date(this.filter.endDate + 'T23:59:59').getTime();
 
-  console.log('✅ Movimientos válidos:', filtered.length, 'de', movements.length);
-  console.log('🔍 ========================================');
-
-  return filtered;
-}
-loadMovements(): void {
-  this.loading = true;
-
-  console.log('📡 ========================================');
-  console.log('📡 Cargando movimientos...');
-  console.log('📅 Período seleccionado:', this.getPeriodLabel(this.selectedPeriod));
-  console.log('🔍 Filtro completo:', JSON.stringify(this.filter, null, 2));
-  console.log('📄 Página:', this.currentPage, '| Items por página:', this.itemsPerPage);
-
-  // ⭐ CRÍTICO: NO enviar las fechas al backend, solo otros filtros
-  const backendFilter: MovementFilter = {
-    movementType: this.filter.movementType,
-    branchId: this.filter.branchId,
-    productId: this.filter.productId,
-    userId: this.filter.userId
-    // ❌ NO enviar startDate ni endDate al backend
-  };
-
-  // Solicitar MUCHOS más registros para filtrar localmente
-  const largeLimit = 1000; // Aumentar para obtener más datos
-
-  this.inventoryService.getMovements(backendFilter, 1, largeLimit)
-    .subscribe({
-      next: (response) => {
-        console.log('✅ Respuesta del backend:', response.data.length, 'movimientos');
-
-        // ⭐ CRÍTICO: Filtrar por fechas SOLO en el frontend
-        this.movements = response.data;
-        this.filteredMovements = this.filterMovementsByDate(response.data);
-
-        // Ordenar por fecha descendente
-        this.filteredMovements.sort((a, b) => {
-          const dateA = new Date(a.dateCreated).getTime();
-          const dateB = new Date(b.dateCreated).getTime();
-          return dateB - dateA;
-        });
-
-        // Aplicar paginación local
-        this.totalItems = this.filteredMovements.length;
-        const start = (this.currentPage - 1) * this.itemsPerPage;
-        const end = start + this.itemsPerPage;
-        this.filteredMovements = this.filteredMovements.slice(start, end);
-
-        this.loading = false;
-
-        console.log('✅ Movimientos después del filtro:', this.filteredMovements.length);
-        console.log('📊 Total items:', this.totalItems);
-
-        // Mostrar resumen por tipo
-        const movementsByType = response.data.reduce((acc: any, mov: StockMovement) => {
-          acc[mov.movementType] = (acc[mov.movementType] || 0) + 1;
-          return acc;
-        }, {});
-        console.log('📊 Resumen por tipo (TOTAL en BD):', movementsByType);
-
-        const filteredByType = this.filteredMovements.reduce((acc: any, mov: StockMovement) => {
-          acc[mov.movementType] = (acc[mov.movementType] || 0) + 1;
-          return acc;
-        }, {});
-        console.log('📊 Resumen por tipo (FILTRADO):', filteredByType);
-
-        // Verificar fechas
-        if (this.filteredMovements.length > 0) {
-          const firstDate = new Date(this.filteredMovements[0].dateCreated);
-          const lastDate = new Date(this.filteredMovements[this.filteredMovements.length - 1].dateCreated);
-          console.log('📅 Primera fecha:', firstDate.toLocaleString('es-GT'));
-          console.log('📅 Última fecha:', lastDate.toLocaleString('es-GT'));
-        } else {
-          console.log('⚠️ No se encontraron movimientos para:', this.getPeriodLabel(this.selectedPeriod));
-        }
-
-        console.log('📡 ========================================');
-      },
-      error: (error) => {
-        this.loading = false;
-        console.error('❌ Error cargando movimientos:', error);
-        console.log('📡 ========================================');
-      }
+    return movements.filter(movement => {
+      const movementTime = new Date(movement.dateCreated).getTime();
+      return movementTime >= startTime && movementTime <= endTime;
     });
-}
-  loadLowStockProducts(): void {
-    this.inventoryService.getLowStockProducts()
+  }
+
+  // ⭐ OPTIMIZACIÓN CRÍTICA: Uso de cache
+  loadMovements(): void {
+    this.loading = true;
+
+    console.log('📡 Cargando movimientos...');
+    console.log('📅 Período:', this.getPeriodLabel(this.selectedPeriod));
+
+    // ⭐ Verificar cache
+    const now = Date.now();
+    const useCache = StockMovementsComponent.cache &&
+                     (now - StockMovementsComponent.cache.timestamp) < StockMovementsComponent.CACHE_TTL;
+
+    if (useCache && StockMovementsComponent.cache) {
+      console.log('✅ Usando datos en cache');
+      this.processMovements(StockMovementsComponent.cache.movements);
+      return;
+    }
+
+    // ⭐ CRÍTICO: NO enviar fechas al backend
+    const backendFilter: MovementFilter = {
+      movementType: this.filter.movementType,
+      branchId: this.filter.branchId,
+      productId: this.filter.productId,
+      userId: this.filter.userId
+    };
+
+    // ⭐ Solicitar más registros para filtrar localmente
+    const limit = 1000;
+
+    this.inventoryService.getMovements(backendFilter, 1, limit)
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (products) => {
-          this.lowStockProducts = products;
+        next: (response) => {
+          console.log('✅ Respuesta del backend:', response.data.length, 'movimientos');
+          console.log('📦 Productos simples:', response.data.filter(m => !m.variantId).length);
+          console.log('🎨 Productos con variantes:', response.data.filter(m => m.variantId).length);
+
+          // ⭐ Guardar en cache
+          StockMovementsComponent.cache = {
+            movements: response.data,
+            timestamp: now
+          };
+
+          this.processMovements(response.data);
         },
         error: (error) => {
-          console.error('Error cargando productos con stock bajo:', error);
+          this.loading = false;
+          console.error('❌ Error cargando movimientos:', error);
         }
       });
   }
 
+  // ⭐ OPTIMIZACIÓN: Procesamiento separado para mejor rendimiento
+  private processMovements(allMovements: StockMovement[]): void {
+    this.movements = allMovements;
+
+    // ⭐ Filtrar por fechas
+    let filtered = this.filterMovementsByDate(allMovements);
+
+    // ⭐ Ordenar por fecha descendente (más reciente primero)
+    filtered.sort((a, b) => {
+      return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
+    });
+
+    // ⭐ Aplicar paginación
+    this.totalItems = filtered.length;
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    this.filteredMovements = filtered.slice(start, end);
+
+    this.loading = false;
+
+    console.log('✅ Procesamiento completo:');
+    console.log('   Total en BD:', allMovements.length);
+    console.log('   Después de filtrar:', filtered.length);
+    console.log('   En página actual:', this.filteredMovements.length);
+    console.log('   Variantes en página:', this.filteredMovements.filter(m => m.variantId).length);
+  }
+
   applyFilter(): void {
-    // ⭐ Al aplicar filtro manual, mantener las fechas del período seleccionado
     this.currentPage = 1;
-    console.log('🔍 Aplicando filtros adicionales:', this.filter);
-    this.loadMovements();
+    console.log('🔍 Aplicando filtros adicionales');
+
+    // ⭐ Si hay cache, usar procesamiento local
+    if (StockMovementsComponent.cache) {
+      this.processMovements(StockMovementsComponent.cache.movements);
+    } else {
+      this.loadMovements();
+    }
   }
 
   clearFilter(): void {
-    // ⭐ Limpiar solo filtros adicionales, mantener las fechas del período
     const currentStartDate = this.filter.startDate;
     const currentEndDate = this.filter.endDate;
 
@@ -314,7 +368,7 @@ loadMovements(): void {
       endDate: currentEndDate
     };
 
-    console.log('🧹 Filtros limpiados, fechas del período mantenidas');
+    console.log('🧹 Filtros limpiados');
     this.applyFilter();
   }
 
@@ -338,8 +392,12 @@ loadMovements(): void {
   handleAdjustmentSuccess(): void {
     this.showAdjustmentModal = false;
     this.editingMovement = undefined;
+
+    // ⭐ Invalidar cache al hacer cambios
+    StockMovementsComponent.cache = null;
+
     this.loadMovements();
-    this.loadLowStockProducts();
+    this.loadLowStockProductsAsync();
   }
 
   closeAdjustmentModal(): void {
@@ -389,51 +447,45 @@ loadMovements(): void {
     return movement.quantity > 0;
   }
 
- exportToExcel(): void {
-  if (this.loading || this.filteredMovements.length === 0) {
-    console.warn('⚠️ No hay datos para exportar');
-    return;
+  exportToExcel(): void {
+    if (this.loading || this.filteredMovements.length === 0) {
+      console.warn('⚠️ No hay datos para exportar');
+      return;
+    }
+
+    console.log('📊 Exportando a Excel...');
+    this.loading = true;
+
+    this.inventoryService.exportMovements(this.filter)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          const period = this.getPeriodLabel(this.selectedPeriod).replace(/\s/g, '_');
+          const fecha = new Date().toISOString().split('T')[0];
+          const fileName = `Movimientos_Inventario_${period}_${fecha}.xlsx`;
+
+          saveAs(blob, fileName);
+          console.log('✅ Archivo exportado:', fileName);
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('❌ Error exportando:', error);
+          this.loading = false;
+        }
+      });
   }
-
-  console.log('📊 ========================================');
-  console.log('📊 Exportando a Excel...');
-  console.log('📅 Período:', this.getPeriodLabel(this.selectedPeriod));
-  console.log('📄 Registros:', this.filteredMovements.length);
-  console.log('🔍 Filtros:', this.filter);
-
-  this.loading = true;
-
-  this.inventoryService.exportMovements(this.filter)
-    .subscribe({
-      next: (blob) => {
-        // Generar nombre de archivo descriptivo
-        const period = this.getPeriodLabel(this.selectedPeriod).replace(/\s/g, '_');
-        const fecha = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-        const fileName = `Movimientos_Inventario_${period}_${fecha}.xlsx`;
-
-        // Descargar archivo
-        saveAs(blob, fileName);
-
-        console.log('✅ Archivo exportado:', fileName);
-        console.log('📊 ========================================');
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('❌ Error exportando a Excel:', error);
-        console.error('   Detalles:', error.error);
-        console.log('📊 ========================================');
-        this.loading = false;
-
-        // Aquí puedes agregar un toast de error
-        // this.toast.error('Error al exportar el archivo');
-      }
-    });
-}
 
   nextPage(): void {
     if (this.currentPage * this.itemsPerPage < this.totalItems) {
       this.currentPage++;
-      this.loadMovements();
+
+      // ⭐ Usar cache si está disponible
+      if (StockMovementsComponent.cache) {
+        this.processMovements(StockMovementsComponent.cache.movements);
+      } else {
+        this.loadMovements();
+      }
+
       this.scrollToTop();
     }
   }
@@ -441,20 +493,41 @@ loadMovements(): void {
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
-      this.loadMovements();
+
+      // ⭐ Usar cache si está disponible
+      if (StockMovementsComponent.cache) {
+        this.processMovements(StockMovementsComponent.cache.movements);
+      } else {
+        this.loadMovements();
+      }
+
       this.scrollToTop();
     }
   }
 
   firstPage(): void {
     this.currentPage = 1;
-    this.loadMovements();
+
+    // ⭐ Usar cache si está disponible
+    if (StockMovementsComponent.cache) {
+      this.processMovements(StockMovementsComponent.cache.movements);
+    } else {
+      this.loadMovements();
+    }
+
     this.scrollToTop();
   }
 
   lastPage(): void {
     this.currentPage = Math.ceil(this.totalItems / this.itemsPerPage);
-    this.loadMovements();
+
+    // ⭐ Usar cache si está disponible
+    if (StockMovementsComponent.cache) {
+      this.processMovements(StockMovementsComponent.cache.movements);
+    } else {
+      this.loadMovements();
+    }
+
     this.scrollToTop();
   }
 

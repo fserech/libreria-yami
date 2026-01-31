@@ -1,7 +1,6 @@
 <!-- stock-movements.component.html -->
 <div class="p-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800 max-w-full overflow-hidden">
 
-
   <!-- ⭐ TABS DE PERÍODOS (Orden: Mes, Semana, Día) -->
   <div class="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-md p-2 mb-4">
     <div class="flex gap-2 border-b border-slate-200 dark:border-slate-700">
@@ -233,10 +232,31 @@
               </span>
             </td>
 
+            <!-- ⭐ COLUMNA DE PRODUCTO ACTUALIZADA -->
             <td class="hidden sm:table-cell">
-              <div>
-                <p class="font-bold text-sm text-slate-700 dark:text-slate-300">{{ movement.product?.productName || 'N/A' }}</p>
-                <p *ngIf="movement.product?.sku" class="text-xs text-slate-500 dark:text-slate-400">SKU: {{ movement.product.sku }}</p>
+              <div class="flex flex-col gap-1">
+                <!-- Nombre del producto (incluyendo variante) -->
+                <p class="font-bold text-sm text-slate-700 dark:text-slate-300">
+                  {{ getProductDisplayName(movement) }}
+                </p>
+
+                <!-- SKU -->
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  SKU: {{ getProductSKU(movement) }}
+                </p>
+
+                <!-- Badge de variante (opcional) -->
+                <div *ngIf="isVariantMovement(movement)" class="flex items-center gap-1">
+                  <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-700 rounded text-xs font-semibold">
+                    Variante
+                  </span>
+                </div>
+
+                <!-- Atributos de la variante -->
+                <p *ngIf="getVariantAttributes(movement)"
+                   class="text-xs text-slate-600 dark:text-slate-400 italic">
+                  {{ getVariantAttributes(movement) }}
+                </p>
               </div>
             </td>
 
@@ -279,25 +299,48 @@
               </div>
             </td>
 
-            <!-- MOBILE VIEW -->
+            <!-- ⭐ MOBILE VIEW ACTUALIZADA -->
             <td class="content-sm">
               <div class="w-full flex justify-between p-1">
                 <div class="flex-1">
-                  <div class="flex items-center gap-2 mb-1">
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
                     <span [ngClass]="getMovementTypeClass(movement.movementType)"
                           class="px-2 py-0.5 rounded text-xs font-semibold">
                       {{ getMovementTypeLabel(movement.movementType) }}
                     </span>
-                    <span [class]="isStockIncrease(movement) ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'"
+                    <span [class]="isStockIncrease(movement) ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'"
                           class="px-2 py-0.5 rounded text-xs font-bold">
                       {{ movement.quantity > 0 ? '+' : '' }}{{ movement.quantity }}
                     </span>
+                    <!-- Badge de variante en mobile -->
+                    <span *ngIf="isVariantMovement(movement)"
+                          class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded text-xs font-semibold">
+                      Variante
+                    </span>
                   </div>
 
-                  <p class="font-bold text-sm text-slate-700 dark:text-slate-300">{{ movement.product?.productName || 'N/A' }}</p>
+                  <!-- Nombre del producto -->
+                  <p class="font-bold text-sm text-slate-700 dark:text-slate-300">
+                    {{ getProductDisplayName(movement) }}
+                  </p>
+
+                  <!-- SKU -->
                   <p class="text-xs text-slate-500 dark:text-slate-400">
+                    SKU: {{ getProductSKU(movement) }}
+                  </p>
+
+                  <!-- Atributos de variante en mobile -->
+                  <p *ngIf="getVariantAttributes(movement)"
+                     class="text-xs text-slate-600 dark:text-slate-400 italic mt-1">
+                    {{ getVariantAttributes(movement) }}
+                  </p>
+
+                  <!-- Fecha y hora -->
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {{ movement.dateCreated | date:'dd/MM/yyyy HH:mm' }}
                   </p>
+
+                  <!-- Stock anterior y nuevo -->
                   <p class="text-xs text-slate-500 dark:text-slate-400">
                     Stock: {{ movement.previousStock }} → <span class="font-bold text-blue-600 dark:text-blue-400">{{ movement.newStock }}</span>
                   </p>
@@ -341,7 +384,7 @@
           <div class="pagination-child">
             <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm text-slate-700 dark:text-slate-300">Página {{currentPage}} de {{Math.ceil(totalItems / itemsPerPage) || 1}}</b></p>
             <p class="text-slate-700 dark:text-slate-300">Items {{(currentPage - 1) * itemsPerPage + 1}} - {{Math.min(currentPage * itemsPerPage, totalItems)}} de {{totalItems}}</p>
-            <button (click)="currentPage = 1; loadMovements()" [disabled]="currentPage === 1">
+            <button (click)="firstPage()" [disabled]="currentPage === 1">
               <svg class="btn-pagination w-5 h-5 text-slate-700 dark:text-slate-300" fill="currentColor" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M11.854 3.646a.5.5 0 0 1 0 .708L8.207 8l3.647 3.646a.5.5 0 0 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 0 1 .708 0zM4.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 1 0v-13a.5.5 0 0 0-.5-.5z"/>
               </svg>
@@ -356,7 +399,7 @@
                 <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
               </svg>
             </button>
-            <button (click)="currentPage = Math.ceil(totalItems / itemsPerPage); loadMovements()" [disabled]="currentPage * itemsPerPage >= totalItems">
+            <button (click)="lastPage()" [disabled]="currentPage * itemsPerPage >= totalItems">
               <svg class="btn-pagination w-5 h-5 text-slate-700 dark:text-slate-300" fill="currentColor" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M4.146 3.646a.5.5 0 0 0 0 .708L7.793 8l-3.647 3.646a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708 0zM11.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/>
               </svg>

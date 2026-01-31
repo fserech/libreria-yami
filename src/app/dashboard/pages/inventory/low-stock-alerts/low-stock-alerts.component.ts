@@ -1,5 +1,5 @@
 import { CommonModule, NgClass } from '@angular/common';
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -26,11 +26,20 @@ import { ProductStock } from '../../../../shared/interfaces/inventory';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { AdjustmentModalComponent } from '../Components/adjustment-modal/adjustment-modal.component';
 import { CrudService } from '../../../../shared/services/crud.service';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { saveAs } from 'file-saver';
 import { ViewModeComponent, StockItem, ViewMode, ActiveView } from '../Components/view-mode/view-mode.component';
+
+// ⭐ Cache estático con TTL
+interface CacheData {
+  alerts: ProductStock[];
+  allStock: ProductStock[];
+  branches: Array<{id: number, branchName: string}>;
+  timestamp: number;
+}
 
 @Component({
   selector: 'app-low-stock-alerts',
@@ -64,7 +73,11 @@ import { ViewModeComponent, StockItem, ViewMode, ActiveView } from '../Component
     })
   ]
 })
-export class LowStockAlertsComponent implements OnInit {
+export class LowStockAlertsComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+  private static cache: CacheData | null = null;
+
   Math = Math;
 
   activeView: ActiveView = 'alerts';
@@ -91,33 +104,53 @@ export class LowStockAlertsComponent implements OnInit {
   showAdjustmentModal = false;
   editingMovement: any;
 
+  // ⭐ Getters optimizados con caching
+  private _totalAlertsCount?: number;
+  private _criticalCount?: number;
+  private _warningCount?: number;
+  private _totalProducts?: number;
+  private _totalStockValue?: number;
+
   get totalAlertsCount(): number {
-    return this.filteredAlerts.length;
+    if (this._totalAlertsCount === undefined) {
+      this._totalAlertsCount = this.filteredAlerts.length;
+    }
+    return this._totalAlertsCount;
   }
 
   get criticalCount(): number {
-    // 🔴 CRÍTICO: Solo productos con stock = 0
-    return this.filteredAlerts.filter(a => a.currentStock === 0).length;
+    if (this._criticalCount === undefined) {
+      this._criticalCount = this.filteredAlerts.filter(a => a.currentStock === 0).length;
+    }
+    return this._criticalCount;
   }
 
   get warningCount(): number {
-    // 🟡 ADVERTENCIA: Productos con stock bajo pero > 0
-    return this.filteredAlerts.filter(a => a.currentStock > 0).length;
+    if (this._warningCount === undefined) {
+      this._warningCount = this.filteredAlerts.filter(a => a.currentStock > 0).length;
+    }
+    return this._warningCount;
   }
 
   get totalProducts(): number {
-    const uniqueProducts = new Set<number>();
-    this.filteredStock.forEach(item => {
-      uniqueProducts.add(item.productId);
-    });
-    return uniqueProducts.size;
+    if (this._totalProducts === undefined) {
+      const uniqueProducts = new Set<number>();
+      this.filteredStock.forEach(item => {
+        uniqueProducts.add(item.productId);
+      });
+      this._totalProducts = uniqueProducts.size;
+    }
+    return this._totalProducts;
   }
 
   get totalStockValue(): number {
-    return this.filteredStock.reduce((sum, item) => {
-      const cost = item.averageCost || item.product?.costPrice || 0;
-      return sum + (item.currentStock * cost);
-    }, 0);
+    if (this._totalStockValue === undefined) {
+      this._totalStockValue = this.filteredStock.reduce((sum, item) => {
+        const cost = item.averageCost || item.product?.costPrice || 0;
+        return sum + (item.currentStock * cost);
+      }, 0);
+    }
+    return this._totalStockValue;
   }
 
   get paginatedItems(): ProductStock[] {
@@ -162,10 +195,23 @@ export class LowStockAlertsComponent implements OnInit {
     this.loadBranches();
   }
 
-  // ⭐ MÉTODO AUXILIAR: Determina si un producto tiene stock bajo
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ⭐ Limpiar cache de getters
+  private clearGetterCache(): void {
+    this._totalAlertsCount = undefined;
+    this._criticalCount = undefined;
+    this._warningCount = undefined;
+    this._totalProducts = undefined;
+    this._totalStockValue = undefined;
+  }
+
   private hasLowStock(item: ProductStock): boolean {
     const isBelowMin = item.currentStock < item.minStock;
-    const isNearMin = item.currentStock <= (item.minStock * 1.2); // 20% sobre el mínimo
+    const isNearMin = item.currentStock <= (item.minStock * 1.2);
     return isBelowMin || (isNearMin && item.belowMinStock);
   }
 
@@ -229,44 +275,75 @@ export class LowStockAlertsComponent implements OnInit {
     this.viewMode = mode;
   }
 
+  // ⭐ OPTIMIZACIÓN: Carga de sucursales más rápida
   private loadBranches(): void {
     this.loading = true;
     const branchesUrl = `${environment.apiUrl}/api/v1/branches`;
 
-    this.http.get<any[]>(branchesUrl).subscribe({
-      next: (branches) => {
-        this.branches = branches.map((b: any) => ({
-          id: b.id,
-          branchName: b.name
-        }));
-        this.loadInitialData();
-      },
-      error: (error) => {
-        console.error('Error cargando sucursales:', error);
-        this.loading = false;
-        this.loadInitialData();
-      }
-    });
+    this.http.get<any[]>(branchesUrl)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (branches) => {
+          this.branches = branches.map((b: any) => ({
+            id: b.id,
+            branchName: b.name
+          }));
+          this.loadInitialData();
+        },
+        error: (error) => {
+          console.error('Error cargando sucursales:', error);
+          this.loading = false;
+          this.loadInitialData();
+        }
+      });
   }
 
-  // ⭐ MODIFICADO: Filtra productos con stock bajo al cargar
+  // ⭐ OPTIMIZACIÓN CRÍTICA: Uso de cache
   private loadInitialData(): void {
+    const now = Date.now();
+    const useCache = LowStockAlertsComponent.cache &&
+                     (now - LowStockAlertsComponent.cache.timestamp) < LowStockAlertsComponent.CACHE_TTL;
+
+    if (useCache && LowStockAlertsComponent.cache) {
+      console.log('✅ Usando datos en cache');
+      this.alerts = LowStockAlertsComponent.cache.alerts;
+      this.allStock = LowStockAlertsComponent.cache.allStock;
+
+      // Merge branches (cache + nuevas)
+      const cachedBranchIds = new Set(LowStockAlertsComponent.cache.branches.map(b => b.id));
+      const newBranches = this.branches.filter(b => !cachedBranchIds.has(b.id));
+      this.branches = [...LowStockAlertsComponent.cache.branches, ...newBranches];
+
+      this.applyFilters();
+      this.applyStockFilters();
+      this.loading = false;
+      return;
+    }
+
+    // Cargar datos frescos
     forkJoin({
       alerts: this.inventoryService.getLowStockProducts(),
       stock: this.inventoryService.getAllProductStock()
-    }).subscribe({
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
       next: (results) => {
-        // ⭐ FILTRO: Solo productos que realmente tienen stock bajo
         this.alerts = results.alerts.filter(p => this.hasLowStock(p));
         this.allStock = results.stock;
 
-        console.log('📊 Datos iniciales cargados:', {
-          alertasBackend: results.alerts.length,
-          alertasFiltradas: this.alerts.length,
+        console.log('📊 Datos cargados:', {
+          alertas: this.alerts.length,
           stock: this.allStock.length,
-          criticas: this.alerts.filter(a => a.currentStock === 0).length,
-          advertencias: this.alerts.filter(a => a.currentStock > 0).length
+          criticas: this.alerts.filter(a => a.currentStock === 0).length
         });
+
+        // ⭐ Guardar en cache
+        LowStockAlertsComponent.cache = {
+          alerts: this.alerts,
+          allStock: this.allStock,
+          branches: this.branches,
+          timestamp: now
+        };
 
         this.syncBranchesFromData();
         this.applyFilters();
@@ -299,20 +376,16 @@ export class LowStockAlertsComponent implements OnInit {
       }
     });
 
-    this.branches = Array.from(branchMap.entries()).map(([id, branchName]) => ({
-      id,
-      branchName
-    }));
-
-    this.branches.sort((a, b) =>
-      a.branchName.localeCompare(b.branchName)
-    );
+    this.branches = Array.from(branchMap.entries())
+      .map(([id, branchName]) => ({ id, branchName }))
+      .sort((a, b) => a.branchName.localeCompare(b.branchName));
   }
 
   switchView(view: ActiveView): void {
     this.activeView = view;
     this.currentPage = 1;
     this.searchTerm = '';
+    this.clearGetterCache();
 
     if (view === 'alerts') {
       this.applyFilters();
@@ -322,10 +395,16 @@ export class LowStockAlertsComponent implements OnInit {
   }
 
   loadAllStock(forceReload: boolean = false): void {
+    if (forceReload) {
+      // ⭐ Invalidar cache al forzar recarga
+      LowStockAlertsComponent.cache = null;
+    }
+
     this.loading = true;
     const branchId = this.selectedBranchId ? Number(this.selectedBranchId) : undefined;
 
     this.inventoryService.getAllProductStock(branchId)
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (products: ProductStock[]) => {
           this.allStock = products;
@@ -340,10 +419,14 @@ export class LowStockAlertsComponent implements OnInit {
       });
   }
 
+  // ⭐ OPTIMIZACIÓN: Filtrado más eficiente
   applyStockFilters(): void {
+    const searchLower = this.searchTerm.toLowerCase();
+    const branchIdNum = this.selectedBranchId ? Number(this.selectedBranchId) : null;
+
     this.filteredStock = this.allStock.filter(item => {
-      if (this.searchTerm) {
-        const searchLower = this.searchTerm.toLowerCase();
+      // Filtro por búsqueda
+      if (searchLower) {
         const stockItem = this.convertToStockItem(item);
         const productName = (stockItem.variantName || stockItem.productName || '').toLowerCase();
         const sku = stockItem.sku.toLowerCase();
@@ -353,15 +436,15 @@ export class LowStockAlertsComponent implements OnInit {
         }
       }
 
-      if (this.selectedBranchId && this.selectedBranchId !== '') {
-        if (item.branchId !== Number(this.selectedBranchId)) {
-          return false;
-        }
+      // Filtro por sucursal
+      if (branchIdNum !== null && item.branchId !== branchIdNum) {
+        return false;
       }
 
       return true;
     });
 
+    // Ordenar
     this.filteredStock.sort((a, b) => {
       const nameA = this.convertToStockItem(a).variantName || this.convertToStockItem(a).productName || '';
       const nameB = this.convertToStockItem(b).variantName || this.convertToStockItem(b).productName || '';
@@ -372,6 +455,8 @@ export class LowStockAlertsComponent implements OnInit {
     if (this.currentPage > this.totalPages && this.totalPages > 0) {
       this.currentPage = 1;
     }
+
+    this.clearGetterCache();
   }
 
   onSearchChange(): void {
@@ -383,27 +468,24 @@ export class LowStockAlertsComponent implements OnInit {
     }
   }
 
-  // ⭐ MODIFICADO: Filtra productos con stock bajo al cargar
   loadAlerts(forceReload: boolean = false): void {
+    if (forceReload) {
+      // ⭐ Invalidar cache al forzar recarga
+      LowStockAlertsComponent.cache = null;
+    }
+
     this.loading = true;
     const branchId = this.selectedBranchId ? Number(this.selectedBranchId) : undefined;
 
-    if (forceReload) {
-      this.alerts = [];
-      this.filteredAlerts = [];
-    }
-
     this.inventoryService.getLowStockProducts(branchId)
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (products: ProductStock[]) => {
-          // ⭐ FILTRO: Solo productos que realmente tienen stock bajo
           this.alerts = products.filter(p => this.hasLowStock(p));
 
           console.log('📊 Alertas recargadas:', {
             backend: products.length,
-            filtradas: this.alerts.length,
-            criticas: this.alerts.filter(a => a.currentStock === 0).length,
-            advertencias: this.alerts.filter(a => a.currentStock > 0).length
+            filtradas: this.alerts.length
           });
 
           this.syncBranchesFromData();
@@ -417,25 +499,22 @@ export class LowStockAlertsComponent implements OnInit {
       });
   }
 
-  // ⭐ MODIFICADO: Aplica filtros adicionales sobre alertas ya filtradas
   applyFilters(): void {
-    this.filteredAlerts = this.alerts.filter(alert => {
-      // Ya sabemos que todos tienen stock bajo, ahora aplicar filtros de UI
+    const searchLower = this.searchTerm.toLowerCase();
+    const branchIdNum = this.selectedBranchId ? Number(this.selectedBranchId) : null;
 
-      // Filtro por nivel de alerta (crítico/advertencia)
+    this.filteredAlerts = this.alerts.filter(alert => {
+      // Filtro por nivel
       if (this.selectedAlertLevel === 'critical') {
-        // 🔴 CRÍTICO: Solo stock = 0
         if (alert.currentStock !== 0) return false;
       }
 
       if (this.selectedAlertLevel === 'warning') {
-        // 🟡 ADVERTENCIA: Solo stock bajo pero > 0
         if (alert.currentStock === 0) return false;
       }
 
       // Filtro por búsqueda
-      if (this.searchTerm) {
-        const searchLower = this.searchTerm.toLowerCase();
+      if (searchLower) {
         const stockItem = this.convertToStockItem(alert);
         const productName = (stockItem.variantName || stockItem.productName || '').toLowerCase();
         const sku = stockItem.sku.toLowerCase();
@@ -446,16 +525,14 @@ export class LowStockAlertsComponent implements OnInit {
       }
 
       // Filtro por sucursal
-      if (this.selectedBranchId && this.selectedBranchId !== '') {
-        if (alert.branchId !== Number(this.selectedBranchId)) {
-          return false;
-        }
+      if (branchIdNum !== null && alert.branchId !== branchIdNum) {
+        return false;
       }
 
       return true;
     });
 
-    // Ordenar: críticos primero (stock = 0), luego por cantidad ascendente
+    // Ordenar: críticos primero
     this.filteredAlerts.sort((a, b) => {
       const aCritical = a.currentStock === 0;
       const bCritical = b.currentStock === 0;
@@ -469,12 +546,21 @@ export class LowStockAlertsComponent implements OnInit {
     if (this.currentPage > this.totalPages && this.totalPages > 0) {
       this.currentPage = 1;
     }
+
+    this.clearGetterCache();
   }
 
   onBranchChange(): void {
     this.currentPage = 1;
-    this.loadAlerts();
-    this.loadAllStock();
+
+    // ⭐ Usar datos en memoria si están disponibles
+    if (LowStockAlertsComponent.cache) {
+      this.applyFilters();
+      this.applyStockFilters();
+    } else {
+      this.loadAlerts();
+      this.loadAllStock();
+    }
   }
 
   onAlertLevelChange(): void {
@@ -560,6 +646,10 @@ export class LowStockAlertsComponent implements OnInit {
     setTimeout(() => {
       this.showAdjustmentModal = false;
       this.editingMovement = undefined;
+
+      // ⭐ Invalidar cache al hacer cambios
+      LowStockAlertsComponent.cache = null;
+
       this.loadAlerts(true);
       this.loadAllStock(true);
     }, 500);
@@ -572,12 +662,7 @@ export class LowStockAlertsComponent implements OnInit {
       return;
     }
 
-    console.log('📊 ========================================');
     console.log('📊 Exportando a Excel...');
-    console.log('📅 Vista:', this.activeView === 'alerts' ? 'Alertas' : 'Existencias');
-    console.log('📄 Registros:', this.activeView === 'alerts' ? this.filteredAlerts.length : this.filteredStock.length);
-    console.log('🔍 Sucursal:', this.selectedBranchId || 'Todas');
-
     this.loading = true;
 
     const exportFilter: any = {};
@@ -594,31 +679,32 @@ export class LowStockAlertsComponent implements OnInit {
       ? this.inventoryService.exportLowStockAlerts(exportFilter)
       : this.inventoryService.exportAllStock(exportFilter);
 
-    exportObservable.subscribe({
-      next: (blob) => {
-        const viewType = this.activeView === 'alerts' ? 'Alertas_Stock' : 'Existencias';
-        const branchName = this.selectedBranchId
-          ? `_${this.branches.find(b => b.id === Number(this.selectedBranchId))?.branchName || 'Sucursal'}`
-          : '_Todas_Sucursales';
-        const fecha = new Date().toISOString().split('T')[0];
-        const fileName = `${viewType}${branchName}_${fecha}.xlsx`;
+    exportObservable
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          const viewType = this.activeView === 'alerts' ? 'Alertas_Stock' : 'Existencias';
+          const branchName = this.selectedBranchId
+            ? `_${this.branches.find(b => b.id === Number(this.selectedBranchId))?.branchName || 'Sucursal'}`
+            : '_Todas_Sucursales';
+          const fecha = new Date().toISOString().split('T')[0];
+          const fileName = `${viewType}${branchName}_${fecha}.xlsx`;
 
-        saveAs(blob, fileName);
-
-        console.log('✅ Archivo exportado:', fileName);
-        console.log('📊 ========================================');
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('❌ Error exportando a Excel:', error);
-        console.error('   Detalles:', error.error);
-        console.log('📊 ========================================');
-        this.loading = false;
-      }
-    });
+          saveAs(blob, fileName);
+          console.log('✅ Archivo exportado:', fileName);
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('❌ Error exportando:', error);
+          this.loading = false;
+        }
+      });
   }
 
   refresh(): void {
+    // ⭐ Invalidar cache al refrescar
+    LowStockAlertsComponent.cache = null;
+
     if (this.activeView === 'alerts') {
       this.loadAlerts(true);
     } else {
