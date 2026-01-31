@@ -69,6 +69,15 @@ interface DashboardData {
   previousMonthSales: number;
 }
 
+interface CacheData {
+  products: Product[];
+  categories: Category[];
+  clients: Client[];
+  orders: Order[];
+  ordersWithProducts: Order[];
+  timestamp: number;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -100,6 +109,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loading = true;
 
+  // 🚀 Cache con TTL de 5 minutos
+  private static readonly CACHE_TTL = 5 * 60 * 1000;
+  private static cache: CacheData | null = null;
+
   readonly TrendingUp = TrendingUp;
   readonly TrendingDown = TrendingDown;
   readonly Package = Package;
@@ -114,6 +127,9 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   topProducts: TopProductDisplay[] = [];
   orders: Order[] = [];
 
+  // 🚀 Mapa de productos para lookups O(1)
+  private productsMap = new Map<number, Product>();
+
   constructor(
     private http: HttpClient,
     private auth: AuthService,
@@ -121,19 +137,20 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // ⭐ OPTIMIZACIÓN: Iniciar carga de datos inmediatamente
     this.loadDashboardData();
   }
 
   ngAfterViewInit() {
-    // ⭐ OPTIMIZACIÓN: Crear gráficos sin delay
-    this.createLineChart();
-    this.createPieChart();
+    // ⭐ Usar setTimeout para asegurar que el DOM esté completamente renderizado
+    setTimeout(() => {
+      this.createLineChart();
+      this.createPieChart();
 
-    // Si los datos ya están cargados, actualizar gráficos
-    if (!this.loading && this.orders.length > 0) {
-      this.refreshCharts();
-    }
+      // Si los datos ya están cargados, actualizar gráficos
+      if (!this.loading && this.orders.length > 0) {
+        this.refreshCharts();
+      }
+    }, 0);
   }
 
   onGoalCalculated(newGoal: number) {
@@ -143,98 +160,240 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   onGoalConfigChanged(config: GoalConfig) {
   }
 
+  // ⭐⭐⭐ MÉTODO PRINCIPAL - GARANTIZA CARGA DE TOP PRODUCTOS ⭐⭐⭐
   async loadDashboardData() {
     this.loading = true;
 
     try {
-      // ⭐ OPTIMIZACIÓN: Cargar TODO en paralelo
-      const [products, categories, clients, ordersResponse] = await Promise.all([
-        firstValueFrom(this.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)),
-        firstValueFrom(this.http.get<Category[]>(`${environment.apiUrl}/api/v1/categories`)),
-        firstValueFrom(this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`)),
-        this.loadOrders() // ⭐ Método separado para órdenes
-      ]);
+      const now = Date.now();
+      const useCache = HomeComponent.cache &&
+                       (now - HomeComponent.cache.timestamp) < HomeComponent.CACHE_TTL;
 
-      const { orders, ordersWithProducts } = ordersResponse;
+      let products: Product[];
+      let categories: Category[];
+      let clients: Client[];
+      let orders: Order[];
+      let ordersWithProducts: Order[];
+
+      if (useCache && HomeComponent.cache) {
+        // Usar cache existente
+        ({ products, categories, clients, orders, ordersWithProducts } = HomeComponent.cache);
+        console.log('✅ Usando datos en cache');
+      } else {
+        // 🚀 CARGAR TODO EN PARALELO
+        const userData = this.auth.getUserData();
+
+        const [productsData, categoriesData, clientsData, ordersResponse] = await Promise.all([
+          this.loadProducts(),
+          this.loadCategories(),
+          this.loadClients(),
+          this.loadOrdersWithProducts(userData) // ⭐ CRÍTICO: Método que garantiza productos
+        ]);
+
+        products = productsData;
+        categories = categoriesData;
+        clients = clientsData;
+        orders = ordersResponse.orders;
+        ordersWithProducts = ordersResponse.ordersWithProducts;
+
+        // Guardar en cache
+        HomeComponent.cache = {
+          products,
+          categories,
+          clients,
+          orders,
+          ordersWithProducts,
+          timestamp: now
+        };
+
+        console.log('✅ Datos cargados y guardados en cache');
+      }
+
+      // 🚀 Pre-construir mapa de productos
+      this.buildProductsMap(products);
       this.orders = orders;
 
-      // Calcular métricas
+      // 📊 Calcular métricas del dashboard
       const dashboardData = this.calculateDashboardMetrics(products, orders, clients);
 
-      // Actualizar componentes visuales
+      // 📈 Actualizar componentes visuales
       this.updateStats(dashboardData, products, orders);
       this.updateKPIs(dashboardData, orders);
+
+      // ⭐⭐⭐ CRÍTICO: Usar ordersWithProducts para calcular top productos ⭐⭐⭐
+      console.log('🎯 Calculando top productos con', ordersWithProducts.length, 'órdenes enriquecidas');
       this.calculateTopProductsFromOrders(ordersWithProducts, products);
 
-      // Actualizar gráficos (solo si ya están creados)
+      // 📊 Actualizar gráficos
       this.refreshCharts(products, categories, orders);
 
     } catch (error) {
-      console.error('❌ Error cargando datos del dashboard:', error);
+      console.error('❌ Error cargando dashboard:', error);
     } finally {
       this.loading = false;
     }
   }
 
-  // ⭐ NUEVO: Método separado para cargar órdenes
-  private async loadOrders(): Promise<{ orders: Order[], ordersWithProducts: Order[] }> {
+  // 🚀 Cargar productos
+  private async loadProducts(): Promise<Product[]> {
+    try {
+      const products = await firstValueFrom(
+        this.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)
+      );
+      console.log('✅ Productos cargados:', products.length);
+      return products;
+    } catch (error) {
+      console.error('❌ Error cargando productos:', error);
+      return [];
+    }
+  }
+
+  // 🚀 Cargar categorías
+  private async loadCategories(): Promise<Category[]> {
+    try {
+      const categories = await firstValueFrom(
+        this.http.get<Category[]>(`${environment.apiUrl}/api/v1/categories`)
+      );
+      console.log('✅ Categorías cargadas:', categories.length);
+      return categories;
+    } catch (error) {
+      console.error('❌ Error cargando categorías:', error);
+      return [];
+    }
+  }
+
+  // 🚀 Cargar clientes
+  private async loadClients(): Promise<Client[]> {
+    try {
+      const clients = await firstValueFrom(
+        this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`)
+      );
+      console.log('✅ Clientes cargados:', clients.length);
+      return clients;
+    } catch (error) {
+      console.error('❌ Error cargando clientes:', error);
+      return [];
+    }
+  }
+
+  // ⭐⭐⭐ MÉTODO CRÍTICO: GARANTIZA QUE LAS ÓRDENES TENGAN PRODUCTOS ⭐⭐⭐
+  private async loadOrdersWithProducts(userData: any): Promise<{ orders: Order[], ordersWithProducts: Order[] }> {
     try {
       this.crud.baseUrl = URL_ORDERS;
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 12);
+
+      // Cargar últimos 6 meses
+      startDate.setMonth(startDate.getMonth() - 6);
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(23, 59, 59, 999);
 
       let filter = `&dateCreatedInit=${startDate.toISOString()}&dateCreatedEnd=${endDate.toISOString()}`;
 
-      const userData = this.auth.getUserData();
       if (userData && userData.role === 'ROLE_USER') {
         filter += `&userId=${userData.id}`;
       }
 
-      const response: any = await this.crud.getPage('asc', 'id', 10000, 1, filter);
+      // Cargar órdenes
+      const response: any = await this.crud.getPage('desc', 'dateCreated', 1000, 1, filter);
       const orders: Order[] = response?.content || [];
 
-      // ⭐ OPTIMIZACIÓN: Solo cargar detalles si es necesario
+      console.log('📦 Órdenes base cargadas:', orders.length);
+
+      if (orders.length === 0) {
+        console.warn('⚠️ No se encontraron órdenes');
+        return { orders: [], ordersWithProducts: [] };
+      }
+
+      // ⭐ VERIFICAR SI LA PRIMERA ORDEN TIENE PRODUCTOS
+      const firstOrder = orders[0];
+      const hasProducts = firstOrder.products && Array.isArray(firstOrder.products) && firstOrder.products.length > 0;
+
+      console.log('🔍 Primera orden tiene productos?', hasProducts);
+      if (hasProducts) {
+        console.log('🔍 Ejemplo de productos en primera orden:', firstOrder.products.slice(0, 2));
+      }
+
       let ordersWithProducts: Order[] = orders;
 
-      if (orders.length > 0) {
-        const firstOrder = orders[0];
+      // ⭐⭐⭐ SI NO TIENEN PRODUCTOS, CARGAR DETALLES INDIVIDUALMENTE ⭐⭐⭐
+      if (!hasProducts) {
+        console.warn('⚠️ Las órdenes NO tienen productos, cargando detalles...');
 
-        // Si la primera orden no tiene productos, cargar detalles en paralelo
-        if (!firstOrder.products || firstOrder.products.length === 0) {
-          // ⭐ OPTIMIZACIÓN: Limitar a 50 órdenes más recientes para detalles
-          const recentOrders = orders.slice(0, 50);
+        // Limitar a las 100 órdenes más recientes para evitar sobrecarga
+        const ordersToEnrich = orders.slice(0, 100);
+        console.log(`🔄 Enriqueciendo ${ordersToEnrich.length} órdenes con sus productos...`);
 
-          const ordersWithDetailsPromises = recentOrders.map(order =>
-            firstValueFrom(this.crud.getId(order.id)).catch(() => order)
+        // Cargar detalles en lotes de 10 para evitar sobrecarga
+        const batchSize = 10;
+        const enrichedOrders: Order[] = [];
+
+        for (let i = 0; i < ordersToEnrich.length; i += batchSize) {
+          const batch = ordersToEnrich.slice(i, i + batchSize);
+
+          const batchPromises = batch.map(order =>
+            firstValueFrom(this.crud.getId(order.id!))
+              .then(detailedOrder => {
+                console.log(`✅ Orden ${order.id} enriquecida con ${detailedOrder.products?.length || 0} productos`);
+                return detailedOrder;
+              })
+              .catch(err => {
+                console.error(`❌ Error enriqueciendo orden ${order.id}:`, err);
+                return order; // Devolver orden sin detalles en caso de error
+              })
           );
 
-          const detailedOrders = await Promise.all(ordersWithDetailsPromises);
+          const batchResults = await Promise.all(batchPromises);
+          enrichedOrders.push(...batchResults);
 
-          // Combinar órdenes con detalles y el resto sin detalles
-          ordersWithProducts = [...detailedOrders, ...orders.slice(50)];
+          console.log(`📊 Progreso: ${Math.min(i + batchSize, ordersToEnrich.length)}/${ordersToEnrich.length} órdenes procesadas`);
         }
+
+        // Combinar órdenes enriquecidas con el resto sin detalles
+        ordersWithProducts = [...enrichedOrders, ...orders.slice(100)];
+
+        console.log('✅ Órdenes enriquecidas:', enrichedOrders.length);
+        console.log('📦 Total órdenes con productos disponibles:', ordersWithProducts.length);
+      } else {
+        console.log('✅ Las órdenes YA tienen productos, no es necesario cargar detalles');
       }
 
       return { orders, ordersWithProducts };
+
     } catch (e) {
       console.error('❌ Error cargando órdenes:', e);
       return { orders: [], ordersWithProducts: [] };
     }
   }
 
-  // ⭐ NUEVO: Método para refrescar gráficos
-  private refreshCharts(products?: Product[], categories?: Category[], orders?: Order[]) {
-    if (this.pieChart && products && categories) {
-      this.updatePieChartWithRealData(products, categories);
-    }
-    if (this.lineChart && orders) {
-      this.updateLineChartWithRealData(orders);
-    }
+  // 🚀 Pre-construir mapa de productos para lookups O(1)
+  private buildProductsMap(products: Product[]) {
+    this.productsMap.clear();
+    products.forEach(p => this.productsMap.set(p.id, p));
+    console.log('🗺️ Mapa de productos construido:', this.productsMap.size);
   }
 
+  // 📊 Refrescar gráficos con verificación de existencia
+  private refreshCharts(products?: Product[], categories?: Category[], orders?: Order[]) {
+    // ⭐ Usar setTimeout para asegurar que los gráficos estén listos
+    setTimeout(() => {
+      if (this.pieChart && products && categories) {
+        console.log('📊 Actualizando pie chart con', products.length, 'productos y', categories.length, 'categorías');
+        this.updatePieChartWithRealData(products, categories);
+      } else if (!this.pieChart) {
+        console.warn('⚠️ Pie chart aún no está inicializado');
+      }
+
+      if (this.lineChart && orders) {
+        console.log('📈 Actualizando line chart con', orders.length, 'órdenes');
+        this.updateLineChartWithRealData(orders);
+      } else if (!this.lineChart) {
+        console.warn('⚠️ Line chart aún no está inicializado');
+      }
+    }, 100);
+  }
+
+  // 📊 Calcular métricas del dashboard
   calculateDashboardMetrics(products: Product[], orders: Order[], clients: Client[]): DashboardData {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -246,10 +405,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!order.status) return false;
       const status = order.status.toUpperCase().trim();
       return status === 'FINALIZED' || status === 'FINALIZADO';
-    };
-
-    const getOrderTotal = (order: Order): number => {
-      return order.totalAmount || 0;
     };
 
     const currentMonthOrders = orders.filter(o => {
@@ -268,34 +423,43 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
              isFinalized(o);
     });
 
-    const totalSales = currentMonthOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
-    const previousMonthSales = previousMonthOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
+    const totalSales = currentMonthOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const previousMonthSales = previousMonthOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
     const productsWithPrices = products.filter(p =>
       p.active && (p.salePrice || 0) > 0 && getProductCostPrice(p) > 0
     );
 
-    const totalMargin = productsWithPrices.reduce((sum, p) => {
+    let totalMargin = 0;
+    for (const p of productsWithPrices) {
       const price = p.salePrice || 0;
       const cost = getProductCostPrice(p);
-      return sum + ((price - cost) / price) * 100;
-    }, 0);
+      totalMargin += ((price - cost) / price) * 100;
+    }
 
     const averageMargin = productsWithPrices.length > 0 ? totalMargin / productsWithPrices.length : 0;
 
-    const last12MonthsSales = orders.filter(o => isFinalized(o)).reduce((sum, o) => {
-      if (!o.products || !Array.isArray(o.products)) return sum;
-      return sum + o.products.reduce((pSum, p) => pSum + (p.quantity || 0), 0);
-    }, 0);
-
-    const totalInventoryUnits = products.reduce((sum, p) => {
-      if (p.hasVariants && p.variants) {
-        return sum + p.variants.reduce((vSum, v) => vSum + (v.currentStock || 0), 0);
+    const finalizedOrders = orders.filter(o => isFinalized(o));
+    let last6MonthsSales = 0;
+    for (const o of finalizedOrders) {
+      if (!o.products || !Array.isArray(o.products)) continue;
+      for (const p of o.products) {
+        last6MonthsSales += (p.quantity || 0);
       }
-      return sum + (p.currentStock || 0);
-    }, 0);
+    }
 
-    const inventoryRotation = totalInventoryUnits > 0 ? last12MonthsSales / totalInventoryUnits : 0;
+    let totalInventoryUnits = 0;
+    for (const p of products) {
+      if (p.hasVariants && p.variants) {
+        for (const v of p.variants) {
+          totalInventoryUnits += (v.currentStock || 0);
+        }
+      } else {
+        totalInventoryUnits += (p.currentStock || 0);
+      }
+    }
+
+    const inventoryRotation = totalInventoryUnits > 0 ? last6MonthsSales / totalInventoryUnits : 0;
 
     return {
       totalSales,
@@ -386,12 +550,18 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     ];
   }
 
+  // ⭐⭐⭐ MÉTODO CRÍTICO: CALCULAR TOP PRODUCTOS ⭐⭐⭐
   calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
+    console.log('🎯 === INICIO CÁLCULO TOP PRODUCTOS ===');
+    console.log('📦 Órdenes recibidas:', orders.length);
+    console.log('🛍️ Productos disponibles:', products.length);
+
     const productSalesMap = new Map<number, {
       quantity: number;
       revenue: number;
       ordersCount: number;
     }>();
+
     const variantSalesMap = new Map<number, {
       productId: number;
       variantId: number;
@@ -407,11 +577,27 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     };
 
     const finalizedOrders = orders.filter(order => isFinalized(order));
+    console.log('✅ Órdenes finalizadas:', finalizedOrders.length);
 
-    finalizedOrders.forEach((order) => {
-      if (!order.products || !Array.isArray(order.products)) return;
+    let ordersWithProductsCount = 0;
+    let totalProductsProcessed = 0;
+
+    finalizedOrders.forEach((order, index) => {
+      if (!order.products || !Array.isArray(order.products) || order.products.length === 0) {
+        if (index < 5) {
+          console.warn(`⚠️ Orden #${order.id} SIN productos`);
+        }
+        return;
+      }
+
+      ordersWithProductsCount++;
+      if (index < 3) {
+        console.log(`✅ Orden #${order.id} tiene ${order.products.length} productos`);
+      }
 
       order.products.forEach((productOrder: ProductOrder) => {
+        totalProductsProcessed++;
+
         let productId: number | undefined;
 
         if (productOrder.productId) {
@@ -420,7 +606,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           productId = productOrder.product.id;
         }
 
-        if (!productId) return;
+        if (!productId) {
+          console.warn('⚠️ ProductOrder sin productId:', productOrder);
+          return;
+        }
 
         if (productOrder.variantId) {
           const variantKey = productOrder.variantId;
@@ -455,11 +644,21 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     });
 
+    console.log('📊 Resumen del procesamiento:');
+    console.log(`  - Órdenes con productos: ${ordersWithProductsCount}/${finalizedOrders.length}`);
+    console.log(`  - Total productos procesados: ${totalProductsProcessed}`);
+    console.log(`  - Productos simples únicos: ${productSalesMap.size}`);
+    console.log(`  - Variantes únicas: ${variantSalesMap.size}`);
+
     const topProductsData: TopProductDisplay[] = [];
 
+    // Procesar productos simples
     productSalesMap.forEach((sales, productId) => {
-      const product = products.find(p => p.id === productId);
-      if (!product) return;
+      const product = this.productsMap.get(productId);
+      if (!product) {
+        console.warn(`⚠️ Producto ID ${productId} no encontrado en mapa`);
+        return;
+      }
 
       topProductsData.push({
         name: product.productName,
@@ -471,9 +670,13 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     });
 
+    // Procesar variantes
     variantSalesMap.forEach((sales) => {
-      const product = products.find(p => p.id === sales.productId);
-      if (!product) return;
+      const product = this.productsMap.get(sales.productId);
+      if (!product) {
+        console.warn(`⚠️ Producto ID ${sales.productId} (variante) no encontrado en mapa`);
+        return;
+      }
 
       const variant = product.variants?.find(v => v.id === sales.variantId);
       const variantName = variant?.variantName || `Variante #${sales.variantId}`;
@@ -489,11 +692,21 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     });
 
+    console.log('🏆 Productos candidatos para top:', topProductsData.length);
+
+    // Ordenar y tomar top 5
     this.topProducts = topProductsData
       .sort((a, b) => b.sales - a.sales)
       .slice(0, 5);
 
+    console.log('✅ TOP 5 PRODUCTOS MÁS VENDIDOS:');
+    this.topProducts.forEach((p, i) => {
+      console.log(`  ${i + 1}. ${p.name}${p.variantName ? ` - ${p.variantName}` : ''}: ${p.sales} unidades, Q${p.revenue.toFixed(2)}`);
+    });
+
+    // Fallback si no hay productos vendidos
     if (this.topProducts.length === 0) {
+      console.warn('⚠️ NO HAY PRODUCTOS VENDIDOS - Mostrando mensaje por defecto');
       this.topProducts = [{
         name: 'Sin ventas registradas',
         sales: 0,
@@ -503,11 +716,18 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         productType: 'simple'
       }];
     }
+
+    console.log('🎯 === FIN CÁLCULO TOP PRODUCTOS ===');
   }
 
   updateLineChartWithRealData(orders: Order[]) {
     if (!this.lineChart) {
-      console.warn('⚠️ Line chart no está inicializado aún');
+      console.warn('⚠️ Line chart no está inicializado');
+      return;
+    }
+
+    if (!this.lineChartRef || !this.lineChartRef.nativeElement) {
+      console.warn('⚠️ Line chart ref no disponible');
       return;
     }
 
@@ -516,6 +736,8 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    console.log('📈 Actualizando line chart con', orders.length, 'órdenes');
+
     const months = this.getLast6Months();
     const salesData = new Array(6).fill(0);
 
@@ -523,10 +745,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!order.status) return false;
       const status = order.status.toUpperCase().trim();
       return status === 'FINALIZED' || status === 'FINALIZADO';
-    };
-
-    const getOrderTotal = (order: Order): number => {
-      return order.totalAmount || 0;
     };
 
     orders.forEach(order => {
@@ -538,8 +756,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       );
 
       if (monthIndex !== -1) {
-        const orderTotal = getOrderTotal(order);
-        salesData[monthIndex] += orderTotal;
+        salesData[monthIndex] += (order.totalAmount || 0);
       }
     });
 
@@ -547,7 +764,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.lineChart.data.labels = months.map(m => m.label);
     this.lineChart.data.datasets[0].data = salesData;
     this.lineChart.data.datasets[1].data = goalsData;
-    this.lineChart.update();
+
+    // ⭐ CRÍTICO: Usar 'active' para forzar actualización
+    this.lineChart.update('active');
+    console.log('✅ Line chart actualizado correctamente');
   }
 
   getLast6Months() {
@@ -599,6 +819,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         plugins: {
           legend: {
             display: true,
@@ -667,6 +888,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         layout: {
           padding: {
             bottom: 20
@@ -731,6 +953,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getCategoryDistribution(products: Product[], categories: Category[]) {
+    console.log('🔍 Calculando distribución de categorías...');
+    console.log('🔍 Total productos:', products.length);
+    console.log('🔍 Total categorías:', categories.length);
+
     const categoryCounts = new Map<number, number>();
 
     products.forEach(product => {
@@ -739,6 +965,8 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         categoryCounts.set(product.categoryId, count + 1);
       }
     });
+
+    console.log('🔍 Categorías con productos:', categoryCounts.size);
 
     const labels: string[] = [];
     const values: number[] = [];
@@ -751,16 +979,29 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
+    console.log('🔍 Distribución final:', { labels, values });
+
     return { labels, values };
   }
 
   updatePieChartWithRealData(products: Product[], categories: Category[]) {
     if (!this.pieChart) {
-      console.warn('⚠️ Pie chart no está inicializado aún');
+      console.warn('⚠️ Pie chart no está inicializado');
       return;
     }
 
+    if (!this.pieChartRef || !this.pieChartRef.nativeElement) {
+      console.warn('⚠️ Pie chart ref no disponible');
+      return;
+    }
+
+    console.log('🥧 Actualizando datos del pie chart...');
     const categoryData = this.getCategoryDistribution(products, categories);
+
+    console.log('🥧 Categorías encontradas:', categoryData.labels.length);
+    console.log('🥧 Labels:', categoryData.labels);
+    console.log('🥧 Values:', categoryData.values);
+
     const isDarkMode = document.documentElement.classList.contains('dark');
     const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
 
@@ -771,7 +1012,9 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       this.pieChart.options.plugins.legend.labels.color = textColor;
     }
 
-    this.pieChart.update();
+    // ⭐ CRÍTICO: Usar 'active' en lugar de 'none' para forzar actualización
+    this.pieChart.update('active');
+    console.log('✅ Pie chart actualizado correctamente');
   }
 
   getIcon(iconName: string) {
