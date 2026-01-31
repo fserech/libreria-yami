@@ -1034,6 +1034,69 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return Math.min((sales / maxSales) * 100, 100);
   }
 
+  diagnosticVariants() {
+  console.log('🔬 === DIAGNÓSTICO DE VARIANTES ===');
+
+  // 1. Verificar productos con variantes
+  const productsWithVariants = Array.from(this.productsMap.values())
+    .filter(p => p.hasVariants && p.variants && p.variants.length > 0);
+
+  console.log('📦 Productos con variantes en sistema:', productsWithVariants.length);
+  productsWithVariants.slice(0, 3).forEach(p => {
+    console.log(`  - ${p.productName}:`);
+    p.variants?.forEach(v => {
+      console.log(`    └─ ID: ${v.id}, Nombre: ${v.variantName}`);
+    });
+  });
+
+  // 2. Verificar órdenes con variantes
+  const ordersWithVariants = this.orders.filter(order =>
+    order.products?.some(po => po.variantId !== null && po.variantId !== undefined)
+  );
+
+  console.log('📋 Órdenes con variantes:', ordersWithVariants.length);
+  ordersWithVariants.slice(0, 3).forEach(order => {
+    console.log(`  - Orden #${order.id}:`);
+    order.products
+      ?.filter(po => po.variantId)
+      .forEach(po => {
+        console.log(`    └─ ProductID: ${po.productId}, VariantID: ${po.variantId}, Qty: ${po.quantity}`);
+      });
+  });
+
+  // 3. Verificar estructura de ProductOrder
+  const sampleOrder = this.orders.find(o => o.products && o.products.length > 0);
+  if (sampleOrder && sampleOrder.products && sampleOrder.products.length > 0) {
+    console.log('🔍 Estructura de ProductOrder (muestra):');
+    const sampleProduct = sampleOrder.products[0];
+    console.log('  Keys disponibles:', Object.keys(sampleProduct));
+    console.log('  Valores:', {
+      productId: sampleProduct.productId,
+      variantId: sampleProduct.variantId,
+      quantity: sampleProduct.quantity,
+      subtotal: sampleProduct.subtotal,
+      hasProduct: !!sampleProduct.product
+    });
+  }
+
+   const variantIdTypes = new Map<string, number>();
+  this.orders.forEach(order => {
+    order.products?.forEach(po => {
+      const type = typeof po.variantId === 'number' ? 'number' :
+                   po.variantId === null ? 'null' :
+                   po.variantId === undefined ? 'undefined' : 'otro';
+      variantIdTypes.set(type, (variantIdTypes.get(type) || 0) + 1);
+    });
+  });
+
+  console.log('📊 Tipos de variantId encontrados:');
+  variantIdTypes.forEach((count, type) => {
+    console.log(`  - ${type}: ${count} veces`);
+  });
+
+  console.log('🔬 === FIN DIAGNÓSTICO ===');
+}
+
   ngOnDestroy() {
     if (this.lineChart) {
       this.lineChart.destroy();
