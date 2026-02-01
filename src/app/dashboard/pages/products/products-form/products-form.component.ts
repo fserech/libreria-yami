@@ -38,6 +38,7 @@ import {
   matInventoryOutline,
   matAddOutline,
   matTrendingUpOutline,
+  matLockOutline,
 } from '@ng-icons/material-icons/outline';
 
 // Constants & Interfaces
@@ -88,6 +89,7 @@ import { ProductVariantComponent } from '../Components/product-variant/product-v
     matInventoryOutline,
     matAddOutline,
     matTrendingUpOutline,
+    matLockOutline,
   })]
 })
 export default class ProductsFormComponent extends BaseForm implements OnInit, FormComponent {
@@ -102,7 +104,7 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   product: Product;
   variants: ProductVariant[] = [];
 
-  // ⭐ NUEVA PROPIEDAD: Precios por proveedor
+  // ⭐ Precios por proveedor
   supplierPrices: ProductSupplierPrice[] = [];
 
   // ==================== OPTIONS ====================
@@ -115,6 +117,9 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   productType: 'simple' | 'variant' = 'simple';
   suggestedSalePrice: number = 0;
   private hasBeenSaved: boolean = false;
+
+  // ⭐ SKU inmutable: true cuando el SKU ya fue generado o cargado del servidor
+  skuLocked: boolean = false;
 
   get supplierLabels(): string[] {
     return this.supplierOptions.map(opt => opt.label);
@@ -222,14 +227,14 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
       this.productType = product.hasVariants ? 'variant' : 'simple';
 
       if (this.productType === 'simple') {
-        // ⭐ CARGAR PRECIOS POR PROVEEDOR si existen
+        // Cargar precios por proveedor
         if (product.supplierPrices && product.supplierPrices.length > 0) {
           this.supplierPrices = product.supplierPrices.map(sp => ({
             ...sp,
             supplierName: this.supplierOptions.find(opt => opt.value === sp.supplierId.toString())?.label
           }));
         } else if (product.costPrice && product.supplierId && product.supplierId.length > 0) {
-          // LEGACY: Convertir formato antiguo a nuevo
+          // LEGACY: Convertir formato antiguo
           this.supplierPrices = product.supplierId.map((supplierId) => ({
             supplierId,
             supplierName: this.supplierOptions.find(opt => opt.value === supplierId.toString())?.label,
@@ -251,6 +256,10 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
           minStock: product.minStock,
           maxStock: product.maxStock
         });
+
+        // ⭐ SKU cargado del servidor → inmutable permanente
+        this.skuLocked = true;
+        this.stockForm.get('sku')?.disable();
 
         this.calculateSuggestedPrice();
       } else {
@@ -289,7 +298,7 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   }
 
   updateProductName(): void {
-    // El nombre completo se genera automáticamente
+    // El nombre completo se genera automáticamente via getFullProductName()
   }
 
   private extractBaseProductName(fullProductName: string, brandId: number): string {
@@ -309,17 +318,15 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   // ==================== SUPPLIER PRICES MANAGEMENT ====================
 
   addSupplierPrice() {
-    // Verificar si ya hay un proveedor sin seleccionar o sin precio
     const hasIncomplete = this.supplierPrices.some(sp =>
       sp.supplierId === 0 || sp.costPrice === 0
     );
 
     if (hasIncomplete) {
-      this.toast.error('Por favor completa el proveedor actual (selecciona proveedor Y agrega precio) antes de agregar otro');
+      this.toast.error('Por favor completa el proveedor actual antes de agregar otro');
       return;
     }
 
-    // Agregar nuevo proveedor vacío
     this.supplierPrices.push({
       supplierId: 0,
       costPrice: 0,
@@ -347,7 +354,7 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     );
 
     if (duplicates.length > 1) {
-      this.toast.error('Este proveedor ya está agregado. Por favor selecciona otro.');
+      this.toast.error('Este proveedor ya está agregado. Selecciona otro.');
       supplierPrice.supplierId = 0;
       supplierPrice.supplierName = undefined;
     }
@@ -358,14 +365,12 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   getBestSupplierPrice(): ProductSupplierPrice | null {
     if (this.supplierPrices.length === 0) return null;
 
-    // Filtrar solo proveedores válidos (con ID y precio > 0)
     const validSuppliers = this.supplierPrices.filter(sp =>
       sp.supplierId > 0 && sp.costPrice > 0
     );
 
     if (validSuppliers.length === 0) return null;
 
-    // Retornar el de MENOR precio (mejor para compra)
     return validSuppliers.reduce((best, current) =>
       current.costPrice < best.costPrice ? current : best
     );
@@ -422,6 +427,14 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     }
 
     this.productType = type;
+
+    // Si cambia a simple y el SKU ya estaba bloqueado, se mantiene
+    // Si cambia a simple en modo new, se resetea el SKU
+    if (type === 'simple' && this.mode === 'new') {
+      this.skuLocked = false;
+      this.stockForm.get('sku')?.enable();
+      this.stockForm.patchValue({ sku: '' });
+    }
   }
 
   onCategoryChange() {
@@ -432,60 +445,80 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     this.variants = variants;
   }
 
-  // ==================== SKU GENERATION ====================
-async generateSKU() {
-  try {
-    // ✅ CORRECCIÓN: Usar baseProductName en lugar de productName
-    const productName = this.productForm.value.baseProductName || '';
-    const namePrefix = productName.substring(0, 3).toUpperCase().replace(/\s/g, '');
+  // ==================== SKU GENERATION (INMUTABLE) ====================
 
-    // Obtener las primeras 3 letras de la marca
-    const brand = this.brandOptions.find(b => b.value === this.productForm.value.brandRef)?.label || 'UNK';
-    const brandPrefix = brand.substring(0, 3).toUpperCase().replace(/\s/g, '');
-
-    let productId = 0;
-
-    // Si estamos editando, usar el ID actual
-    if (this.mode === 'edit' && this.id) {
-      productId = this.id;
+  /**
+   * Genera el SKU con formato: NOMBRE-MARCA-ID
+   * Una vez generado, el campo se bloquea permanentemente.
+   * En modo 'edit' el SKU ya viene bloqueado desde loadProduct().
+   */
+  async generateSKU() {
+    // Si ya está bloqueado, no hacer nada
+    if (this.skuLocked) {
+      this.toast.error('El SKU ya fue asignado y no puede modificarse');
+      return;
     }
-    // Si estamos creando, obtener el siguiente ID
-    else if (this.mode === 'new') {
-      const currentBaseUrl = this.crud.baseUrl;
-      this.crud.baseUrl = URL_PRODUCTS;
 
-      try {
-        const response: any = await this.crud.getAll('');
-        const maxId = response && response.length > 0
-          ? Math.max(...response.map((p: any) => p.id || 0))
-          : 0;
-        productId = maxId + 1;
-      } finally {
-        this.crud.baseUrl = currentBaseUrl;
+    // Validar que nombre y marca estén presentes
+    const productName = this.productForm.get('baseProductName')?.value?.trim() || '';
+    const brandId = this.productForm.get('brandRef')?.value;
+
+    if (!productName) {
+      this.toast.error('Ingresa el nombre del producto primero');
+      return;
+    }
+
+    if (!brandId) {
+      this.toast.error('Selecciona la marca primero');
+      return;
+    }
+
+    try {
+      // Prefijo de nombre: primeras 3 letras del nombre base, en mayúsculas
+      const namePrefix = productName.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      // Prefijo de marca: primeras 3 letras de la marca, en mayúsculas
+      const brand = this.brandOptions.find(b => b.value === brandId)?.label || 'UNK';
+      const brandPrefix = brand.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      let productId = 0;
+
+      if (this.mode === 'edit' && this.id) {
+        // Editando: usar el ID actual del producto
+        productId = this.id;
+      } else {
+        // Nuevo producto: obtener el siguiente ID disponible
+        const currentBaseUrl = this.crud.baseUrl;
+        this.crud.baseUrl = URL_PRODUCTS;
+
+        try {
+          const response: any = await this.crud.getAll('');
+          const maxId = response && response.length > 0
+            ? Math.max(...response.map((p: any) => p.id || 0))
+            : 0;
+          productId = maxId + 1;
+        } finally {
+          this.crud.baseUrl = currentBaseUrl;
+        }
       }
+
+      // Formato final: NOMBRE-MARCA-ID (ID con padding de 4 dígitos)
+      const correlativo = productId.toString().padStart(4, '0');
+      const sku = `${namePrefix}-${brandPrefix}-${correlativo}`;
+
+      // Asignar SKU y bloquearlo
+      this.stockForm.patchValue({ sku });
+      this.skuLocked = true;
+      this.stockForm.get('sku')?.disable();
+
+      this.toast.success(`SKU generado: ${sku}`);
+
+    } catch (error) {
+      console.error('Error al generar SKU:', error);
+      this.toast.error('Error al generar el SKU. Intenta de nuevo.');
     }
-
-    // Generar SKU con formato: NOM-MAR-0001
-    const correlativo = productId.toString().padStart(4, '0');
-    const sku = `${namePrefix}-${brandPrefix}-${correlativo}`;
-
-    console.log('✅ SKU generado:', {
-      baseProductName: productName,  // ← Cambiado para claridad
-      namePrefix,
-      brand,
-      brandPrefix,
-      id: productId,
-      sku
-    });
-
-    this.stockForm.patchValue({ sku });
-
-  } catch (error) {
-    console.error('❌ Error al generar SKU:', error);
-    const timestamp = Date.now().toString().slice(-6);
-    this.stockForm.patchValue({ sku: `ERR-UNK-${timestamp}` });
   }
-}
+
   // ==================== HELPERS ====================
 
   validateStockMinMax() {
@@ -513,88 +546,64 @@ async generateSKU() {
   // ==================== FORM SUBMISSION ====================
 
   canSubmit(): boolean {
-    console.log('🔍 Validación canSubmit()');
-    console.log('productForm.invalid:', this.productForm.invalid);
-    console.log('stockForm.invalid:', this.stockForm.invalid);
-    console.log('productType:', this.productType);
-    console.log('supplierPrices:', this.supplierPrices);
-
-    if (this.productForm.invalid) {
-      console.log('❌ productForm inválido');
-      return false;
-    }
+    if (this.productForm.invalid) return false;
 
     if (this.productType === 'simple') {
-      // Validar campos básicos del stock
-      const skuValid = this.stockForm.get('sku')?.valid;
+      // El SKU debe estar generado (bloqueado) para poder enviar
+      if (!this.skuLocked) return false;
+
+      const skuValue = this.stockForm.get('sku')?.value;
+      if (!skuValue) return false;
+
       const salePriceValid = this.stockForm.get('salePrice')?.valid;
       const currentStockValid = this.stockForm.get('currentStock')?.valid;
       const minStockValid = this.stockForm.get('minStock')?.valid;
       const maxStockValid = this.stockForm.get('maxStock')?.valid;
 
-      console.log('✅ SKU válido:', skuValid);
-      console.log('✅ Precio venta válido:', salePriceValid);
-      console.log('✅ Stock actual válido:', currentStockValid);
-      console.log('✅ Stock mín válido:', minStockValid);
-      console.log('✅ Stock máx válido:', maxStockValid);
+      if (!salePriceValid || !currentStockValid || !minStockValid || !maxStockValid) return false;
 
-      if (!skuValid || !salePriceValid || !currentStockValid || !minStockValid || !maxStockValid) {
-        console.log('❌ Campos de stock inválidos');
-        return false;
-      }
+      // Debe tener al menos un proveedor válido
+      const validSuppliers = this.supplierPrices.filter(sp =>
+        Number(sp.supplierId) > 0 && Number(sp.costPrice) > 0
+      );
 
-      // Validar que haya al menos un proveedor con precio válido
-      const validSuppliers = this.supplierPrices.filter(sp => {
-        const isValid = Number(sp.supplierId) > 0 && Number(sp.costPrice) > 0;
-        console.log(`Proveedor ${sp.supplierId}: costPrice=${sp.costPrice}, válido=${isValid}`);
-        return isValid;
-      });
-
-      console.log('✅ Proveedores válidos:', validSuppliers.length);
-      console.log('✅ Lista de proveedores válidos:', validSuppliers);
-
-      // Debe tener AL MENOS un proveedor válido
       return validSuppliers.length > 0;
     } else {
-      const hasVariants = this.variants.length > 0;
-      console.log('✅ Tiene variantes:', hasVariants);
-      return hasVariants;
+      return this.variants.length > 0;
     }
   }
 
   async submit() {
-    console.log('🚀 Iniciando submit...');
-
-    // Validación detallada
     if (this.productForm.invalid) {
-      const invalidFields = [];
+      const invalidFields: string[] = [];
       Object.keys(this.productForm.controls).forEach(key => {
-        const control = this.productForm.get(key);
-        if (control?.invalid) {
-          invalidFields.push(key);
-        }
+        if (this.productForm.get(key)?.invalid) invalidFields.push(key);
       });
-      this.toast.error(`Campos inválidos en información general: ${invalidFields.join(', ')}`);
+      this.toast.error(`Campos inválidos: ${invalidFields.join(', ')}`);
       return;
     }
 
     if (this.productType === 'simple') {
-      // Validar stock form
       if (this.stockForm.invalid) {
-        const invalidFields = [];
+        // Verificar controles habilitados manualmente (sku está disabled)
+        const invalidFields: string[] = [];
         Object.keys(this.stockForm.controls).forEach(key => {
           const control = this.stockForm.get(key);
-          if (control?.invalid) {
-            invalidFields.push(key);
-          }
+          if (control?.enabled && control?.invalid) invalidFields.push(key);
         });
-        this.toast.error(`Campos inválidos en stock: ${invalidFields.join(', ')}`);
+        if (invalidFields.length > 0) {
+          this.toast.error(`Campos inválidos en stock: ${invalidFields.join(', ')}`);
+          return;
+        }
+      }
+
+      if (!this.skuLocked || !this.stockForm.get('sku')?.value) {
+        this.toast.error('Debes generar el SKU antes de guardar');
         return;
       }
 
-      // Validar proveedores
       if (this.supplierPrices.length === 0) {
-        this.toast.error('⚠️ Debes agregar al menos un proveedor con precio');
+        this.toast.error('Debes agregar al menos un proveedor con precio');
         return;
       }
 
@@ -603,11 +612,9 @@ async generateSKU() {
       );
 
       if (validSupplierPrices.length === 0) {
-        this.toast.error('⚠️ Debes configurar al menos un proveedor con precio válido (mayor a 0)');
+        this.toast.error('Configura al menos un proveedor con precio válido (mayor a 0)');
         return;
       }
-
-      console.log('✅ Validación exitosa, proveedores válidos:', validSupplierPrices);
     } else {
       if (!this.variants || this.variants.length === 0) {
         this.toast.error('Debes agregar al menos una variante');
@@ -627,7 +634,6 @@ async generateSKU() {
           Number(sp.supplierId) > 0 && Number(sp.costPrice) > 0
         );
 
-        // Obtener el mejor precio de costo para compatibilidad con backend legacy
         const bestCostPrice = this.getBestCostPrice();
 
         product = {
@@ -638,15 +644,16 @@ async generateSKU() {
           categoryId: Number(this.productForm.value.categoryId),
           brandRef: Number(this.productForm.value.brandRef),
           hasVariants: false,
-          sku: this.stockForm.value.sku.trim(),
+          // ⭐ SKU: usar el valor directamente (el control puede estar disabled)
+          sku: this.stockForm.get('sku')?.value,
 
-          // ⭐ COMPATIBILIDAD: Enviar tanto el formato nuevo como el legacy
+          // Formato nuevo
           supplierPrices: validSupplierPrices.map(sp => ({
             supplierId: Number(sp.supplierId),
             costPrice: Number(sp.costPrice)
           })),
 
-          // Legacy: Enviar costPrice y supplierId para compatibilidad
+          // Legacy: compatibilidad con backend
           costPrice: bestCostPrice,
           supplierId: validSupplierPrices.map(sp => Number(sp.supplierId)),
 
@@ -669,6 +676,7 @@ async generateSKU() {
           maxStock: Number(variant.maxStock),
           attributes: variant.attributes || {},
           supplierId: variant.supplierId || [],
+          supplierPrices: variant.supplierPrices || [],
           active: variant.active !== undefined ? variant.active : true
         }));
 
@@ -685,8 +693,6 @@ async generateSKU() {
         };
       }
 
-      console.log('📦 Producto a enviar:', JSON.stringify(product, null, 2));
-
       if (this.mode === 'edit') {
         const response: any = await firstValueFrom(this.crud.updateId(this.id, product));
         this.toast.success(response.message || 'Producto actualizado correctamente');
@@ -695,28 +701,20 @@ async generateSKU() {
         this.toast.success(response.message || 'Producto creado correctamente');
       }
 
-      // Marcar formularios como pristine
       this.productForm.markAsPristine();
       this.stockForm.markAsPristine();
       this.hasBeenSaved = true;
 
-      // Pequeña espera antes de navegar para asegurar que los guards detecten pristine
       await new Promise(resolve => setTimeout(resolve, 100));
-
       this.router.navigate(['dashboard/products']);
 
     } catch (error: any) {
-      console.error('❌ Error completo:', error);
+      console.error('Error completo:', error);
 
       let errorMessage = 'Error al guardar el producto';
-
-      if (error.error?.message) {
-        errorMessage = error.error.message;
-      } else if (error.error?.error) {
-        errorMessage = error.error.error;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
+      if (error.error?.message) errorMessage = error.error.message;
+      else if (error.error?.error) errorMessage = error.error.error;
+      else if (error.message) errorMessage = error.message;
 
       this.toast.error(errorMessage);
     } finally {
@@ -742,31 +740,16 @@ async generateSKU() {
   // ==================== CAMBIOS SIN GUARDAR ====================
 
   isDirty(): boolean {
-    // Si ya se guardó exitosamente, no hay cambios pendientes
-    if (this.hasBeenSaved) {
-      return false;
-    }
+    if (this.hasBeenSaved) return false;
+    if (this.isSaving) return false;
 
-    // Si estamos guardando, no hay cambios pendientes
-    if (this.isSaving) {
-      return false;
-    }
-
-    // Para productos con variantes
     if (this.productType === 'variant') {
-      // Si ya tiene variantes guardadas, no hay cambios pendientes
-      if (this.variantComponent?.hasVariants()) {
-        return false;
-      }
-      // Si está editando una variante nueva sin guardar
+      if (this.variantComponent?.hasVariants()) return false;
       const hasUnsavedVariantChanges = this.variantComponent?.hasUnsavedChanges();
       return !!hasUnsavedVariantChanges;
     }
 
-    // Para productos simples
-    // Solo considerar dirty si los forms están dirty
     const formsAreDirty = this.productForm.dirty || this.stockForm.dirty;
-
     return formsAreDirty;
   }
 

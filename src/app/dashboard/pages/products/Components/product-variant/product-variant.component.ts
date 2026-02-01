@@ -19,12 +19,14 @@ import {
   matAddOutline,
   matCheckCircleOutline,
   matTrendingUpOutline,
+  matLockOutline,
 } from '@ng-icons/material-icons/outline';
 import { environment } from '../../../../../../environments/environment';
 import { CheckboxComponent } from '../../../../../shared/components/checkbox/checkbox.component';
 import { InputComponent } from '../../../../../shared/components/input/input.component';
 import { ToggleComponent } from '../../../../../shared/components/toggle/toggle.component';
 import { REGUEX_DECIMAL_INT } from '../../../../../shared/constants/reguex';
+import { URL_PRODUCTS } from '../../../../../shared/constants/endpoints';
 import { InputOptionsSelect } from '../../../../../shared/interfaces/input';
 import { ProductVariant, ProductSupplierPrice } from '../../../../../shared/interfaces/product';
 import { CrudService } from '../../../../../shared/services/crud.service';
@@ -70,6 +72,7 @@ interface ManualAttribute {
     matAddOutline,
     matCheckCircleOutline,
     matTrendingUpOutline,
+    matLockOutline,
   })]
 })
 export class ProductVariantComponent implements OnInit, OnChanges {
@@ -94,14 +97,13 @@ export class ProductVariantComponent implements OnInit, OnChanges {
   manualAttributes: ManualAttribute[] = [];
   availableAttributes: VariantAttribute[] = [];
   selectedAttributeValues: string[] = [];
-
-  // ⭐ NUEVA PROPIEDAD: Precios por proveedor para la variante actual
   variantSupplierPrices: ProductSupplierPrice[] = [];
 
   // ==================== UI STATE ====================
   editingVariantIndex: number = -1;
   showCustomAttrInput: boolean = false;
   showCustomValueInput: boolean = false;
+  variantSkuLocked: boolean = false;
 
   // ==================== FORM CONTROLS ====================
   attrKeyControl = new FormControl('');
@@ -125,8 +127,7 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     if (this.initialVariants && this.initialVariants.length > 0) {
       this.variants = [...this.initialVariants];
     }
-
-    if (this.categoryId) {
+    if (this.categoryId && this.variants.length === 0) {
       this.loadCategoryAttributes(this.categoryId);
     }
   }
@@ -134,10 +135,76 @@ export class ProductVariantComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['categoryId'] && !changes['categoryId'].firstChange) {
       const newCategoryId = changes['categoryId'].currentValue;
-      if (newCategoryId) {
+      if (newCategoryId && this.variants.length === 0) {
         this.loadCategoryAttributes(newCategoryId);
       }
     }
+
+    if (changes['brandValue'] && !changes['brandValue'].firstChange) {
+      this.handleExternalBrandChange();
+    }
+  }
+
+  // ==================== PENDING CHANGES METHODS (FOR PARENT) ====================
+
+  /**
+   * Determina si hay cambios sin guardar en el formulario de edición de variante actual.
+   * Usado por el Guard 'PendingChanges'.
+   */
+  hasUnsavedChanges(): boolean {
+    // Si el formulario está sucio (dirty), hay cambios pendientes.
+    return this.variantForm.dirty || this.manualAttributes.length > 0 || this.variantSupplierPrices.length > 0;
+  }
+
+  /**
+   * Indica si ya existen variantes en la lista.
+   */
+  hasVariants(): boolean {
+    return this.variants && this.variants.length > 0;
+  }
+
+  // ==================== LOGIC FOR DYNAMIC SKU ====================
+
+  private handleExternalBrandChange() {
+    if (this.variants.length > 0) {
+      let updatedCount = 0;
+      this.variants = this.variants.map((v, index) => {
+        if (!v.id) {
+          updatedCount++;
+          return { ...v, sku: this.calculateSkuValue(index) };
+        }
+        return v;
+      });
+
+      if (updatedCount > 0) {
+        this.emitVariants();
+        this.toast.info(`Se actualizaron ${updatedCount} SKUs por cambio de marca`);
+      }
+    }
+
+    if (this.editingVariantIndex !== -1 && !this.variants[this.editingVariantIndex]?.id) {
+       const newSku = this.calculateSkuValue(this.editingVariantIndex);
+       this.variantForm.patchValue({ sku: newSku });
+    }
+  }
+
+  private calculateSkuValue(index: number): string {
+    const brand = this.brandOptions.find(b => b.value === this.brandValue);
+    const brandLabel = brand?.label || 'UNK';
+    let baseName = this.productName || 'PROD';
+
+    if (brand) {
+      const brandUpper = brandLabel.toUpperCase();
+      if (baseName.toUpperCase().endsWith(brandUpper)) {
+        baseName = baseName.substring(0, baseName.length - brandUpper.length).trim();
+      }
+    }
+
+    const namePrefix = baseName.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const brandPrefix = brandLabel.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const correlativo = (index + 1).toString().padStart(4, '0');
+
+    return `${namePrefix}-${brandPrefix}-${correlativo}`;
   }
 
   // ==================== INITIALIZATION ====================
@@ -156,8 +223,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     });
   }
 
-  // ==================== DATA LOADING ====================
-
   async loadCategoryAttributes(categoryId: number): Promise<void> {
     try {
       const attributes = await firstValueFrom(
@@ -165,9 +230,8 @@ export class ProductVariantComponent implements OnInit, OnChanges {
           `${environment.apiUrl}/api/v1/categories/${categoryId}/attributes`
         )
       );
-
       this.availableAttributes = attributes || [];
-    } catch (error) {
+    } catch (error: any) {
       this.availableAttributes = [];
     }
   }
@@ -180,22 +244,24 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       costPrice: 0,
       isPreferred: this.variantSupplierPrices.length === 0
     });
+    this.variantForm.markAsDirty(); // Notificar cambio al padre
   }
 
   removeSupplierPrice(supplierPrice: ProductSupplierPrice) {
     const index = this.variantSupplierPrices.indexOf(supplierPrice);
     if (index > -1) {
       this.variantSupplierPrices.splice(index, 1);
-
       if (supplierPrice.isPreferred && this.variantSupplierPrices.length > 0) {
         this.variantSupplierPrices[0].isPreferred = true;
       }
+      this.variantForm.markAsDirty();
     }
   }
 
   setPreferredSupplier(supplierPrice: ProductSupplierPrice) {
     this.variantSupplierPrices.forEach(sp => sp.isPreferred = false);
     supplierPrice.isPreferred = true;
+    this.variantForm.markAsDirty();
   }
 
   onSupplierChange(supplierPrice: ProductSupplierPrice) {
@@ -203,19 +269,16 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     if (supplier) {
       supplierPrice.supplierName = supplier.label;
     }
+    this.variantForm.markAsDirty();
   }
 
   getBestSupplierPrice(): ProductSupplierPrice | null {
     if (this.variantSupplierPrices.length === 0) return null;
-
     const preferred = this.variantSupplierPrices.find(sp => sp.isPreferred && sp.supplierId > 0);
     if (preferred && preferred.costPrice > 0) return preferred;
-
     return this.variantSupplierPrices
       .filter(sp => sp.costPrice > 0 && sp.supplierId > 0)
-      .reduce((best, current) =>
-        (!best || current.costPrice < best.costPrice) ? current : best
-      , null as ProductSupplierPrice | null);
+      .reduce((best, current) => (!best || current.costPrice < best.costPrice) ? current : best, null as ProductSupplierPrice | null);
   }
 
   getBestCostPrice(): number {
@@ -226,9 +289,7 @@ export class ProductVariantComponent implements OnInit, OnChanges {
   calculateCurrentMargin(): string {
     const bestCostPrice = this.getBestCostPrice();
     const salePrice = parseFloat(this.variantForm.get('salePrice')?.value) || 0;
-
     if (bestCostPrice === 0 || salePrice === 0) return '0.00';
-
     const margin = ((salePrice - bestCostPrice) / bestCostPrice) * 100;
     return margin.toFixed(2);
   }
@@ -236,7 +297,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
   calculateProfit(): number {
     const bestCostPrice = this.getBestCostPrice();
     const salePrice = parseFloat(this.variantForm.get('salePrice')?.value) || 0;
-
     return salePrice - bestCostPrice;
   }
 
@@ -244,7 +304,6 @@ export class ProductVariantComponent implements OnInit, OnChanges {
 
   onAttributeKeyChange(event: any) {
     const value = event.target.value;
-
     if (value === '__custom__') {
       this.showCustomAttrInput = true;
       this.showCustomValueInput = false;
@@ -255,14 +314,8 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       this.showCustomAttrInput = false;
       this.showCustomValueInput = false;
       this.customAttrValueControl.setValue('');
-
       const attribute = this.availableAttributes.find(attr => attr.attributeName === value);
-      if (attribute) {
-        this.selectedAttributeValues = attribute.attributeValues;
-      } else {
-        this.selectedAttributeValues = [];
-      }
-
+      this.selectedAttributeValues = attribute ? attribute.attributeValues : [];
       this.attrValueControl.setValue('');
     } else {
       this.showCustomAttrInput = false;
@@ -273,49 +326,32 @@ export class ProductVariantComponent implements OnInit, OnChanges {
 
   onAttributeValueChange(event: any) {
     const value = event.target.value;
-
-    if (value === '__custom__') {
-      this.showCustomValueInput = true;
-      this.customAttrValueControl.setValue('');
-    } else {
-      this.showCustomValueInput = false;
-    }
+    this.showCustomValueInput = value === '__custom__';
+    if (this.showCustomValueInput) this.customAttrValueControl.setValue('');
   }
 
   addManualAttribute() {
-    let key = '';
-    let value = '';
-
-    if (this.showCustomAttrInput) {
-      key = this.customAttrKeyControl.value?.trim() || '';
-    } else if (this.availableAttributes.length > 0) {
-      key = this.attrKeyControl.value?.trim() || '';
-    } else {
-      key = this.variantForm.get('attrKey')?.value?.trim() || '';
-    }
-
-    if (this.showCustomValueInput) {
-      value = this.customAttrValueControl.value?.trim() || '';
-    } else if (this.selectedAttributeValues.length > 0) {
-      const selectedValue = this.attrValueControl.value;
-      value = selectedValue && selectedValue !== '__custom__' ? selectedValue.trim() : '';
-    } else {
-      value = this.variantForm.get('attrValue')?.value?.trim() || '';
-    }
+    let key = this.showCustomAttrInput ? this.customAttrKeyControl.value?.trim() : (this.availableAttributes.length > 0 ? this.attrKeyControl.value?.trim() : this.variantForm.get('attrKey')?.value?.trim());
+    let value = this.showCustomValueInput ? this.customAttrValueControl.value?.trim() : (this.selectedAttributeValues.length > 0 ? (this.attrValueControl.value !== '__custom__' ? this.attrValueControl.value?.trim() : '') : this.variantForm.get('attrValue')?.value?.trim());
 
     if (!key || !value) {
       this.toast.error('Ingresa tanto el nombre como el valor del atributo');
       return;
     }
 
-    const exists = this.manualAttributes.some(attr => attr.key.toLowerCase() === key.toLowerCase());
-    if (exists) {
+    if (this.manualAttributes.some(attr => attr.key.toLowerCase() === key!.toLowerCase())) {
       this.toast.error('Ya existe un atributo con ese nombre');
       return;
     }
 
-    this.manualAttributes.push({ key, value });
+    this.manualAttributes.push({ key: key!, value: value! });
+    this.resetAttributeInputs();
+    this.autoGenerateVariantName();
+    this.variantForm.markAsDirty();
+    this.toast.success('Atributo agregado');
+  }
 
+  private resetAttributeInputs() {
     this.attrKeyControl.setValue('');
     this.attrValueControl.setValue('');
     this.customAttrKeyControl.setValue('');
@@ -324,14 +360,12 @@ export class ProductVariantComponent implements OnInit, OnChanges {
     this.selectedAttributeValues = [];
     this.showCustomAttrInput = false;
     this.showCustomValueInput = false;
-
-    this.autoGenerateVariantName();
-    this.toast.success('Atributo agregado');
   }
 
   removeManualAttribute(index: number) {
     this.manualAttributes.splice(index, 1);
     this.autoGenerateVariantName();
+    this.variantForm.markAsDirty();
   }
 
   autoGenerateVariantName() {
@@ -339,84 +373,71 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       this.variantForm.patchValue({ variantName: '' });
       return;
     }
-
     const baseName = this.productName || 'Producto';
     const attrValues = this.manualAttributes.map(attr => attr.value).join(' - ');
-    const generatedName = `${baseName} - ${attrValues}`;
-
-    this.variantForm.patchValue({ variantName: generatedName });
+    this.variantForm.patchValue({ variantName: `${baseName} - ${attrValues}` });
   }
 
   // ==================== SKU GENERATION ====================
 
-  generateVariantSKU() {
-    const brand = this.brandOptions.find(b => b.value === this.brandValue)?.label || 'UNK';
-    const timestamp = Date.now().toString().slice(-6);
+  async generateVariantSKU() {
+    if (this.editingVariantIndex !== -1 && this.variants[this.editingVariantIndex].id) {
+       this.toast.error('No se puede modificar el SKU de una variante ya guardada');
+       return;
+    }
 
-    const attrValues = this.manualAttributes
-      .map(attr => attr.value.substring(0, 3).toUpperCase())
-      .join('-');
+    if (!this.productName) {
+      this.toast.error('El nombre del producto no está disponible');
+      return;
+    }
 
-    const sku = `${brand.substring(0, 3).toUpperCase()}-${attrValues || 'VAR'}-${timestamp}`;
+    if (!this.brandValue) {
+      this.toast.error('Selecciona la marca en la información general primero');
+      return;
+    }
+
+    const index = this.editingVariantIndex >= 0 ? this.editingVariantIndex : this.variants.length;
+    const sku = this.calculateSkuValue(index);
+
     this.variantForm.patchValue({ sku });
+    this.variantSkuLocked = true;
+    this.variantForm.get('sku')?.disable();
+    this.variantForm.markAsDirty();
+    this.toast.success(`SKU generado: ${sku}`);
   }
 
   // ==================== VARIANT MANAGEMENT ====================
 
   addOrUpdateVariant() {
-    const baseFieldsValid =
-      this.variantForm.get('sku')?.valid &&
-      this.variantForm.get('variantName')?.valid &&
-      this.variantForm.get('salePrice')?.valid &&
-      this.variantForm.get('currentStock')?.valid &&
-      this.variantForm.get('minStock')?.valid &&
-      this.variantForm.get('maxStock')?.valid;
+    const skuValue = this.variantForm.get('sku')?.value;
+    const baseFieldsValid = skuValue && this.variantForm.get('variantName')?.valid && this.variantForm.get('salePrice')?.valid;
 
-    if (!baseFieldsValid) {
-      this.toast.error('Por favor completa todos los campos requeridos');
+    if (!baseFieldsValid || !this.variantSkuLocked) {
+      this.toast.error('Completa los campos y genera el SKU');
       return;
     }
 
     if (this.manualAttributes.length === 0) {
-      this.toast.error('Debes agregar al menos un atributo para identificar esta variante');
+      this.toast.error('Agrega al menos un atributo');
       return;
     }
 
-    // Validar proveedores
-    const validSupplierPrices = this.variantSupplierPrices.filter(sp =>
-      Number(sp.supplierId) > 0 && Number(sp.costPrice) > 0
-    );
-
+    const validSupplierPrices = this.variantSupplierPrices.filter(sp => Number(sp.supplierId) > 0 && Number(sp.costPrice) > 0);
     if (validSupplierPrices.length === 0) {
-      this.toast.error('⚠️ Debes agregar al menos un proveedor con precio válido');
+      this.toast.error('Agrega un proveedor válido');
       return;
     }
 
     const attributes: { [key: string]: string } = {};
-    this.manualAttributes.forEach(attr => {
-      attributes[attr.key] = attr.value;
-    });
-
-    // Obtener mejor precio para compatibilidad legacy
-    const bestCostPrice = this.getBestCostPrice();
-    const preferredSupplier = this.getBestSupplierPrice();
+    this.manualAttributes.forEach(attr => attributes[attr.key] = attr.value);
 
     const variant: ProductVariant = {
       id: this.editingVariantIndex >= 0 ? this.variants[this.editingVariantIndex].id : null,
-      sku: this.variantForm.value.sku.trim(),
+      sku: skuValue.trim(),
       variantName: this.variantForm.value.variantName.trim(),
-
-      // ⭐ NUEVO: Enviar precios por proveedor
-      supplierPrices: validSupplierPrices.map(sp => ({
-        supplierId: Number(sp.supplierId),
-        costPrice: Number(sp.costPrice),
-        isPreferred: sp.isPreferred || false
-      })),
-
-      // Legacy: compatibilidad con backend
-      costPrice: bestCostPrice,
-      supplierId: preferredSupplier ? [Number(preferredSupplier.supplierId)] : validSupplierPrices.map(sp => Number(sp.supplierId)),
-
+      supplierPrices: validSupplierPrices,
+      costPrice: this.getBestCostPrice(),
+      supplierId: [Number(this.getBestSupplierPrice()?.supplierId)],
       salePrice: Number(this.variantForm.value.salePrice),
       currentStock: Number(this.variantForm.value.currentStock),
       minStock: Number(this.variantForm.value.minStock),
@@ -425,22 +446,11 @@ export class ProductVariantComponent implements OnInit, OnChanges {
       active: this.variantForm.value.active
     };
 
-    const isDuplicate = this.variants.some((v, idx) =>
-      v.sku === variant.sku && idx !== this.editingVariantIndex
-    );
-
-    if (isDuplicate) {
-      this.toast.error('El SKU ya existe en otra variante');
-      return;
-    }
-
     if (this.editingVariantIndex >= 0) {
       this.variants[this.editingVariantIndex] = variant;
-      this.toast.success('Variante actualizada');
       this.editingVariantIndex = -1;
     } else {
       this.variants.push(variant);
-      this.toast.success('Variante agregada');
     }
 
     this.resetVariantForm();
@@ -450,53 +460,25 @@ export class ProductVariantComponent implements OnInit, OnChanges {
   editVariant(index: number) {
     const variant = this.variants[index];
     this.editingVariantIndex = index;
+    this.variantForm.patchValue({ ...variant });
 
-    this.variantForm.patchValue({
-      sku: variant.sku,
-      variantName: variant.variantName,
-      salePrice: variant.salePrice,
-      currentStock: variant.currentStock,
-      minStock: variant.minStock,
-      maxStock: variant.maxStock,
-      active: variant.active
-    });
+    this.variantSkuLocked = !!variant.sku;
+    if (this.variantSkuLocked) this.variantForm.get('sku')?.disable();
 
-    // Cargar atributos
-    this.manualAttributes = [];
-    if (variant.attributes) {
-      Object.keys(variant.attributes).forEach(key => {
-        this.manualAttributes.push({
-          key: key,
-          value: variant.attributes[key]
-        });
-      });
-    }
+    this.manualAttributes = Object.entries(variant.attributes || {}).map(([key, value]) => ({ key, value }));
+    this.variantSupplierPrices = [...(variant.supplierPrices || [])];
 
-    // ⭐ Cargar precios por proveedor
-    this.variantSupplierPrices = [];
-    if (variant.supplierPrices && variant.supplierPrices.length > 0) {
-      this.variantSupplierPrices = variant.supplierPrices.map(sp => ({
-        ...sp,
-        supplierName: this.supplierOptions.find(opt => opt.value === sp.supplierId.toString())?.label
-      }));
-    } else if (variant.costPrice && variant.supplierId && variant.supplierId.length > 0) {
-      // Legacy: convertir formato antiguo
-      this.variantSupplierPrices = variant.supplierId.map((supplierId, idx) => ({
-        supplierId,
-        supplierName: this.supplierOptions.find(opt => opt.value === supplierId.toString())?.label,
-        costPrice: variant.costPrice || 0,
-        isPreferred: idx === 0
-      }));
-    }
+    // Al empezar a editar, marcamos como pristine hasta que el usuario toque algo
+    this.variantForm.markAsPristine();
   }
 
-  deleteVariant(index: number) {
-    if (confirm('¿Estás seguro de eliminar esta variante?')) {
-      this.variants.splice(index, 1);
-      this.toast.success('Variante eliminada');
-      this.emitVariants();
-    }
-  }
+deleteVariant(index: number) {
+  this.variants.splice(index, 1);
+  this.emitVariants();
+  this.toast.success('Variante eliminada correctamente');
+}
+
+
 
   cancelEditVariant() {
     this.editingVariantIndex = -1;
@@ -504,80 +486,33 @@ export class ProductVariantComponent implements OnInit, OnChanges {
   }
 
   resetVariantForm() {
-    this.variantForm.patchValue({
-      sku: '',
-      variantName: '',
-      salePrice: '',
-      currentStock: 0,
-      minStock: 0,
-      maxStock: 100,
-      active: true,
-      attrKey: '',
-      attrValue: ''
+    this.variantForm.reset({
+      currentStock: 0, minStock: 0, maxStock: 100, active: true
     });
-
     this.manualAttributes = [];
-    this.variantSupplierPrices = []; // ⭐ Limpiar precios de proveedores
+    this.variantSupplierPrices = [];
+    this.variantSkuLocked = false;
+    this.variantForm.get('sku')?.enable();
+    this.resetAttributeInputs();
 
-    this.attrKeyControl.setValue('');
-    this.attrValueControl.setValue('');
-    this.customAttrKeyControl.setValue('');
-    this.customAttrValueControl.setValue('');
-    this.selectedAttributeValues = [];
-    this.showCustomAttrInput = false;
-    this.showCustomValueInput = false;
+    // Importante: Marcar como pristine después del reset para que isDirty() sea correcto
+    this.variantForm.markAsPristine();
   }
 
-  // ==================== HELPERS ====================
-
-  emitVariants() {
-    this.variantsChange.emit([...this.variants]);
-  }
-
-  getVariants(): ProductVariant[] {
-    return [...this.variants];
-  }
-
-  hasVariants(): boolean {
-    return this.variants.length > 0;
-  }
-
-  hasUnsavedChanges(): boolean {
-    if (this.variants.length > 0) {
-      return false;
-    }
-
-    const formHasData =
-      this.variantForm.get('sku')?.value?.trim() ||
-      this.variantForm.get('variantName')?.value?.trim() ||
-      this.variantForm.get('salePrice')?.value ||
-      this.manualAttributes.length > 0 ||
-      this.variantSupplierPrices.length > 0;
-
-    return !!formHasData;
-  }
-
-  // ==================== VARIANT DISPLAY ====================
+  emitVariants() { this.variantsChange.emit([...this.variants]); }
+  getVariants() { return [...this.variants]; }
 
   getVariantAttributesDisplay(variant: ProductVariant): string {
-    if (!variant.attributes || Object.keys(variant.attributes).length === 0) {
-      return 'Sin atributos';
-    }
-
-    return Object.entries(variant.attributes)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(', ');
+    return Object.entries(variant.attributes || {}).map(([k, v]) => `${k}: ${v}`).join(', ') || 'Sin atributos';
   }
 
-  getStockStatusClass(variant: ProductVariant): string {
-    if (variant.currentStock === 0) return 'text-red-600 font-bold';
-    if (variant.currentStock <= variant.minStock) return 'text-orange-600 font-semibold';
-    return 'text-green-600';
+  getStockStatusClass(v: ProductVariant) {
+    if (v.currentStock === 0) return 'text-red-600 font-bold';
+    return v.currentStock <= v.minStock ? 'text-orange-600 font-semibold' : 'text-green-600';
   }
 
-  getStockStatusText(variant: ProductVariant): string {
-    if (variant.currentStock === 0) return 'AGOTADO';
-    if (variant.currentStock <= variant.minStock) return 'BAJO STOCK';
-    return 'DISPONIBLE';
+  getStockStatusText(v: ProductVariant) {
+    if (v.currentStock === 0) return 'AGOTADO';
+    return v.currentStock <= v.minStock ? 'BAJO STOCK' : 'DISPONIBLE';
   }
 }

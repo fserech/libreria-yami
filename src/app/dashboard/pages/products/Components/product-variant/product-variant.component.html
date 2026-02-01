@@ -174,25 +174,48 @@
           [load]="load">
         </app-input>
 
+        <!-- ⭐ SKU INMUTABLE DE VARIANTE -->
         <div class="relative">
-          <app-input
-            [form]="variantForm"
-            name="sku"
-            icon="matQrCodeOutline"
-            label="SKU (Código único)"
-            placeholder="Ej: BIC-CEL-123456"
-            helpMessage="Código para identificar en el sistema"
-            errorMessage="El SKU es requerido"
-            [minlength]="1"
-            [maxlength]="50"
-            [load]="load">
-          </app-input>
-          <button
-            type="button"
-            (click)="generateVariantSKU()"
-            class="absolute right-2 top-9 text-blue-600 hover:text-blue-800 text-xs font-semibold">
-            Generar
-          </button>
+          @if (!variantSkuLocked) {
+            <!-- Estado: SKU no generado aún -->
+            <app-input
+              [form]="variantForm"
+              name="sku"
+              icon="matQrCodeOutline"
+              label="SKU (Código único)"
+              placeholder="Haz clic en Generar"
+              helpMessage="Se genera automáticamente con formato NOMBRE-MARCA-ID"
+              errorMessage="El SKU es requerido"
+              [load]="load">
+            </app-input>
+            <button
+              type="button"
+              (click)="generateVariantSKU()"
+              class="absolute right-2 top-9 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded hover:bg-blue-700 transition-colors">
+              Generar SKU
+            </button>
+          } @else {
+            <!-- Estado: SKU generado y bloqueado permanente -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                SKU (Código único)
+              </label>
+              <div class="relative">
+                <ng-icon name="matQrCodeOutline" size="18" class="absolute left-3 top-2.5 text-gray-400"></ng-icon>
+                <input
+                  type="text"
+                  [value]="variantForm.get('sku')?.value || ''"
+                  readonly
+                  class="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 cursor-not-allowed font-mono text-sm focus:outline-none">
+                <!-- Icono de candado -->
+                <ng-icon name="matLockOutline" size="18" class="absolute right-3 top-2.5 text-red-500 dark:text-red-400"></ng-icon>
+              </div>
+              <p class="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                <ng-icon name="matLockOutline" size="12"></ng-icon>
+                SKU bloqueado permanentemente — no puede modificarse
+              </p>
+            </div>
+          }
         </div>
 
         <!-- PASO 3: STOCK -->
@@ -234,7 +257,7 @@
           [load]="load">
         </app-input>
 
-        <!-- ⭐ PASO 4: PRECIOS POR PROVEEDOR -->
+        <!-- PASO 4: PRECIOS POR PROVEEDOR -->
         <div class="col-span-1 sm:col-span-2 mt-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
           <div class="flex justify-between items-center mb-4">
             <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -399,7 +422,7 @@
       <button
         type="button"
         (click)="addOrUpdateVariant()"
-        [disabled]="variantForm.get('sku')?.invalid || variantForm.get('variantName')?.invalid || manualAttributes.length === 0"
+        [disabled]="!variantSkuLocked || variantForm.get('variantName')?.invalid || manualAttributes.length === 0"
         class="btn-primary px-6 py-2 text-sm font-bold">
         @if (editingVariantIndex >= 0) {
           <ng-icon name="matEditOutline" size="18" class="inline mr-2"></ng-icon>
@@ -436,7 +459,12 @@
           <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
             @for (variant of variants; track variant.sku; let i = $index) {
               <tr class="hover:bg-gray-50 dark:hover:bg-slate-800">
-                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-300 font-mono">{{ variant.sku }}</td>
+                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-300">
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono">{{ variant.sku }}</span>
+                    <ng-icon name="matLockOutline" size="12" class="text-red-500 dark:text-red-400"></ng-icon>
+                  </div>
+                </td>
                 <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-400 font-medium">{{ variant.variantName }}</td>
                 <td class="px-4 py-3 text-xs">
                   @if (variant.attributes && variant.attributes | keyvalue; as attrs) {
