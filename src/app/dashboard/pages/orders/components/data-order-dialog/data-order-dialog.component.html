@@ -1,0 +1,83 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+
+<div class="w-full p-3 border-b">
+  <div class="w-full grid grid-cols-1 sm:grid-cols-1">
+
+    <!-- Selector de Sucursal -->
+    <app-select
+      [form]="form"
+      name="idBranch"
+      label="Sucursal"
+      icon="matAddBusinessOutline"
+      placeholder="Seleccione una sucursal"
+      helpMessage="Seleccione la sucursal donde se realizará la venta"
+      errorMessage="Debe seleccionar una sucursal"
+      [load]="load"
+      [options]="branches">
+    </app-select>
+
+    <!-- Campo de Observación con Sugerencias -->
+    <div class="relative">
+      <app-input
+        [form]="form"
+        name="observation"
+        icon="matInsertCommentOutline"
+        label="Mensaje de agradecimiento"
+        placeholder="Edite o escriba su mensaje..."
+        helpMessage="Puede editar el mensaje sugerido o escribir uno personalizado"
+        errorMessage="Error al ingresar la observación"
+        [counter]="true"
+        [minlength]="0"
+        [maxlength]="300">
+      </app-input>
+
+      <!-- ✅ BOTÓN PARA GENERAR NUEVO MENSAJE -->
+      <button
+        type="button"
+        (click)="generateNewMessage()"
+        class="absolute right-2 top-8 p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400
+               dark:hover:text-blue-300 transition-colors rounded-lg hover:bg-blue-50
+               dark:hover:bg-blue-900/20"
+        title="Generar otro mensaje">
+        <ng-icon name="matRefreshOutline" size="20"></ng-icon>
+      </button>
+    </div>
+
+    <!-- ✅ SUGERENCIAS RÁPIDAS (CHIPS) -->
+    <div class="mt-2 mb-4">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">
+        💡 O seleccione una de estas opciones:
+      </p>
+      <div class="flex flex-wrap gap-2">
+        @for (message of thankYouMessages.slice(0, 5); track $index) {
+          <button
+            type="button"
+            (click)="form.controls['observation'].setValue(message)"
+            class="px-3 py-1 text-xs bg-gray-100 hover:bg-blue-100 dark:bg-slate-800
+                   dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-full
+                   transition-colors border border-gray-300 dark:border-slate-700
+                   hover:border-blue-500 dark:hover:border-blue-600">
+            {{ message }}
+          </button>
+        }
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="flex justify-center align-middle gap-2 mt-4">
+    <button
+      (click)="close()"
+      [disabled]="load"
+      class="btn-danger h-12 w-48 font-bold">
+      Cancelar
+    </button>
+    <button
+      (click)="ok()"
+      [disabled]="load || form.invalid"
+      class="btn-success h-12 w-48 font-bold">
+      Continuar
+    </button>
+  </div>
+</div>

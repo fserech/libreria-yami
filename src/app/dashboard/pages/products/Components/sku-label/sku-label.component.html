@@ -1,0 +1,125 @@
+<div class="sku-label-wrapper">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PANEL DE CONTROLES  (se oculta al imprimir)
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="sku-label-controls no-print">
+
+    <div class="controls-left">
+      <!-- Layout -->
+      <div class="control-group">
+        <label>Etiquetas por página</label>
+        <select [value]="labelsPerPage" (change)="changeLayout($event)">
+          @for (opt of layoutOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Copias -->
+      <div class="control-group">
+        <label>Copias por etiqueta</label>
+        <div class="copies-input">
+          <button (click)="changeCopies(copies - 1)">−</button>
+          <input type="number" [value]="copies" min="1" max="20"
+                 (input)="changeCopiesFromInput($event)" />
+          <button (click)="changeCopies(copies + 1)">+</button>
+        </div>
+      </div>
+
+      <!-- Resumen -->
+      <div class="control-summary">
+        <span>{{ expandedLabels.length }} etiqueta{{ expandedLabels.length !== 1 ? 's' : '' }}</span>
+        <span class="separator">·</span>
+        <span>{{ pages.length }} página{{ pages.length !== 1 ? 's' : '' }}</span>
+      </div>
+    </div>
+
+    <div class="controls-right">
+      <button class="btn-print" (click)="print()">
+        <ng-icon name="matPrintOutline" size="18"></ng-icon>
+        Imprimir
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PÁGINAS DE ETIQUETAS
+       ═══════════════════════════════════════════════════════════════════════ -->
+  @for (page of pages; track $index) {
+    <div class="label-page" [style.grid-template-columns]="'repeat(' + currentLayout.cols + ', 1fr)'">
+
+      @for (item of page; track $index) {
+        <div class="label-card">
+
+          <!-- Barra superior de color (acento) -->
+          <div class="label-accent"></div>
+
+          <!-- Contenido principal -->
+          <div class="label-body">
+
+            <!-- SKU grande -->
+            <div class="label-sku">{{ item.sku }}</div>
+
+            <!-- Barcode visual simulado -->
+            <div class="label-barcode">
+              @for (bar of generateBarcode(item.sku); track $index) {
+                <div class="bar" [class.thick]="bar === 'T'" [class.narrow]="bar === 'N'"></div>
+              }
+            </div>
+
+            <!-- Nombre del producto -->
+            <div class="label-name">{{ item.name }}</div>
+
+            <!-- Marca (si existe) -->
+            @if (item.brandName) {
+              <div class="label-brand">{{ item.brandName }}</div>
+            }
+
+            <!-- Atributos de variante (si existen) -->
+            @if (item.attributes && getAttributeEntries(item.attributes).length > 0) {
+              <div class="label-attributes">
+                @for (attr of getAttributeEntries(item.attributes); track attr.key) {
+                  <span class="label-attr-tag">
+                    <span class="attr-key">{{ attr.key }}:</span>
+                    <span class="attr-val">{{ attr.value }}</span>
+                  </span>
+                }
+              </div>
+            }
+
+            <!-- Precio (si existe) -->
+            @if (item.price !== undefined && item.price !== null) {
+              <div class="label-price">Q {{ item.price | number:'1.2-2' }}</div>
+            }
+          </div>
+
+          <!-- Borde inferior punteado decorativo -->
+          <div class="label-footer"></div>
+        </div>
+      }
+
+      <!-- Rellenar con espacios vacíos si la página no está llena -->
+      @for (empty of ($index === pages.length - 1 ? labelsPerPage - page.length : 0) | makeArray; track $index) {
+        <div class="label-card label-empty"></div>
+      }
+    </div>
+
+    <!-- Separador de página (solo visible en pantalla) -->
+    @if ($index < pages.length - 1) {
+      <div class="page-separator no-print">
+        <span>— Página {{ $index + 1 }} —</span>
+      </div>
+    }
+  }
+
+  <!-- Estado vacío -->
+  @if (labels.length === 0) {
+    <div class="label-empty-state no-print">
+      <ng-icon name="matQrCodeOutline" size="48"></ng-icon>
+      <p>No hay etiquetas para mostrar</p>
+      <p class="subtitle">Las etiquetas aparecerán cuando el producto tenga SKU generado</p>
+    </div>
+  }
+
+</div>

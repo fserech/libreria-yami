@@ -1,0 +1,13 @@
+@for (menu of menuService.pagesMenu; track menu.group) {
+  <div class="dropdown relative inline-block m-1 z-50">
+    <!-- Button -->
+
+    <!-- Dropdown  -->
+    <div
+      class="dropdown-content absolute top-[100%] min-w-[200px] origin-top-left"
+      navbar-submenu
+      [submenu]="menu.items">
+    </div>
+  </div>
+
+}

@@ -1,0 +1,69 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+
+<div class="w-full p-3 border-b">
+  <div class="w-full grid grid-cols-1 sm:grid-cols-1">
+    <app-input
+      [form]="form"
+      name="id"
+      icon="bootstrapPostcardFill"
+      label="ID Proveedor"
+      placeholder="ID Proveedor"
+      helpMessage="Sólo se aceptan números"
+      errorMessage="Error message."
+      [counter]="true"
+      [minlength]="1"
+      [maxlength]="20">
+    </app-input>
+
+    <app-input
+      [form]="form"
+      name="name"
+      icon="matDriveFileRenameOutlineOutline"
+      label="Nombre de Proveedor"
+      placeholder="Nombre de Proveedor"
+      helpMessage="Sólo se aceptan caracteres alfanumericos"
+      errorMessage="Error message."
+      [counter]="true"
+      [minlength]="1"
+      [maxlength]="200">
+    </app-input>
+
+    <app-input
+      [form]="form"
+      name="email"
+      icon="matEmailOutline"
+      label="Correo electrónico"
+      placeholder="correo@ejemplo.com"
+      helpMessage="Sólo se aceptan correos válidos"
+      errorMessage="El correo no es válido"
+      [counter]="true"
+      [minlength]="5"
+      [maxlength]="100">
+    </app-input>
+
+    <app-input
+      [form]="form"
+      name="phone"
+      icon="matPhoneOutline"
+      label="Teléfono"
+      placeholder="Número de teléfono"
+      helpMessage="Ingresa el número de contacto"
+      errorMessage="Error message."
+      [counter]="true"
+      [minlength]="7"
+      [maxlength]="20">
+    </app-input>
+
+    <app-toggle
+      label="Proveedor Activo"
+      [form]="form"
+      name="active">
+    </app-toggle>
+  </div>
+
+  <div class="flex justify-center align-middle">
+    <button (click)="filter()" [disabled]="load" class="btn-primary h-10 w-40 font-bold">
+      Filtrar
+    </button>
+  </div>
+</div>

@@ -1,0 +1,287 @@
+<div class="flex flex-col sm:flex-row sm:items-center w-full justify-between sticky top-0 bg-white dark:bg-slate-900 pb-3 border-b dark:border-slate-700">
+
+  <!-- Botón "Nuevo" (Mobile) -->
+  <div class="w-full mb-4 sm:hidden">
+    <button (click)="add()" type="button" class="btn-primary float-end h-10 w-48 mb-5">
+      <div class="flex text-center justify-center align-middle">
+        <p class="text-sm md:text-base">Nuevo</p>
+        <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+      </div>
+    </button>
+  </div>
+
+  <!-- Búsqueda -->
+  <div class="flex sm:w-5/12 sm:ml-4 mb-5">
+    <app-search-input-text
+      class="w-full"
+      [form]="form"
+      name="name"
+      icon="matSearchOutline"
+      label="Proveedor"
+      placeholder="Nombre de proveedor"
+      [maxlength]="50"
+      [load]="load"
+      [counter]="true"
+      (keydown.enter)="introSearch()"
+      (keydown.escape)="initPage()"
+      (clearFilters)="initPage()">
+    </app-search-input-text>
+    <button (click)="(form.controls['name'].value && form.controls['name'].value !== '') ?
+    filter(form.controls['name'].value) : loadInitialData()" type="button" class="btn-success h-10">
+      <div class="flex text-center justify-center align-middle">
+        <ng-icon class="text-white font-bold p-0 m-0" size="20" name="matSearchOutline"></ng-icon>
+      </div>
+    </button>
+  </div>
+
+  <!-- Botón "Nuevo" (Desktop) -->
+  <button (click)="add()" type="button" class="btn-primary h-10 w-48 mb-2 sm:mb-0 hidden sm:inline-block">
+    <div class="flex text-center justify-center align-middle">
+      <p class="text-sm md:text-base">Nuevo</p>
+      <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+    </div>
+  </button>
+
+</div>
+
+<div class="rounded-lg mt-4">
+
+  <!-- ✅ LOADING STATE -->
+  @if (load) {
+    <div class="w-full p-8 text-center">
+      <div class="animate-pulse flex flex-col space-y-4">
+        @for (item of [1,2,3,4,5]; track $index) {
+          <div class="h-20 bg-gray-300 dark:bg-slate-700 rounded-lg"></div>
+        }
+      </div>
+      <p class="text-gray-500 dark:text-gray-400 mt-4">Cargando proveedores...</p>
+    </div>
+  }
+
+  <!-- ✅ EMPTY STATE -->
+  @if (!load && ItemsList.length === 0) {
+    <div class="w-full p-8 text-center">
+      <div class="mx-auto mb-4 w-24 h-24 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+        <ng-icon class="text-gray-400 dark:text-gray-500" size="48" name="matAddOutline"></ng-icon>
+      </div>
+      <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        No hay proveedores
+      </h3>
+      <p class="text-gray-500 dark:text-gray-400 mb-6">
+        @if (filters && filters !== '') {
+          No se encontraron proveedores con ese nombre
+        } @else {
+          No hay proveedores registrados en el sistema
+        }
+      </p>
+      <button (click)="add()" type="button" class="btn-primary px-6 py-3">
+        <div class="flex items-center justify-center gap-2">
+          <ng-icon class="text-white" size="20" name="matAddOutline"></ng-icon>
+          <span>Crear primer proveedor</span>
+        </div>
+      </button>
+    </div>
+  }
+
+  <!-- ✅ DATA TABLE -->
+  @if (!load && ItemsList.length > 0) {
+    <table class="table-grid w-full">
+      <!-- DESKTOP HEADERS -->
+      <thead class="hidden sm:table-header-group">
+        <tr>
+          <th class="w-16">
+            <button (click)="changeSortOrderBy('id')">
+              <p>ID</p>
+              @if(sortConfig.sortBy === 'id' && sortConfig.sortOrder === 'asc'){
+                <ng-icon size="20" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'id' && sortConfig.sortOrder === 'desc'){
+                <ng-icon size="20" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
+          <th>
+            <button (click)="changeSortOrderBy('supplierName')">
+              <p>Nombre</p>
+              @if(sortConfig.sortBy === 'supplierName' && sortConfig.sortOrder === 'asc'){
+                <ng-icon size="20" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'supplierName' && sortConfig.sortOrder === 'desc'){
+                <ng-icon size="20" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
+          <th class="hidden lg:table-cell">
+            <button (click)="changeSortOrderBy('supplierDesc')">
+              <p>Descripción</p>
+              @if(sortConfig.sortBy === 'supplierDesc' && sortConfig.sortOrder === 'asc'){
+                <ng-icon size="20" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'supplierDesc' && sortConfig.sortOrder === 'desc'){
+                <ng-icon size="20" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
+          <th class="hidden lg:table-cell">
+            <button (click)="changeSortOrderBy('address')">
+              <p>Dirección</p>
+              @if(sortConfig.sortBy === 'address' && sortConfig.sortOrder === 'asc'){
+                <ng-icon size="20" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'address' && sortConfig.sortOrder === 'desc'){
+                <ng-icon size="20" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
+          <th class="hidden md:table-cell">
+            <button (click)="changeSortOrderBy('phone')">
+              <p>Teléfono</p>
+              @if(sortConfig.sortBy === 'phone' && sortConfig.sortOrder === 'asc'){
+                <ng-icon size="20" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'phone' && sortConfig.sortOrder === 'desc'){
+                <ng-icon size="20" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+
+          <th class="hidden md:table-cell">
+            <button (click)="changeSortOrderBy('email')">
+              <p>Email</p>
+              @if(sortConfig.sortBy === 'email' && sortConfig.sortOrder === 'asc'){
+                <ng-icon size="20" name="matArrowDownwardOutline"></ng-icon>
+              }
+              @if(sortConfig.sortBy === 'email' && sortConfig.sortOrder === 'desc'){
+                <ng-icon size="20" name="matArrowUpwardOutline"></ng-icon>
+              }
+            </button>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (supplier of ItemsList; track supplier.id) {
+          <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950': $odd, 'bg-white dark:bg-slate-900': $even }">
+
+            <!-- DESKTOP VIEW -->
+            <td class="hidden sm:table-cell w-16">
+              <mat-radio-button color="primary"
+                                [value]="supplier.id"
+                                [checked]="selectedIdControl.value === supplier.id"
+                                (change)="toggleSelection(supplier)">
+                <span class="ml-2 font-semibold text-sm text-gray-900 dark:text-white">{{ supplier.id }}</span>
+              </mat-radio-button>
+            </td>
+
+            <td class="hidden sm:table-cell">
+              <p class="font-bold text-gray-900 dark:text-white">{{ supplier.supplierName }}</p>
+            </td>
+
+            <td class="hidden lg:table-cell">
+              <p class="text-sm text-gray-700 dark:text-gray-300">{{ supplier.supplierDesc || 'N/A' }}</p>
+            </td>
+
+            <td class="hidden lg:table-cell">
+              <p class="text-sm text-gray-700 dark:text-gray-300">{{ supplier.address || 'N/A' }}</p>
+            </td>
+
+            <td class="hidden md:table-cell">
+              <p class="text-sm text-gray-700 dark:text-gray-300">{{ supplier.phone || 'N/A' }}</p>
+            </td>
+
+            <td class="hidden md:table-cell">
+              <p class="text-sm text-gray-700 dark:text-gray-300 truncate" [title]="supplier.email">{{ supplier.email || 'N/A' }}</p>
+            </td>
+
+            <!-- MOBILE VIEW -->
+            <td class="sm:hidden">
+              <mat-radio-button color="primary"
+                                [value]="supplier.id"
+                                [checked]="selectedIdControl.value === supplier.id"
+                                (change)="toggleSelection(supplier)"
+                                class="w-full">
+                <div class="w-full ml-3 space-y-2">
+
+                  <!-- Fila 1: ID y Nombre -->
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">ID</p>
+                      <p class="text-sm font-bold text-gray-900 dark:text-white">{{ supplier.id }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nombre</p>
+                      <p class="text-sm font-bold text-gray-900 dark:text-white">{{ supplier.supplierName }}</p>
+                    </div>
+                  </div>
+
+                  <!-- Fila 2: Descripción y Dirección -->
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Descripción</p>
+                      <p class="text-sm text-gray-700 dark:text-gray-300">{{ supplier.supplierDesc || 'N/A' }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Dirección</p>
+                      <p class="text-sm text-gray-700 dark:text-gray-300">{{ supplier.address || 'N/A' }}</p>
+                    </div>
+                  </div>
+
+                  <!-- Fila 3: Teléfono y Email -->
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Teléfono</p>
+                      <p class="text-sm text-gray-700 dark:text-gray-300">{{ supplier.phone || 'N/A' }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</p>
+                      <p class="text-sm text-gray-700 dark:text-gray-300 truncate" [title]="supplier.email">{{ supplier.email || 'N/A' }}</p>
+                    </div>
+                  </div>
+
+                </div>
+              </mat-radio-button>
+            </td>
+
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <!-- PAGINATION DESKTOP -->
+    <div class="content-desktop w-full mt-4">
+      <div class="pagination">
+        <div class="pagination-child">
+          <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{page}} de {{totalPages}}</b></p>
+          <p>Items {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+          <button><ng-icon (click)="firstPage()" class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
+          <button><ng-icon (click)="previousPage()" class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
+          <button><ng-icon (click)="nextPage()" class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
+          <button><ng-icon (click)="lastPage()" class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGINATION MOBILE -->
+    <div class="content-sm mt-4">
+      <div class="pagination">
+        <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
+          <div class="flex justify-between mb-2 p-2 rounded-lg border m-1 bg-white dark:bg-slate-900 dark:border-slate-700">
+            <button class="btn-pagination"><ng-icon (click)="firstPage()" size="22" name="bootstrapChevronBarLeft"></ng-icon></button>
+            <button class="btn-pagination"><ng-icon (click)="previousPage()" size="22" name="bootstrapChevronLeft"></ng-icon></button>
+            <button class="btn-pagination"><ng-icon (click)="nextPage()" size="22" name="bootstrapChevronRight"></ng-icon></button>
+            <button class="btn-pagination"><ng-icon (click)="lastPage()" size="22" name="bootstrapChevronBarRight"></ng-icon></button>
+          </div>
+
+          <div class="flex justify-between">
+            <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Páginas: </b> {{page}} de {{totalPages}}</p>
+            <p class="bg-white dark:bg-slate-900 p-1 m-1 rounded text-sm text-start pl-2 w-48"><b> Items: </b> {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

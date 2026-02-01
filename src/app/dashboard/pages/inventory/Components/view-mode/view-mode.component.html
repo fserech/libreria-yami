@@ -1,0 +1,353 @@
+<div class="view-mode-container">
+
+  <!-- VISTA TABLA -->
+  <div *ngIf="viewMode === 'table'" class="rounded-lg">
+
+    <!-- TABLA DESKTOP -->
+    <table class="hidden sm:table table-grid w-full">
+      <thead>
+        <tr>
+          <th><p class="text-slate-700 dark:text-slate-300">Tipo</p></th>
+          <th *ngIf="activeView === 'alerts'"><p class="text-slate-700 dark:text-slate-300">Estado</p></th>
+          <th><p class="text-slate-700 dark:text-slate-300">Producto</p></th>
+          <th><p class="text-slate-700 dark:text-slate-300">Sucursal</p></th>
+          <th><p class="text-slate-700 dark:text-slate-300">Actual</p></th>
+          <th><p class="text-slate-700 dark:text-slate-300">Mínimo</p></th>
+          <th><p class="text-slate-700 dark:text-slate-300">Máximo</p></th>
+          <th><p class="text-slate-700 dark:text-slate-300">Nivel</p></th>
+          <th><p class="text-slate-700 dark:text-slate-300">Acciones</p></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (item of items; track $index) {
+          <tr [ngClass]="{'bg-gray-200 dark:bg-slate-950 p-0 rounded-lg': $odd}">
+
+            <!-- Tipo -->
+            <td>
+              <span class="px-2 py-1 text-xs font-medium rounded-full"
+                    [ngClass]="getTypeBadgeClass(item)">
+                {{ getTypeBadge(item) }}
+              </span>
+            </td>
+
+            <!-- Estado (Solo alertas) -->
+            <td *ngIf="activeView === 'alerts'">
+              @if (getAlertLevel(item) === 'critical') {
+                <span class="h-2 w-2 mr-2 bg-red-500 rounded-full inline-flex"></span>
+              }
+              @if (getAlertLevel(item) === 'warning') {
+                <span class="h-2 w-2 mr-2 bg-yellow-500 rounded-full inline-flex"></span>
+              }
+              <span class="px-2 py-1 text-xs font-bold rounded-full"
+                    [ngClass]="{'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': getAlertLevel(item) === 'critical',
+                                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': getAlertLevel(item) === 'warning'}">
+                {{ getAlertLevel(item) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}
+              </span>
+            </td>
+
+            <!-- Producto -->
+            <td>
+              <div>
+                <p class="font-bold text-slate-800 dark:text-slate-200">{{ getDisplayName(item) }}</p>
+                <p class="text-xs text-wrap text-slate-500 dark:text-slate-400">SKU: {{ getDisplaySKU(item) }}</p>
+                @if (isVariant(item) && getVariantAttributes(item)) {
+                  <p class="text-xs text-wrap text-blue-600 dark:text-blue-400 mt-1">
+                    {{ getVariantAttributes(item) }}
+                  </p>
+                }
+              </div>
+            </td>
+
+            <!-- Sucursal -->
+            <td>
+              <span class="text-sm text-slate-700 dark:text-slate-300">{{ item.branchName || 'N/A' }}</span>
+            </td>
+
+            <!-- Stock Actual -->
+            <td class="text-center">
+              <span class="text-lg font-bold"
+                    [ngClass]="activeView === 'alerts'
+                      ? (getAlertLevel(item) === 'critical' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400')
+                      : getStockStatusClass(item)">
+                {{ item.currentStock }}
+              </span>
+            </td>
+
+            <!-- Stock Mínimo -->
+            <td class="text-center">
+              <span class="text-sm text-slate-700 dark:text-slate-300">{{ item.minStock }}</span>
+            </td>
+
+            <!-- Stock Máximo -->
+            <td class="text-center">
+              <span class="text-sm text-slate-700 dark:text-slate-300">{{ item.maxStock }}</span>
+            </td>
+
+            <!-- Nivel con barra -->
+            <td>
+              <div class="flex flex-col items-center">
+                <div class="w-24 bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                  <div class="h-full rounded-full transition-all"
+                       [ngClass]="getProgressBarClass(item)"
+                       [style.width.%]="getStockPercentage(item)">
+                  </div>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {{ getStockPercentage(item) | number:'1.0-0' }}%
+                </p>
+                @if (activeView === 'alerts' && item.currentStock < item.minStock) {
+                  <p class="text-xs text-red-600 dark:text-red-400 font-semibold">
+                    {{ item.currentStock }}/{{ item.minStock }}
+                  </p>
+                }
+              </div>
+            </td>
+
+            <!-- Acciones - SOLO AJUSTAR -->
+            <td>
+              <div class="w-full c-actions flex gap-2 justify-center">
+                <button (click)="adjustStock(item)" class="btn-action" title="Ajustar Stock">
+                  <ng-icon class="text-blue-500 dark:text-blue-400" size="20" name="matEditOutline"></ng-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <!-- LISTA MÓVIL -->
+    <div class="sm:hidden space-y-2">
+      @for (item of items; track $index) {
+        <div class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 shadow-sm"
+             [ngClass]="{'bg-slate-50 dark:bg-slate-900': $odd}">
+
+          <div class="flex justify-between items-start mb-2">
+            <div class="flex-1">
+              <!-- Badges -->
+              <div class="flex gap-2 mb-2 flex-wrap">
+                <span class="px-2 py-0.5 text-xs font-medium rounded-full"
+                      [ngClass]="getTypeBadgeClass(item)">
+                  {{ getTypeBadge(item) }}
+                </span>
+
+                @if (activeView === 'alerts') {
+                  <span class="px-2 py-0.5 text-xs font-bold rounded-full flex items-center gap-1"
+                        [ngClass]="{'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': getAlertLevel(item) === 'critical',
+                                    'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': getAlertLevel(item) === 'warning'}">
+                    @if (getAlertLevel(item) === 'critical') {
+                      <span class="h-2 w-2 bg-red-500 rounded-full inline-flex"></span>
+                    }
+                    @if (getAlertLevel(item) === 'warning') {
+                      <span class="h-2 w-2 bg-yellow-500 rounded-full inline-flex"></span>
+                    }
+                    {{ getAlertLevel(item) === 'critical' ? 'CRÍTICO' : 'ADVERTENCIA' }}
+                  </span>
+                }
+
+                @if (activeView === 'stock') {
+                  <span class="px-2 py-0.5 text-xs font-bold rounded-full flex items-center gap-1"
+                        [ngClass]="{'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': getStockStatus(item) === 'critical',
+                                    'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': getStockStatus(item) === 'warning',
+                                    'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400': getStockStatus(item) === 'excess',
+                                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': getStockStatus(item) === 'good'}">
+                    <span class="h-2 w-2 rounded-full"
+                          [ngClass]="getStockStatus(item) === 'critical' ? 'bg-red-500' :
+                                     getStockStatus(item) === 'warning' ? 'bg-yellow-500' :
+                                     getStockStatus(item) === 'excess' ? 'bg-orange-500' : 'bg-green-500'"></span>
+                    {{ getStockStatus(item).toUpperCase() }}
+                  </span>
+                }
+              </div>
+
+              <p class="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">
+                {{ getDisplayName(item) }}
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                SKU: {{ getDisplaySKU(item) }}
+              </p>
+              @if (isVariant(item) && getVariantAttributes(item)) {
+                <p class="text-xs text-blue-600 dark:text-blue-400 mb-1">
+                  {{ getVariantAttributes(item) }}
+                </p>
+              }
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                📍 {{ item.branchName || 'N/A' }}
+              </p>
+            </div>
+
+            <!-- Acciones - SOLO AJUSTAR -->
+            <div class="flex flex-col gap-2 ml-2">
+              <button (click)="adjustStock(item)"
+                      class="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                      title="Ajustar">
+                <ng-icon class="text-indigo-600 dark:text-indigo-400" size="18" name="matEditOutline"></ng-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Grid de Stock -->
+          <div class="grid grid-cols-4 gap-2 mt-3">
+            <div class="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+              <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Actual</p>
+              <p class="text-base font-bold"
+                 [ngClass]="activeView === 'alerts'
+                   ? (getAlertLevel(item) === 'critical' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400')
+                   : getStockStatusClass(item)">
+                {{ item.currentStock }}
+              </p>
+            </div>
+            <div class="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+              <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Mín</p>
+              <p class="text-base font-bold text-slate-700 dark:text-slate-300">{{ item.minStock }}</p>
+            </div>
+            <div class="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+              <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Máx</p>
+              <p class="text-base font-bold text-slate-700 dark:text-slate-300">{{ item.maxStock }}</p>
+            </div>
+            <div class="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+              <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Nivel</p>
+              <p class="text-base font-bold text-slate-700 dark:text-slate-300">
+                {{ getStockPercentage(item) | number:'1.0-0' }}%
+              </p>
+            </div>
+          </div>
+
+          <!-- Barra de progreso -->
+          <div class="mt-3">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-slate-600 dark:text-slate-400">
+                Nivel de stock
+                @if (activeView === 'alerts' && item.currentStock < item.minStock) {
+                  <span class="text-red-600 dark:text-red-400 font-semibold ml-1">
+                    ({{ item.currentStock }}/{{ item.minStock }})
+                  </span>
+                }
+              </span>
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">
+                {{ getStockPercentage(item) | number:'1.0-0' }}%
+              </span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+              <div class="h-full rounded-full transition-all"
+                   [ngClass]="getProgressBarClass(item)"
+                   [style.width.%]="getStockPercentage(item)">
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- VISTA TARJETAS -->
+  <div *ngIf="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    @for (item of items; track $index) {
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+
+        <!-- Header -->
+        <div class="flex justify-between items-start mb-3">
+          <div class="flex gap-2 flex-wrap">
+            <span class="px-2 py-1 text-xs font-medium rounded-full"
+                  [ngClass]="getTypeBadgeClass(item)">
+              {{ getTypeBadge(item) }}
+            </span>
+
+            @if (activeView === 'alerts') {
+              <span class="px-2 py-1 text-xs font-bold rounded-full flex items-center gap-1"
+                    [ngClass]="{'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': getAlertLevel(item) === 'critical',
+                                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': getAlertLevel(item) === 'warning'}">
+                @if (getAlertLevel(item) === 'critical') {
+                  <span class="h-2 w-2 bg-red-500 rounded-full"></span>
+                }
+                @if (getAlertLevel(item) === 'warning') {
+                  <span class="h-2 w-2 bg-yellow-500 rounded-full"></span>
+                }
+                {{ getAlertLevel(item) === 'critical' ? 'CRÍTICO' : 'ALERTA' }}
+              </span>
+            }
+
+            @if (activeView === 'stock') {
+              <span class="px-2 py-1 text-xs font-bold rounded-full flex items-center gap-1"
+                    [ngClass]="{'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': getStockStatus(item) === 'critical',
+                                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': getStockStatus(item) === 'warning',
+                                'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400': getStockStatus(item) === 'excess',
+                                'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': getStockStatus(item) === 'good'}">
+                <span class="h-2 w-2 rounded-full"
+                      [ngClass]="getStockStatus(item) === 'critical' ? 'bg-red-500' :
+                                 getStockStatus(item) === 'warning' ? 'bg-yellow-500' :
+                                 getStockStatus(item) === 'excess' ? 'bg-orange-500' : 'bg-green-500'"></span>
+                {{ getStockStatus(item) === 'critical' ? 'CRÍTICO' :
+                   getStockStatus(item) === 'warning' ? 'BAJO' :
+                   getStockStatus(item) === 'excess' ? 'EXCESO' : 'NORMAL' }}
+              </span>
+            }
+          </div>
+        </div>
+
+        <!-- Info -->
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-200 mb-1 line-clamp-2">
+          {{ getDisplayName(item) }}
+        </h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">SKU: {{ getDisplaySKU(item) }}</p>
+        @if (isVariant(item) && getVariantAttributes(item)) {
+          <p class="text-xs text-blue-600 dark:text-blue-400 mb-2">{{ getVariantAttributes(item) }}</p>
+        }
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1">
+          <span>📍</span><span>{{ item.branchName || 'N/A' }}</span>
+        </p>
+
+        <!-- Stock Grid -->
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Actual</p>
+            <p class="text-lg font-bold"
+               [ngClass]="activeView === 'alerts'
+                 ? (getAlertLevel(item) === 'critical' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400')
+                 : getStockStatusClass(item)">
+              {{ item.currentStock }}
+            </p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Mín</p>
+            <p class="text-lg font-bold text-slate-700 dark:text-slate-300">{{ item.minStock }}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2 text-center">
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Máx</p>
+            <p class="text-lg font-bold text-slate-700 dark:text-slate-300">{{ item.maxStock }}</p>
+          </div>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div class="mb-3">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-xs text-slate-600 dark:text-slate-400">Nivel de stock</span>
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">
+              {{ getStockPercentage(item) | number:'1.0-0' }}%
+            </span>
+          </div>
+          <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+            <div class="h-full rounded-full transition-all"
+                 [ngClass]="getProgressBarClass(item)"
+                 [style.width.%]="getStockPercentage(item)">
+            </div>
+          </div>
+          @if (activeView === 'alerts' && item.currentStock < item.minStock) {
+            <p class="text-xs text-red-600 dark:text-red-400 font-semibold mt-1 text-center">
+              {{ item.currentStock }}/{{ item.minStock }} unidades
+            </p>
+          }
+        </div>
+
+        <!-- Acciones - SOLO AJUSTAR -->
+        <button (click)="adjustStock(item)"
+                class="w-full px-3 py-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors text-sm font-medium text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-2">
+          <ng-icon name="matEditOutline" size="18"></ng-icon>
+          <span>Ajustar Stock</span>
+        </button>
+      </div>
+    }
+  </div>
+
+</div>

@@ -1,0 +1,62 @@
+@if (!load) {
+  <mat-form-field class="w-full" [appearance]="'fill'">
+    @if (icon) {
+      <ng-icon
+        matPrefix
+        class="text-gray-500"
+        size="20"
+        [name]="icon">
+      </ng-icon>
+    }
+
+    @if (selectedCount === 0) {
+      <mat-label>{{ label }}</mat-label>
+    }
+
+    <mat-select
+      [placeholder]="getSelectedLabels()"
+      [formControl]="selectControl"
+      multiple>
+      @for (option of formArrayOptions; track option.index) {
+        <mat-option [value]="option.index">
+          {{ option.label }}
+        </mat-option>
+      }
+    </mat-select>
+
+    @if(isValid) {
+      <ng-icon
+        matSuffix
+        class="text-green-500"
+        size="20"
+        name="matCheckCircleOutline">
+      </ng-icon>
+    }
+    @if(!isValid) {
+      <ng-icon
+        matSuffix
+        class="text-red-500 transform rotate-45"
+        size="20"
+        name="matAddCircleOutlineOutline">
+      </ng-icon>
+    }
+  </mat-form-field>
+
+  <!-- ✅ Usar -mt-4 para subirlo -->
+  @if (helpMessage && helpMessage !== '') {
+    <div class="text-xs text-gray-500 -mt-4 mb-4">{{ helpMessage }}</div>
+  }
+} @else {
+  <div class="relative">
+    <input class="relative w-full pl-12 pr-3 py-2 rounded-2xl bg-gray-300 dark:bg-gray-700 dark:text-white border-none animate-pulse" disabled>
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      @if(icon){
+        <ng-icon class="text-slate-500 dark:text-slate-400 animate-pulse" size="20" [name]="icon"></ng-icon>
+      }
+    </div>
+  </div>
+
+  @if (helpMessage && helpMessage !== '') {
+    <div class="bg-emerald-200 dark:bg-slate-800 mt-1 mb-4 animate-pulse rounded-lg text-xs text-transparent" style="user-select: none;">{{ helpMessage }}</div>
+  }
+}

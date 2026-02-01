@@ -1,0 +1,87 @@
+<p class="font-bold text-xl text-center border-b pb-2 dark:border-slate-800">{{ data.title }}</p>
+<div class="w-full p-3 border-b">
+  <div class="w-full grid grid-cols-1 sm:grid-cols-1">
+    <!-- Nombre del Proveedor -->
+    <app-input
+      [form]="form"
+      name="supplierName"
+      icon="matBusinessOutline"
+      label="Nombre del Proveedor"
+      placeholder="Nombre del Proveedor"
+      helpMessage="Ingrese el nombre del proveedor"
+      errorMessage="El nombre es requerido"
+      [minlength]="1"
+      [maxlength]="100">
+    </app-input>
+
+    <!-- Descripción del Proveedor -->
+    <app-input
+      [form]="form"
+      name="supplierDesc"
+      icon="matDescriptionOutline"
+      label="Descripción (Opcional)"
+      placeholder="Descripción del proveedor"
+      helpMessage="Breve descripción o tipo de productos que provee"
+      errorMessage="Error en la descripción"
+      [minlength]="0"
+      [maxlength]="200"
+      [counter]="true"
+      [load]="load">
+    </app-input>
+
+    <!-- Email -->
+    <app-input
+      [form]="form"
+      name="email"
+      type="email"
+      icon="matEmailOutline"
+      label="Email (Opcional)"
+      placeholder="correo@proveedor.com"
+      helpMessage="Email de contacto del proveedor"
+      errorMessage="Ingrese un email válido"
+      [minlength]="0"
+      [maxlength]="100"
+      [load]="load">
+    </app-input>
+
+    <!-- Teléfono -->
+    <app-input
+      [form]="form"
+      name="phone"
+      icon="matAddIcCallOutline"
+      label="Teléfono"
+      placeholder="Teléfono del proveedor"
+      helpMessage="Sólo se aceptan números enteros"
+      errorMessage="Ingrese un teléfono válido"
+      [minlength]="8"
+      [maxlength]="8"
+      [counter]="true"
+      [load]="load">
+    </app-input>
+
+    <!-- Dirección -->
+    <app-input
+      [form]="form"
+      name="address"
+      icon="matAddLocationAltOutline"
+      label="Dirección"
+      placeholder="Dirección del proveedor"
+      helpMessage="Dirección física del proveedor"
+      errorMessage="La dirección es requerida"
+      [minlength]="1"
+      [maxlength]="300"
+      [counter]="true"
+      [load]="load">
+    </app-input>
+  </div>
+
+  <!-- Botones de acción -->
+  <div class="flex justify-center align-middle gap-2 mt-4">
+    <button (click)="close()" [disabled]="load" class="btn-danger h-12 w-48 font-bold">
+      Cancelar
+    </button>
+    <button (click)="ok()" [disabled]="load || form.invalid" class="btn-primary h-12 w-48 font-bold">
+      Guardar y continuar
+    </button>
+  </div>
+</div>

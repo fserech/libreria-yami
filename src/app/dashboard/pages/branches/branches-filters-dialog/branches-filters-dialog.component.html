@@ -1,0 +1,100 @@
+<div class="min-w-[300px] max-w-[500px]">
+  <!-- Header -->
+  <div class="border-b dark:border-slate-800 pb-3 mb-4">
+    <p class="font-bold text-xl text-center">{{ data.title }}</p>
+    <p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-1">
+      Ingrese los criterios de búsqueda deseados
+    </p>
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="form" (ngSubmit)="filter()">
+    <div class="w-full space-y-4 mb-4">
+      <!-- ID Sucursal -->
+      <app-input
+        [form]="form"
+        name="id"
+        icon="bootstrapPostcardFill"
+        label="ID Sucursal"
+        placeholder="Ej: 123"
+        helpMessage="Ingrese el ID numérico de la sucursal"
+        errorMessage="Debe ser un número válido"
+        [counter]="false"
+        [minlength]="1"
+        [maxlength]="20">
+      </app-input>
+
+      <!-- Nombre -->
+      <app-input
+        [form]="form"
+        name="name"
+        icon="matDriveFileRenameOutlineOutline"
+        label="Nombre de Sucursal"
+        placeholder="Ej: Sucursal Centro"
+        helpMessage="Buscar por nombre (mínimo 2 caracteres)"
+        errorMessage="Debe tener entre 2 y 60 caracteres"
+        [counter]="true"
+        [minlength]="2"
+        [maxlength]="60">
+      </app-input>
+
+      <!-- Usuario Responsable (solo admin) -->
+      @if (isAdmin()) {
+        <app-select
+          [form]="form"
+          [load]="load"
+          [options]="users"
+          placeholder="Seleccione usuario"
+          name="idUser"
+          icon="matPersonOutline"
+          label="Usuario responsable"
+          helpMessage="Filtrar por usuario responsable">
+        </app-select>
+      }
+    </div>
+
+    <!-- Info sobre filtros activos -->
+    @if (hasActiveFilters) {
+      <div class="mb-4 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs text-blue-600 dark:text-blue-400">
+        <b>Filtros activos:</b> Se aplicarán los criterios que haya completado
+      </div>
+    }
+
+    <!-- Action Buttons -->
+    <div class="flex justify-center gap-3 pt-3 border-t dark:border-slate-800">
+      <button
+        type="button"
+        (click)="close()"
+        class="btn-secondary h-10 w-32 font-bold text-sm">
+        Cancelar
+      </button>
+
+      @if (hasActiveFilters) {
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="btn-warning h-10 w-32 font-bold text-sm">
+          Limpiar
+        </button>
+      }
+
+      <button
+        type="submit"
+        [disabled]="load || !hasActiveFilters"
+        class="btn-primary h-10 w-32 font-bold text-sm"
+        [class.opacity-50]="!hasActiveFilters"
+        [class.cursor-not-allowed]="!hasActiveFilters">
+        @if (load) {
+          Cargando...
+        } @else {
+          Filtrar
+        }
+      </button>
+    </div>
+  </form>
+
+  <!-- Help text -->
+  <div class="mt-4 p-2 bg-gray-50 dark:bg-slate-950 rounded text-xs text-gray-600 dark:text-gray-400">
+    <b>💡 Consejo:</b> Puede combinar múltiples filtros para una búsqueda más precisa
+  </div>
+</div>

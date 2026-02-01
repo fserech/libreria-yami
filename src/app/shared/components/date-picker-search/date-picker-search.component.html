@@ -1,0 +1,17 @@
+<mat-form-field (click)="picker.open()" class="w-fullp-0 m-0" [floatLabel]="getFloatLabelValue()" color="primary">
+  @if (!getFormControl().value) {
+  <mat-label class="text-gray-500 dark:text-gray-400">{{ placeholder }}</mat-label>
+  }
+  <input
+    matInput
+    readonly
+    [matDatepicker]="picker"
+    (dateChange)="change($event)"
+    [min]="minDate" [max]="maxDate"
+    [formControl]="getFormControl()"/>
+  <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+  <button class="p-0 m-0" mat-icon-button matIconSuffix (click)="clearDate($event)">
+    <ng-icon class="text-slate-500 font-bold dark:text-slate-400" size="20" name="bootstrapXCircle"></ng-icon>
+  </button>
+  <mat-datepicker #picker  disabled="false"></mat-datepicker>
+</mat-form-field>

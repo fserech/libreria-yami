@@ -1,0 +1,508 @@
+<!-- HEADER -->
+<app-header
+  headerTitle="Productos"
+  headerDescription="Gestión de módulo de productos, crear, editar, activar, desactivar y eliminar productos.">
+</app-header>
+
+<div class="p-2 m-2 bg-white rounded dark:bg-slate-900 border dark:border-slate-800">
+
+  <!-- HEADER CON BOTÓN REGRESAR -->
+  <div class="w-full border-b text-lg dark:border-slate-700 mb-4 pb-2 flex justify-between items-center">
+    <div>
+      @if (mode === 'new') {
+        <p class="text-gray-500 dark:text-gray-300 font-bold">Nuevo Producto</p>
+      }
+      @if (mode === 'edit' || mode === 'view') {
+        <p class="text-gray-500 dark:text-gray-300 text-base">
+          <b>ID producto: </b>{{ id }}
+        </p>
+      }
+    </div>
+
+    <button (click)="back()" class="btn-back">
+      <ng-icon class="btn-back-icon" size="20" name="matArrowBackOutline"></ng-icon>
+      <p class="hidden sm:block text-sm font-bold">Regresar</p>
+    </button>
+  </div>
+
+  <!-- TABS DE NAVEGACIÓN -->
+  <div class="border-b border-gray-200 dark:border-slate-700 mb-6">
+    <nav class="flex space-x-4" aria-label="Tabs">
+      <button
+        (click)="switchTab('general')"
+        [class]="activeTab === 'general'
+          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+        class="py-2 px-4 border-b-2 font-medium text-sm transition-colors">
+        <ng-icon name="matInfoOutline" size="18" class="inline mr-2"></ng-icon>
+        Información General
+      </button>
+
+      <button
+        (click)="switchTab('variants')"
+        [class]="activeTab === 'variants'
+          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+        class="py-2 px-4 border-b-2 font-medium text-sm transition-colors"
+        [disabled]="!productForm.get('categoryId')?.value">
+        <ng-icon name="matInventory2Outline" size="18" class="inline mr-2"></ng-icon>
+        Stock y Precios
+        @if (productType === 'variant' && variants.length > 0) {
+          <span class="ml-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+            {{ variants.length }}
+          </span>
+        }
+      </button>
+    </nav>
+  </div>
+
+  <!-- TAB 1: INFORMACIÓN GENERAL -->
+  @if (activeTab === 'general') {
+    <div class="animate-fadeIn">
+
+      <!-- TIPO DE PRODUCTO -->
+      <div class="mb-6 p-4 bg-blue-50 dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-slate-700">
+        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <ng-icon name="matHelpOutline" size="18" class="inline mr-1"></ng-icon>
+          Tipo de Producto
+        </p>
+
+        <div class="flex gap-4">
+          <label class="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="productType"
+              value="simple"
+              [checked]="productType === 'simple'"
+              (change)="changeProductType('simple')"
+              class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <strong>Producto Simple</strong> - Sin variantes (ej: Lápiz HB)
+            </span>
+          </label>
+
+          <label class="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="productType"
+              value="variant"
+              [checked]="productType === 'variant'"
+              (change)="changeProductType('variant')"
+              class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <strong>Producto con Variantes</strong> - Múltiples opciones (ej: Cuadernos)
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- FORMULARIO DE INFORMACIÓN GENERAL -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <!-- NOMBRE BASE DEL PRODUCTO -->
+        <app-input
+          [form]="productForm"
+          name="baseProductName"
+          icon="matDriveFileRenameOutlineOutline"
+          label="Nombre base del producto"
+          placeholder="Ej: CRAYÓN, CUADERNO, REGLA"
+          helpMessage="Nombre genérico del producto (sin marca)"
+          errorMessage="El nombre base es requerido"
+          [minlength]="1"
+          [maxlength]="100"
+          [counter]="true"
+          [load]="load"
+          (changes)="updateProductName()">
+        </app-input>
+
+        <!-- MARCA -->
+        <app-select
+          [form]="productForm"
+          name="brandRef"
+          icon="matFilterBAndWOutline"
+          label="Marca"
+          placeholder="Selecciona una marca"
+          helpMessage="Marca del producto"
+          errorMessage="La marca es requerida"
+          [required]="true"
+          [load]="load"
+          [options]="brandOptions"
+          (changes)="updateProductName()">
+        </app-select>
+
+        <!-- NOMBRE COMPLETO GENERADO -->
+        <div class="col-span-1 sm:col-span-2 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-lg border-2 border-blue-200 dark:border-slate-600">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 mt-1">
+              <ng-icon name="matCheckCircleOutline" size="24" class="text-blue-600 dark:text-blue-400"></ng-icon>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Nombre completo del producto:
+              </p>
+              <p class="text-xl font-bold text-blue-700 dark:text-blue-300 mb-1">
+                {{ getFullProductName() || 'Completa los campos arriba' }}
+              </p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">
+                <ng-icon name="matInfoOutline" size="14" class="inline mr-1"></ng-icon>
+                Este será el nombre que aparecerá en todo el sistema
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CATEGORÍA -->
+        <app-select
+          [form]="productForm"
+          name="categoryId"
+          icon="matCategoryOutline"
+          label="Categoría"
+          placeholder="Selecciona una categoría"
+          helpMessage="Categoría del producto"
+          errorMessage="La categoría es requerida"
+          [required]="true"
+          [load]="load"
+          [options]="categoryOptions"
+          (changes)="onCategoryChange()">
+        </app-select>
+
+        <!-- DESCRIPCIÓN -->
+        <app-input
+          [form]="productForm"
+          name="productDesc"
+          icon="matDescriptionOutline"
+          label="Descripción"
+          placeholder="Descripción detallada del producto"
+          helpMessage="Descripción opcional del producto"
+          errorMessage="La descripción es requerida"
+          [minlength]="1"
+          [maxlength]="255"
+          [counter]="true"
+          [load]="load">
+        </app-input>
+
+        <!-- ESTADO ACTIVO -->
+        <app-toggle
+          class="col-span-1 sm:col-span-2"
+          label="Producto Activo"
+          [form]="productForm"
+          name="active"
+          [load]="load">
+        </app-toggle>
+
+      </div>
+
+      <!-- BOTÓN CONTINUAR -->
+      <div class="mt-6 flex justify-end">
+        <button
+          (click)="switchTab('variants')"
+          [disabled]="productForm.invalid"
+          class="btn-primary h-10 px-6 font-bold">
+          Continuar a Stock y Precios
+          <ng-icon name="matArrowForwardOutline" size="18" class="inline ml-2"></ng-icon>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- TAB 2: STOCK Y PRECIOS -->
+  @if (activeTab === 'variants') {
+    <div class="animate-fadeIn">
+
+      <!-- PRODUCTO SIMPLE -->
+      @if (productType === 'simple') {
+        <div class="mb-4">
+          <p class="text-gray-600 dark:text-gray-300 font-semibold mb-4">
+            <ng-icon name="matInventoryOutline" size="20" class="inline mr-2"></ng-icon>
+            Información de Stock y Precios
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- SKU con generador -->
+            <div class="relative">
+              <app-input
+                [form]="stockForm"
+                name="sku"
+                icon="matQrCodeOutline"
+                label="SKU (Código único)"
+                placeholder="Ej: TUC-CRA-123456"
+                helpMessage="Código único del producto"
+                errorMessage="El SKU es requerido"
+                [minlength]="1"
+                [maxlength]="50"
+                [load]="load">
+              </app-input>
+              <button
+                type="button"
+                (click)="generateSKU()"
+                class="absolute right-2 top-9 text-blue-600 hover:text-blue-800 text-xs font-semibold">
+                Generar
+              </button>
+            </div>
+
+            <!-- STOCK INICIAL -->
+            <app-input
+              [form]="stockForm"
+              name="currentStock"
+              icon="matInventory2Outline"
+              label="Stock inicial"
+              placeholder="0"
+              helpMessage="Cantidad inicial en inventario"
+              errorMessage="El stock inicial es requerido"
+              [load]="load">
+            </app-input>
+
+            <!-- STOCK MÍNIMO -->
+            <app-input
+              [form]="stockForm"
+              name="minStock"
+              icon="matStackedBarChartOutline"
+              label="Stock mínimo"
+              placeholder="0"
+              helpMessage="Alerta cuando llegue a este nivel"
+              errorMessage="El stock mínimo es requerido"
+              [load]="load"
+              (changes)="validateStockMinMax()">
+            </app-input>
+
+            <!-- STOCK MÁXIMO -->
+            <app-input
+              [form]="stockForm"
+              name="maxStock"
+              icon="matStackedBarChartOutline"
+              label="Stock máximo"
+              placeholder="100"
+              helpMessage="Capacidad máxima de almacenamiento"
+              errorMessage="El stock máximo es requerido"
+              [load]="load"
+              (changes)="validateStockMinMax()">
+            </app-input>
+
+          </div>
+
+          <!-- ⭐ SECCIÓN: PRECIOS POR PROVEEDOR -->
+          <div class="mt-6 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-4">
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <ng-icon name="matAttachMoneyOutline" size="18" class="inline mr-1"></ng-icon>
+                Precios por Proveedor
+                <span class="text-xs text-red-600 dark:text-red-400 ml-2">* Requerido (mínimo 1)</span>
+              </p>
+              <button
+                type="button"
+                (click)="addSupplierPrice()"
+                class="text-sm text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1">
+                <ng-icon name="matAddOutline" size="16"></ng-icon>
+                Agregar Proveedor
+              </button>
+            </div>
+
+            <!-- Mensaje informativo -->
+            <div class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+              <p class="text-xs text-blue-800 dark:text-blue-300">
+                <ng-icon name="matInfoOutline" size="14" class="inline mr-1"></ng-icon>
+                <strong>Importante:</strong> Puedes agregar múltiples proveedores con diferentes precios.
+                El sistema automáticamente seleccionará el mejor precio para tus cálculos.
+              </p>
+            </div>
+
+            <!-- Lista de precios por proveedor -->
+            @if (supplierPrices.length === 0) {
+              <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
+                <p class="text-sm text-yellow-800 dark:text-yellow-300 font-semibold mb-2">
+                  ⚠️ Debes agregar al menos un proveedor con precio
+                </p>
+                <p class="text-xs text-yellow-700 dark:text-yellow-400">
+                  Haz clic en "Agregar Proveedor" para comenzar. Puedes agregar múltiples proveedores con diferentes precios.
+                </p>
+              </div>
+            }
+
+            @for (supplierPrice of supplierPrices; track supplierPrice.supplierId || $index) {
+              <div class="mb-3 p-3 bg-white dark:bg-slate-900 rounded border border-gray-200 dark:border-slate-600">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                  <!-- Selector de Proveedor -->
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Proveedor *
+                    </label>
+                    <select
+                      [(ngModel)]="supplierPrice.supplierId"
+                      (ngModelChange)="onSupplierChange(supplierPrice)"
+                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-gray-200"
+                      [class.border-red-500]="supplierPrice.supplierId === 0">
+                      <option [value]="0">Selecciona un proveedor</option>
+                      @for (supplier of supplierOptions; track supplier.value) {
+                        <option
+                          [value]="supplier.value"
+                          [disabled]="isSupplierSelected(supplier.value, supplierPrice)">
+                          {{ supplier.label }}
+                          @if (isSupplierSelected(supplier.value, supplierPrice)) {
+                            (Ya agregado)
+                          }
+                        </option>
+                      }
+                    </select>
+                    @if (supplierPrice.supplierId === 0) {
+                      <p class="text-xs text-red-600 dark:text-red-400 mt-1">Selecciona un proveedor</p>
+                    }
+                  </div>
+
+                  <!-- Precio de Compra -->
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Precio de Compra *
+                    </label>
+                    <input
+                      type="number"
+                      [(ngModel)]="supplierPrice.costPrice"
+                      (ngModelChange)="calculateSuggestedPrice()"
+                      step="0.01"
+                      min="0.01"
+                      placeholder="0.00"
+                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-gray-200"
+                      [class.border-red-500]="!supplierPrice.costPrice || supplierPrice.costPrice <= 0">
+                    @if (!supplierPrice.costPrice || supplierPrice.costPrice <= 0) {
+                      <p class="text-xs text-red-600 dark:text-red-400 mt-1">Ingresa el precio de este proveedor</p>
+                    }
+                  </div>
+
+                  <!-- Acciones -->
+                  <div class="flex items-end justify-end">
+                    <button
+                      type="button"
+                      (click)="removeSupplierPrice(supplierPrice)"
+                      class="px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                      Eliminar
+                    </button>
+                  </div>
+
+                </div>
+
+                <!-- Info adicional -->
+                @if (supplierPrice.lastPurchaseDate) {
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <ng-icon name="matHistoryOutline" size="14" class="inline mr-1"></ng-icon>
+                    Última compra: {{ supplierPrice.lastPurchaseDate | date }} - Q{{ supplierPrice.lastPurchasePrice }}
+                  </p>
+                }
+              </div>
+            }
+
+            <!-- Info del mejor precio -->
+            @if (getBestSupplierPrice()) {
+              <div class="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                <p class="text-sm text-green-800 dark:text-green-300 font-semibold mb-2">
+                  <ng-icon name="matCheckCircleOutline" size="16" class="inline mr-1"></ng-icon>
+                  Mejor precio encontrado
+                </p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span class="text-green-700 dark:text-green-400">Proveedor:</span>
+                    <span class="ml-2 font-bold">{{ getBestSupplierPrice()?.supplierName }}</span>
+                  </div>
+                  <div>
+                    <span class="text-green-700 dark:text-green-400">Precio:</span>
+                    <span class="ml-2 font-bold">Q{{ getBestSupplierPrice()?.costPrice?.toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- PRECIO DE VENTA -->
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <app-input
+                [form]="stockForm"
+                name="salePrice"
+                icon="matAttachMoneyOutline"
+                label="Precio de venta"
+                placeholder="0.00"
+                helpMessage="Precio al que vendes el producto"
+                errorMessage="El precio de venta es requerido y debe ser mayor a 0"
+                [minlength]="1"
+                [maxlength]="10"
+                [load]="load">
+              </app-input>
+
+              @if (stockForm.get('salePrice')?.value && stockForm.get('salePrice')?.valid) {
+                <p class="text-xs text-green-600 dark:text-green-400 mt-1 ml-1">
+                  ✓ Precio válido
+                </p>
+              }
+            </div>
+
+            <!-- INFO: MARGEN DE GANANCIA CALCULADO -->
+            @if (getBestCostPrice() > 0 && stockForm.get('salePrice')?.value > 0) {
+              <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                <div class="flex-1">
+                  <p class="text-sm text-blue-800 dark:text-blue-300 font-semibold mb-1">
+                    <ng-icon name="matTrendingUpOutline" size="16" class="inline mr-1"></ng-icon>
+                    Margen de ganancia
+                  </p>
+                  <p class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                    {{ calculateCurrentMargin() }}%
+                  </p>
+                  <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                    Ganancia: Q{{ calculateProfit().toFixed(2) }} por unidad
+                  </p>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- INFO ADICIONAL -->
+          <div class="mt-4 p-4 bg-blue-50 dark:bg-slate-800 rounded border border-blue-200 dark:border-slate-700">
+            <p class="text-sm text-blue-800 dark:text-blue-300">
+              <ng-icon name="matInfoOutline" size="16" class="inline mr-1"></ng-icon>
+              <b>Nota importante:</b> Los precios de compra se actualizarán automáticamente cuando registres nuevas compras.
+              El sistema usará el precio del proveedor seleccionado en cada transacción.
+            </p>
+          </div>
+        </div>
+      }
+
+      <!-- PRODUCTO CON VARIANTES - COMPONENTE -->
+      @if (productType === 'variant') {
+        <app-product-variant
+          [categoryId]="getCategoryIdAsNumber()"
+          [brandValue]="productForm.get('brandRef')?.value || ''"
+          [brandOptions]="brandOptions"
+          [supplierOptions]="supplierOptions"
+          [initialVariants]="variants"
+          [productName]="getFullProductName()"
+          [load]="load"
+          (variantsChange)="onVariantsChange($event)">
+        </app-product-variant>
+      }
+
+    </div>
+  }
+
+  <!-- BOTÓN GUARDAR FINAL -->
+  <div class="w-full border-t dark:border-slate-700 pt-4 mt-6 flex justify-between items-center gap-3">
+
+    <div class="flex gap-3">
+
+      @if (!load) {
+        <button
+          (click)="submit()"
+          [disabled]="!canSubmit()"
+          [class.opacity-50]="!canSubmit()"
+          [class.cursor-not-allowed]="!canSubmit()"
+           class="btn-primary h-10 w-36 font-bold">
+          <ng-icon name="matSaveOutline" size="18" class="inline mr-2"></ng-icon>
+          Guardar
+        </button>
+      } @else {
+        <button class="btn-primary h-10 px-8 font-bold animate-pulse">
+          Guardando...
+        </button>
+      }
+    </div>
+  </div>
+
+</div>

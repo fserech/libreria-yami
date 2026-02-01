@@ -1,0 +1,48 @@
+<app-header
+  headerTitle="Categorías y Marcas"
+  headerDescription="Gestión de clasificaciones de productos (Categorías y Marcas).">
+</app-header>
+<div class="p-2 m-2">
+  <!-- Tabs -->
+  <div class="flex gap-2 mb-4">
+ <button
+  [routerLink]="['/dashboard/categories']"
+  [class]="activeTab === 'categories'
+    ? 'flex-1 py-3 px-6 rounded-lg bg-blue-400'
+    : 'flex-1 py-3 px-6 rounded-lg bg-white dark:bg-slate-900 text-gray-600'">
+
+  <div class="flex text-center justify-center align-middle">
+    <p
+      class="text-sm md:text-base align-middle"
+      [class.text-white]="activeTab === 'categories'"
+      [class.font-bold]="activeTab === 'categories'">
+      Categorías
+    </p>
+  </div>
+
+</button>
+
+<button
+  [routerLink]="['/dashboard/categories/brands']"
+  [class]="activeTab === 'brands'
+    ? 'flex-1 py-3 px-6 rounded-lg bg-blue-400'
+    : 'flex-1 py-3 px-6 rounded-lg bg-white dark:bg-slate-900 text-gray-600'">
+
+  <div class="flex text-center justify-center align-middle">
+            <p
+      class="text-sm md:text-base align-middle"
+      [class.text-white]="activeTab === 'brands'"
+      [class.font-bold]="activeTab === 'brands'">
+      Marcas
+    </p>
+          </div>
+
+</button>
+
+
+
+  </div>
+
+  <!-- Aquí Angular cargará la lista, el formulario, edición, etc -->
+  <router-outlet></router-outlet>
+</div>
