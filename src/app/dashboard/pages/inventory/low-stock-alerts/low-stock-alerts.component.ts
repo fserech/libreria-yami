@@ -305,7 +305,7 @@ export class LowStockAlertsComponent implements OnInit, OnDestroy {
                      (now - LowStockAlertsComponent.cache.timestamp) < LowStockAlertsComponent.CACHE_TTL;
 
     if (useCache && LowStockAlertsComponent.cache) {
-      console.log('✅ Usando datos en cache');
+
       this.alerts = LowStockAlertsComponent.cache.alerts;
       this.allStock = LowStockAlertsComponent.cache.allStock;
 
@@ -330,12 +330,6 @@ export class LowStockAlertsComponent implements OnInit, OnDestroy {
       next: (results) => {
         this.alerts = results.alerts.filter(p => this.hasLowStock(p));
         this.allStock = results.stock;
-
-        console.log('📊 Datos cargados:', {
-          alertas: this.alerts.length,
-          stock: this.allStock.length,
-          criticas: this.alerts.filter(a => a.currentStock === 0).length
-        });
 
         // ⭐ Guardar en cache
         LowStockAlertsComponent.cache = {
@@ -483,10 +477,7 @@ export class LowStockAlertsComponent implements OnInit, OnDestroy {
         next: (products: ProductStock[]) => {
           this.alerts = products.filter(p => this.hasLowStock(p));
 
-          console.log('📊 Alertas recargadas:', {
-            backend: products.length,
-            filtradas: this.alerts.length
-          });
+
 
           this.syncBranchesFromData();
           this.applyFilters();
@@ -662,7 +653,7 @@ export class LowStockAlertsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('📊 Exportando a Excel...');
+
     this.loading = true;
 
     const exportFilter: any = {};
@@ -691,7 +682,7 @@ export class LowStockAlertsComponent implements OnInit, OnDestroy {
           const fileName = `${viewType}${branchName}_${fecha}.xlsx`;
 
           saveAs(blob, fileName);
-          console.log('✅ Archivo exportado:', fileName);
+
           this.loading = false;
         },
         error: (error) => {

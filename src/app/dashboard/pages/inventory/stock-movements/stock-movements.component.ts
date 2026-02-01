@@ -216,10 +216,6 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
       startDate: startDateStr,
       endDate: endDateStr
     };
-
-    console.log('🔍 Filtrando período:', this.getPeriodLabel(period));
-    console.log('📅 Desde:', startDateStr, 'Hasta:', endDateStr);
-
     this.loadMovements();
   }
 
@@ -270,16 +266,13 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
   loadMovements(): void {
     this.loading = true;
 
-    console.log('📡 Cargando movimientos...');
-    console.log('📅 Período:', this.getPeriodLabel(this.selectedPeriod));
-
     // ⭐ Verificar cache
     const now = Date.now();
     const useCache = StockMovementsComponent.cache &&
                      (now - StockMovementsComponent.cache.timestamp) < StockMovementsComponent.CACHE_TTL;
 
     if (useCache && StockMovementsComponent.cache) {
-      console.log('✅ Usando datos en cache');
+
       this.processMovements(StockMovementsComponent.cache.movements);
       return;
     }
@@ -299,9 +292,6 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          console.log('✅ Respuesta del backend:', response.data.length, 'movimientos');
-          console.log('📦 Productos simples:', response.data.filter(m => !m.variantId).length);
-          console.log('🎨 Productos con variantes:', response.data.filter(m => m.variantId).length);
 
           // ⭐ Guardar en cache
           StockMovementsComponent.cache = {
@@ -338,16 +328,10 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
 
     this.loading = false;
 
-    console.log('✅ Procesamiento completo:');
-    console.log('   Total en BD:', allMovements.length);
-    console.log('   Después de filtrar:', filtered.length);
-    console.log('   En página actual:', this.filteredMovements.length);
-    console.log('   Variantes en página:', this.filteredMovements.filter(m => m.variantId).length);
   }
 
   applyFilter(): void {
     this.currentPage = 1;
-    console.log('🔍 Aplicando filtros adicionales');
 
     // ⭐ Si hay cache, usar procesamiento local
     if (StockMovementsComponent.cache) {
@@ -368,8 +352,7 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
       endDate: currentEndDate
     };
 
-    console.log('🧹 Filtros limpiados');
-    this.applyFilter();
+       this.applyFilter();
   }
 
   viewMovementDetail(movement: StockMovement): void {
@@ -453,7 +436,7 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('📊 Exportando a Excel...');
+
     this.loading = true;
 
     this.inventoryService.exportMovements(this.filter)
@@ -465,11 +448,11 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
           const fileName = `Movimientos_Inventario_${period}_${fecha}.xlsx`;
 
           saveAs(blob, fileName);
-          console.log('✅ Archivo exportado:', fileName);
+
           this.loading = false;
         },
         error: (error) => {
-          console.error('❌ Error exportando:', error);
+
           this.loading = false;
         }
       });

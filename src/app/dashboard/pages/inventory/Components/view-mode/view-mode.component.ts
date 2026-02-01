@@ -55,14 +55,8 @@ export class ViewModeComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['items'] && this.items.length > 0) {
-      console.log('🔍 ViewMode recibió items:', this.items.length);
-      console.log('📊 Primer item:', {
-        sku: this.items[0]?.sku,
-        current: this.items[0]?.currentStock,
-        min: this.items[0]?.minStock,
-        max: this.items[0]?.maxStock,
-        percentage: this.getStockPercentage(this.items[0])
-      });
+
+
     }
   }
 
