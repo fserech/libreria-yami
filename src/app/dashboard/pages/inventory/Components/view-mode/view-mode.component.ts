@@ -189,17 +189,7 @@ export class ViewModeComponent implements OnChanges {
 
     // Debug solo para el primer item
     if (item.id === this.items[0]?.id) {
-      console.log('📊 Cálculo de porcentaje:', {
-        sku: item.sku,
-        currentStock,
-        minStock,
-        maxStock,
-        isBelowMin: currentStock < minStock,
-        range,
-        current,
-        rawPercentage: percentage,
-        finalPercentage
-      });
+
     }
 
     return finalPercentage;
