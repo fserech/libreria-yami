@@ -50,7 +50,10 @@ import { environment } from '../../../../../environments/environment';
 import BaseForm from '../../../../shared/classes/base-form';
 import { FormComponent } from '../../../../shared/guards/pending-changes.guard';
 import { ProductVariantComponent } from '../Components/product-variant/product-variant.component';
+<<<<<<< HEAD
 import { SkuLabelComponent, SkuLabelItem } from '../Components/sku-label/sku-label.component';
+=======
+>>>>>>> bc75a0885a882c1e3b4dc438653b256f2e57cfa4
 
 @Component({
   selector: 'app-products-form',
@@ -65,9 +68,13 @@ import { SkuLabelComponent, SkuLabelItem } from '../Components/sku-label/sku-lab
     CheckboxComponent,
     ToggleComponent,
     NgIconComponent,
+<<<<<<< HEAD
     ProductVariantComponent,
     SkuLabelComponent,
 
+=======
+    ProductVariantComponent
+>>>>>>> bc75a0885a882c1e3b4dc438653b256f2e57cfa4
   ],
   templateUrl: './products-form.component.html',
   styleUrl: './products-form.component.scss',
@@ -576,6 +583,7 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
     }
   }
 
+<<<<<<< HEAD
   get skuLabels(): SkuLabelItem[] {
   if (this.productType === 'simple') {
     const skuVal = this.stockForm.get('sku')?.value;
@@ -600,6 +608,8 @@ export default class ProductsFormComponent extends BaseForm implements OnInit, F
   });
 }
 
+=======
+>>>>>>> bc75a0885a882c1e3b4dc438653b256f2e57cfa4
   async submit() {
     if (this.productForm.invalid) {
       const invalidFields: string[] = [];
