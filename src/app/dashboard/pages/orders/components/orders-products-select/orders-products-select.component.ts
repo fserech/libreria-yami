@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -22,17 +22,18 @@ import { SelectProductQuantityDialogComponent } from '../select-product-quantity
 import { OrdersProductsSelectListDialogComponent } from '../orders-products-select-list-dialog/orders-products-select-list-dialog.component';
 import {
   getProductCostPrice,
-  getProductAverageCostPrice,  // 🆕 NUEVO
-  calculateSaleProfit              // 🆕 NUEVO
+  getProductAverageCostPrice,
+  calculateSaleProfit
 } from '../../../../../shared/utils/product-utils';
 import { ProductOrderSelect } from '../../../../../shared/interfaces/order';
+import { ScannerComponent } from '../scanner/scanner.component';
+import { ScannedProductResult } from '../../../../../shared/services/Scanner.service';
+
 
 interface ProductOrder {
   product: Product;
   quantity: number;
   variantId?: number | null;
-
-  // 🆕 NUEVO: Capturar el costo promedio AL MOMENTO de agregar a la orden
   costPriceAtSale?: number;
 }
 
@@ -42,7 +43,8 @@ interface ProductOrder {
   imports: [
     CommonModule,
     NgIconComponent,
-    FormsModule
+    FormsModule,
+    ScannerComponent  // 🆕 Importar el componente del escáner
   ],
   templateUrl: './orders-products-select.component.html',
   styleUrl: './orders-products-select.component.scss',
@@ -56,7 +58,7 @@ interface ProductOrder {
     matExpandMoreOutline,
   })]
 })
-export class OrdersProductsSelectComponent implements OnInit {
+export class OrdersProductsSelectComponent implements OnInit, OnDestroy {
   @Input() set existingProducts(products: ProductOrderSelect[]) {
     if (products && products.length > 0) {
       console.log('🔄 Recibiendo productos existentes:', products);
@@ -78,8 +80,8 @@ export class OrdersProductsSelectComponent implements OnInit {
 
   // Hacer disponibles las funciones en el template
   getProductCostPrice = getProductCostPrice;
-  getProductAverageCostPrice = getProductAverageCostPrice;  // 🆕 NUEVO
-  calculateSaleProfit = calculateSaleProfit;                // 🆕 NUEVO
+  getProductAverageCostPrice = getProductAverageCostPrice;
+  calculateSaleProfit = calculateSaleProfit;
 
   constructor(
     private crud: CrudService,
@@ -90,6 +92,14 @@ export class OrdersProductsSelectComponent implements OnInit {
 
   async ngOnInit() {
     await this.loadProducts();
+  }
+
+  ngOnDestroy() {}
+
+  // 🆕 Handler que se invoca cuando el ScannerComponent emite un producto escaneado
+  onProductScanned(result: ScannedProductResult) {
+    if (!result || !result.product) return;
+    this.addProductToOrder(result.product, 1, result.variantId);
   }
 
   async loadProducts() {
@@ -119,8 +129,6 @@ export class OrdersProductsSelectComponent implements OnInit {
         product: item.product,
         quantity: item.quantity,
         variantId: item.variantId || null,
-
-        // 🆕 NUEVO: Cargar el costo congelado si existe
         costPriceAtSale: item.costPriceAtSale || getProductAverageCostPrice(item.product)
       }));
 
@@ -174,8 +182,6 @@ export class OrdersProductsSelectComponent implements OnInit {
       costPrice: getProductCostPrice(variant),
       currentStock: variant.currentStock,
       hasVariants: false,
-
-      // 🆕 NUEVO: Pasar el costo promedio si existe
       averageCostPrice: (variant as any).averageCostPrice
     };
 
@@ -200,11 +206,7 @@ export class OrdersProductsSelectComponent implements OnInit {
     });
   }
 
-  /**
-   * 🆕 MODIFICADO: Ahora captura el costo promedio al momento de agregar
-   */
   addProductToOrder(product: Product, quantity: number, variantId?: number) {
-    // 🆕 CAPTURAR el costo promedio AHORA (antes de cualquier cambio futuro)
     const costPriceAtSale = getProductAverageCostPrice(product);
 
     const existingProduct = this.selectedProducts.find(p =>
@@ -215,20 +217,17 @@ export class OrdersProductsSelectComponent implements OnInit {
     if (existingProduct) {
       existingProduct.quantity += quantity;
       existingProduct.product = product;
-      // 🆕 MANTENER el costo original, NO actualizarlo
-      // existingProduct.costPriceAtSale ya tiene el valor correcto
     } else {
       this.selectedProducts.push({
         product,
         quantity,
         variantId: variantId || null,
-        costPriceAtSale  // 🆕 GUARDAR el costo promedio actual
+        costPriceAtSale
       });
     }
 
     this.emitChanges();
 
-    // 🆕 OPCIONAL: Mostrar información de ganancia en el toast
     const profit = calculateSaleProfit(product, quantity, product.salePrice || 0);
     this.toast.success(
       `${product.productName} agregado • Ganancia: Q${profit.profit.toFixed(2)} (${profit.margin.toFixed(1)}%)`
@@ -240,16 +239,11 @@ export class OrdersProductsSelectComponent implements OnInit {
     this.emitChanges();
   }
 
-  /**
-   * 🆕 MODIFICADO: Incluir el costo congelado al emitir
-   */
   private emitChanges() {
     const productsSelect: ProductOrderSelect[] = this.selectedProducts.map(item => ({
       product: item.product,
       quantity: item.quantity,
       variantId: item.variantId || null,
-
-      // 🆕 NUEVO: Incluir el costo promedio congelado
       costPriceAtSale: item.costPriceAtSale || getProductAverageCostPrice(item.product)
     }));
 
@@ -266,7 +260,7 @@ export class OrdersProductsSelectComponent implements OnInit {
       product: item.product,
       quantity: item.quantity,
       variantId: item.variantId || null,
-      costPriceAtSale: item.costPriceAtSale  // 🆕 INCLUIR
+      costPriceAtSale: item.costPriceAtSale
     }));
 
     const dialogRef = this.dialog.open(OrdersProductsSelectListDialogComponent, {
@@ -288,7 +282,7 @@ export class OrdersProductsSelectComponent implements OnInit {
           product: item.product,
           quantity: item.quantity,
           variantId: item.variantId || null,
-          costPriceAtSale: item.costPriceAtSale  // 🆕 PRESERVAR
+          costPriceAtSale: item.costPriceAtSale
         }));
         this.emitChanges();
         this.toast.success('Lista de productos actualizada');
@@ -310,8 +304,6 @@ export class OrdersProductsSelectComponent implements OnInit {
     return `Q${minPrice.toFixed(2)} - Q${maxPrice.toFixed(2)}`;
   }
 
-  // ==================== FUNCIONES PARA PRODUCTOS SIMPLES ====================
-
   getStockStatus(product: Product): string {
     const stock = product.currentStock || 0;
     const minStock = product.minStock || 0;
@@ -329,8 +321,6 @@ export class OrdersProductsSelectComponent implements OnInit {
     if (stock <= minStock) return 'text-orange-600 dark:text-orange-400';
     return 'text-green-600 dark:text-green-400';
   }
-
-  // ==================== FUNCIONES PARA VARIANTES ====================
 
   getVariantStockStatus(variant: ProductVariant): string {
     const stock = variant.currentStock || 0;

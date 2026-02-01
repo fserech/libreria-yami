@@ -1,0 +1,107 @@
+<!-- INDICADOR DE ESTADO DEL ESCÁNER -->
+<div class="sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-900
+            p-3 rounded-lg border-2 z-20 transition-all duration-300"
+     [ngClass]="{
+       'border-gray-300 dark:border-slate-600': scannerStatus === 'idle',
+       'border-blue-500 dark:border-blue-400 animate-pulse': scannerStatus === 'scanning',
+       'border-green-500 dark:border-green-400': scannerStatus === 'success',
+       'border-red-500 dark:border-red-400': scannerStatus === 'error'
+     }">
+  <div class="flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3 flex-1">
+      <div class="relative">
+        <ng-icon
+          name="matQrCodeScannerOutline"
+          size="28"
+          class="transition-all duration-300"
+          [ngClass]="{
+            'text-gray-600 dark:text-gray-400': scannerStatus === 'idle',
+            'text-blue-600 dark:text-blue-400': scannerStatus === 'scanning',
+            'text-green-600 dark:text-green-400': scannerStatus === 'success',
+            'text-red-600 dark:text-red-400': scannerStatus === 'error'
+          }">
+        </ng-icon>
+
+        <!-- Indicador de estado pulsante -->
+        @if (scannerEnabled) {
+          <span class="absolute -top-1 -right-1 flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                  [ngClass]="{
+                    'bg-gray-400': scannerStatus === 'idle',
+                    'bg-blue-500': scannerStatus === 'scanning',
+                    'bg-green-500': scannerStatus === 'success',
+                    'bg-red-500': scannerStatus === 'error'
+                  }"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3"
+                  [ngClass]="{
+                    'bg-gray-500': scannerStatus === 'idle',
+                    'bg-blue-600': scannerStatus === 'scanning',
+                    'bg-green-600': scannerStatus === 'success',
+                    'bg-red-600': scannerStatus === 'error'
+                  }"></span>
+          </span>
+        }
+      </div>
+
+      <div class="flex-1">
+        <div class="flex items-center gap-2">
+          <h3 class="font-bold text-gray-800 dark:text-gray-200">
+            Lector de Códigos
+          </h3>
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                [ngClass]="{
+                  'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300': !scannerEnabled,
+                  'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300': scannerEnabled && scannerStatus === 'idle',
+                  'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300': scannerStatus === 'scanning',
+                  'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300': scannerStatus === 'success',
+                  'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300': scannerStatus === 'error'
+                }">
+            @if (!scannerEnabled) {
+              Desactivado
+            } @else if (scannerStatus === 'idle') {
+              Listo
+            } @else if (scannerStatus === 'scanning') {
+              Escaneando...
+            } @else if (scannerStatus === 'success') {
+              ✓ Agregado
+            } @else if (scannerStatus === 'error') {
+              ✗ Error
+            }
+          </span>
+        </div>
+
+        <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+          @if (!scannerEnabled) {
+            Presiona el botón para activar el escáner
+          } @else if (scannerStatus === 'idle') {
+            Escanea un código de barras para agregar productos
+          } @else if (scannerStatus === 'scanning') {
+            Leyendo código...
+          } @else if (scannerStatus === 'success' && lastScannedSku) {
+            SKU: {{ lastScannedSku }}
+          } @else if (scannerStatus === 'error' && lastScannedSku) {
+            SKU no encontrado: {{ lastScannedSku }}
+          }
+        </p>
+      </div>
+    </div>
+
+    <!-- Toggle del escáner -->
+    <button
+      (click)="toggleScanner()"
+      class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 whitespace-nowrap
+             flex items-center gap-2 shadow-md hover:shadow-lg"
+      [ngClass]="{
+        'bg-green-600 hover:bg-green-700 text-white': !scannerEnabled,
+        'bg-red-600 hover:bg-red-700 text-white': scannerEnabled
+      }">
+      @if (scannerEnabled) {
+        <ng-icon name="matCancelOutline" size="18"></ng-icon>
+        Desactivar
+      } @else {
+        <ng-icon name="matCheckCircleOutline" size="18"></ng-icon>
+        Activar
+      }
+    </button>
+  </div>
+</div>

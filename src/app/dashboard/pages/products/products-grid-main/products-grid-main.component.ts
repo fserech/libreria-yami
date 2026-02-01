@@ -67,7 +67,7 @@ import { SkuLabelComponent, SkuLabelItem } from '../Components/sku-label/sku-lab
       matKeyboardArrowDownOutline,
       matKeyboardArrowUpOutline,
       matPrintOutline,
-      matCloseOutline
+      matCloseOutline,bootstrapChevronLeft,bootstrapChevronRight,bootstrapChevronBarLeft,bootstrapChevronBarRight
     })
   ]
 })

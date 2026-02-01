@@ -1,7 +1,13 @@
 <div class="flex flex-col space-y-4">
 
+  <!-- 🆕 COMPONENTE DEL ESCÁNER: solo se invoca aquí -->
+  <app-scanner
+    [products]="products"
+    (productScanned)="onProductScanned($event)">
+  </app-scanner>
+
   <!-- BUSCADOR -->
-  <div class="sticky top-0 bg-white dark:bg-slate-900 pb-3 border-b dark:border-slate-700 z-10">
+  <div class="sticky top-24 bg-white dark:bg-slate-900 pb-3 border-b dark:border-slate-700 z-10">
     <div class="flex gap-2">
       <div class="flex-1 relative">
         <input
