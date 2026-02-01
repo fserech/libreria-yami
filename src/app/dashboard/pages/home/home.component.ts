@@ -178,7 +178,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       if (useCache && HomeComponent.cache) {
         // Usar cache existente
         ({ products, categories, clients, orders, ordersWithProducts } = HomeComponent.cache);
-        console.log('✅ Usando datos en cache');
+
       } else {
         // 🚀 CARGAR TODO EN PARALELO
         const userData = this.auth.getUserData();
@@ -206,7 +206,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           timestamp: now
         };
 
-        console.log('✅ Datos cargados y guardados en cache');
+
       }
 
       // 🚀 Pre-construir mapa de productos
@@ -221,7 +221,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       this.updateKPIs(dashboardData, orders);
 
       // ⭐⭐⭐ CRÍTICO: Usar ordersWithProducts para calcular top productos ⭐⭐⭐
-      console.log('🎯 Calculando top productos con', ordersWithProducts.length, 'órdenes enriquecidas');
+
       this.calculateTopProductsFromOrders(ordersWithProducts, products);
 
       // 📊 Actualizar gráficos
@@ -240,10 +240,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       const products = await firstValueFrom(
         this.http.get<Product[]>(`${environment.apiUrl}/api/v1/products`)
       );
-      console.log('✅ Productos cargados:', products.length);
+
       return products;
     } catch (error) {
-      console.error('❌ Error cargando productos:', error);
+
       return [];
     }
   }
@@ -254,7 +254,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       const categories = await firstValueFrom(
         this.http.get<Category[]>(`${environment.apiUrl}/api/v1/categories`)
       );
-      console.log('✅ Categorías cargadas:', categories.length);
+
       return categories;
     } catch (error) {
       console.error('❌ Error cargando categorías:', error);
@@ -268,7 +268,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       const clients = await firstValueFrom(
         this.http.get<Client[]>(`${environment.apiUrl}/api/v1/clients`)
       );
-      console.log('✅ Clientes cargados:', clients.length);
+
       return clients;
     } catch (error) {
       console.error('❌ Error cargando clientes:', error);
@@ -298,7 +298,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       const response: any = await this.crud.getPage('desc', 'dateCreated', 1000, 1, filter);
       const orders: Order[] = response?.content || [];
 
-      console.log('📦 Órdenes base cargadas:', orders.length);
+
 
       if (orders.length === 0) {
         console.warn('⚠️ No se encontraron órdenes');
@@ -309,9 +309,9 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       const firstOrder = orders[0];
       const hasProducts = firstOrder.products && Array.isArray(firstOrder.products) && firstOrder.products.length > 0;
 
-      console.log('🔍 Primera orden tiene productos?', hasProducts);
+
       if (hasProducts) {
-        console.log('🔍 Ejemplo de productos en primera orden:', firstOrder.products.slice(0, 2));
+
       }
 
       let ordersWithProducts: Order[] = orders;
@@ -322,7 +322,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
         // Limitar a las 100 órdenes más recientes para evitar sobrecarga
         const ordersToEnrich = orders.slice(0, 100);
-        console.log(`🔄 Enriqueciendo ${ordersToEnrich.length} órdenes con sus productos...`);
+
 
         // Cargar detalles en lotes de 10 para evitar sobrecarga
         const batchSize = 10;
@@ -334,7 +334,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           const batchPromises = batch.map(order =>
             firstValueFrom(this.crud.getId(order.id!))
               .then(detailedOrder => {
-                console.log(`✅ Orden ${order.id} enriquecida con ${detailedOrder.products?.length || 0} productos`);
+
                 return detailedOrder;
               })
               .catch(err => {
@@ -346,16 +346,14 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           const batchResults = await Promise.all(batchPromises);
           enrichedOrders.push(...batchResults);
 
-          console.log(`📊 Progreso: ${Math.min(i + batchSize, ordersToEnrich.length)}/${ordersToEnrich.length} órdenes procesadas`);
+
         }
 
         // Combinar órdenes enriquecidas con el resto sin detalles
         ordersWithProducts = [...enrichedOrders, ...orders.slice(100)];
 
-        console.log('✅ Órdenes enriquecidas:', enrichedOrders.length);
-        console.log('📦 Total órdenes con productos disponibles:', ordersWithProducts.length);
       } else {
-        console.log('✅ Las órdenes YA tienen productos, no es necesario cargar detalles');
+
       }
 
       return { orders, ordersWithProducts };
@@ -370,7 +368,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private buildProductsMap(products: Product[]) {
     this.productsMap.clear();
     products.forEach(p => this.productsMap.set(p.id, p));
-    console.log('🗺️ Mapa de productos construido:', this.productsMap.size);
+
   }
 
   // 📊 Refrescar gráficos con verificación de existencia
@@ -378,14 +376,14 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     // ⭐ Usar setTimeout para asegurar que los gráficos estén listos
     setTimeout(() => {
       if (this.pieChart && products && categories) {
-        console.log('📊 Actualizando pie chart con', products.length, 'productos y', categories.length, 'categorías');
+
         this.updatePieChartWithRealData(products, categories);
       } else if (!this.pieChart) {
         console.warn('⚠️ Pie chart aún no está inicializado');
       }
 
       if (this.lineChart && orders) {
-        console.log('📈 Actualizando line chart con', orders.length, 'órdenes');
+
         this.updateLineChartWithRealData(orders);
       } else if (!this.lineChart) {
         console.warn('⚠️ Line chart aún no está inicializado');
@@ -552,9 +550,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ⭐⭐⭐ MÉTODO CRÍTICO: CALCULAR TOP PRODUCTOS ⭐⭐⭐
   calculateTopProductsFromOrders(orders: Order[], products: Product[]) {
-    console.log('🎯 === INICIO CÁLCULO TOP PRODUCTOS ===');
-    console.log('📦 Órdenes recibidas:', orders.length);
-    console.log('🛍️ Productos disponibles:', products.length);
+
 
     const productSalesMap = new Map<number, {
       quantity: number;
@@ -577,7 +573,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     };
 
     const finalizedOrders = orders.filter(order => isFinalized(order));
-    console.log('✅ Órdenes finalizadas:', finalizedOrders.length);
+
 
     let ordersWithProductsCount = 0;
     let totalProductsProcessed = 0;
@@ -592,7 +588,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
       ordersWithProductsCount++;
       if (index < 3) {
-        console.log(`✅ Orden #${order.id} tiene ${order.products.length} productos`);
+
       }
 
       order.products.forEach((productOrder: ProductOrder) => {
@@ -644,11 +640,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     });
 
-    console.log('📊 Resumen del procesamiento:');
-    console.log(`  - Órdenes con productos: ${ordersWithProductsCount}/${finalizedOrders.length}`);
-    console.log(`  - Total productos procesados: ${totalProductsProcessed}`);
-    console.log(`  - Productos simples únicos: ${productSalesMap.size}`);
-    console.log(`  - Variantes únicas: ${variantSalesMap.size}`);
+
 
     const topProductsData: TopProductDisplay[] = [];
 
@@ -692,16 +684,13 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     });
 
-    console.log('🏆 Productos candidatos para top:', topProductsData.length);
-
     // Ordenar y tomar top 5
     this.topProducts = topProductsData
       .sort((a, b) => b.sales - a.sales)
       .slice(0, 5);
 
-    console.log('✅ TOP 5 PRODUCTOS MÁS VENDIDOS:');
     this.topProducts.forEach((p, i) => {
-      console.log(`  ${i + 1}. ${p.name}${p.variantName ? ` - ${p.variantName}` : ''}: ${p.sales} unidades, Q${p.revenue.toFixed(2)}`);
+
     });
 
     // Fallback si no hay productos vendidos
@@ -717,7 +706,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       }];
     }
 
-    console.log('🎯 === FIN CÁLCULO TOP PRODUCTOS ===');
+
   }
 
   updateLineChartWithRealData(orders: Order[]) {
@@ -735,8 +724,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       console.warn('⚠️ Goals component no está disponible');
       return;
     }
-
-    console.log('📈 Actualizando line chart con', orders.length, 'órdenes');
 
     const months = this.getLast6Months();
     const salesData = new Array(6).fill(0);
@@ -767,7 +754,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // ⭐ CRÍTICO: Usar 'active' para forzar actualización
     this.lineChart.update('active');
-    console.log('✅ Line chart actualizado correctamente');
+
   }
 
   getLast6Months() {
@@ -953,9 +940,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getCategoryDistribution(products: Product[], categories: Category[]) {
-    console.log('🔍 Calculando distribución de categorías...');
-    console.log('🔍 Total productos:', products.length);
-    console.log('🔍 Total categorías:', categories.length);
 
     const categoryCounts = new Map<number, number>();
 
@@ -966,7 +950,6 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    console.log('🔍 Categorías con productos:', categoryCounts.size);
 
     const labels: string[] = [];
     const values: number[] = [];
@@ -979,7 +962,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    console.log('🔍 Distribución final:', { labels, values });
+
 
     return { labels, values };
   }
@@ -995,12 +978,8 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    console.log('🥧 Actualizando datos del pie chart...');
-    const categoryData = this.getCategoryDistribution(products, categories);
 
-    console.log('🥧 Categorías encontradas:', categoryData.labels.length);
-    console.log('🥧 Labels:', categoryData.labels);
-    console.log('🥧 Values:', categoryData.values);
+    const categoryData = this.getCategoryDistribution(products, categories);
 
     const isDarkMode = document.documentElement.classList.contains('dark');
     const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
@@ -1014,7 +993,7 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // ⭐ CRÍTICO: Usar 'active' en lugar de 'none' para forzar actualización
     this.pieChart.update('active');
-    console.log('✅ Pie chart actualizado correctamente');
+
   }
 
   getIcon(iconName: string) {
@@ -1035,17 +1014,17 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   diagnosticVariants() {
-  console.log('🔬 === DIAGNÓSTICO DE VARIANTES ===');
+
 
   // 1. Verificar productos con variantes
   const productsWithVariants = Array.from(this.productsMap.values())
     .filter(p => p.hasVariants && p.variants && p.variants.length > 0);
 
-  console.log('📦 Productos con variantes en sistema:', productsWithVariants.length);
+
   productsWithVariants.slice(0, 3).forEach(p => {
-    console.log(`  - ${p.productName}:`);
+
     p.variants?.forEach(v => {
-      console.log(`    └─ ID: ${v.id}, Nombre: ${v.variantName}`);
+
     });
   });
 
@@ -1054,29 +1033,22 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     order.products?.some(po => po.variantId !== null && po.variantId !== undefined)
   );
 
-  console.log('📋 Órdenes con variantes:', ordersWithVariants.length);
+
   ordersWithVariants.slice(0, 3).forEach(order => {
-    console.log(`  - Orden #${order.id}:`);
+
     order.products
       ?.filter(po => po.variantId)
       .forEach(po => {
-        console.log(`    └─ ProductID: ${po.productId}, VariantID: ${po.variantId}, Qty: ${po.quantity}`);
+
       });
   });
 
   // 3. Verificar estructura de ProductOrder
   const sampleOrder = this.orders.find(o => o.products && o.products.length > 0);
   if (sampleOrder && sampleOrder.products && sampleOrder.products.length > 0) {
-    console.log('🔍 Estructura de ProductOrder (muestra):');
+
     const sampleProduct = sampleOrder.products[0];
-    console.log('  Keys disponibles:', Object.keys(sampleProduct));
-    console.log('  Valores:', {
-      productId: sampleProduct.productId,
-      variantId: sampleProduct.variantId,
-      quantity: sampleProduct.quantity,
-      subtotal: sampleProduct.subtotal,
-      hasProduct: !!sampleProduct.product
-    });
+
   }
 
    const variantIdTypes = new Map<string, number>();
@@ -1089,12 +1061,10 @@ export default class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   });
 
-  console.log('📊 Tipos de variantId encontrados:');
-  variantIdTypes.forEach((count, type) => {
-    console.log(`  - ${type}: ${count} veces`);
+   variantIdTypes.forEach((count, type) => {
+
   });
 
-  console.log('🔬 === FIN DIAGNÓSTICO ===');
 }
 
   ngOnDestroy() {
