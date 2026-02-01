@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
@@ -8,6 +8,8 @@ import {
   matQrCodeOutline,
 } from '@ng-icons/material-icons/outline';
 import { MakeArrayPipe } from '../../../../../shared/pipes/array.pipe';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 
 // ─── Interfaz pública ────────────────────────────────────────────────────────
@@ -20,7 +22,7 @@ export interface SkuLabelItem {
 }
 
 // ─── Opciones de layout ──────────────────────────────────────────────────────
-export type LabelsPerPage = 6 | 10 | 12;   // 2×3 | 2×5 | 3×4
+export type LabelsPerPage = 6 | 10 | 12 | 20;   // 2×3 | 2×5 | 3×4 | 4×5
 
 @Component({
   selector: 'app-sku-label',
@@ -37,20 +39,25 @@ export type LabelsPerPage = 6 | 10 | 12;   // 2×3 | 2×5 | 3×4
 })
 export class SkuLabelComponent implements OnChanges {
 
+  // ── ViewChild para capturar el contenido ────────────────────────────────
+  @ViewChild('labelsContent') labelsContent!: ElementRef;
+
   // ── Inputs ───────────────────────────────────────────────────────────────
-  @Input() labels: SkuLabelItem[] = [];
-  @Input() copies: number = 1;           // copias por etiqueta
+  @Input() items: SkuLabelItem[] = [];
+  @Input() copies: number = 1;
 
   // ── Estado interno ───────────────────────────────────────────────────────
-  labelsPerPage: LabelsPerPage = 6;
-  expandedLabels: SkuLabelItem[] = [];   // labels × copies
-  pages: SkuLabelItem[][] = [];          // agrupa por página
+  labelsPerPage: LabelsPerPage = 12;
+  expandedLabels: SkuLabelItem[] = [];
+  pages: SkuLabelItem[][] = [];
+  isExporting: boolean = false;
 
   // ── Opciones de layout disponibles ───────────────────────────────────────
   readonly layoutOptions: { value: LabelsPerPage; label: string; cols: number; rows: number }[] = [
     { value: 6,  label: '6 etiquetas  (2 × 3)', cols: 2, rows: 3 },
     { value: 10, label: '10 etiquetas (2 × 5)', cols: 2, rows: 5 },
     { value: 12, label: '12 etiquetas (3 × 4)', cols: 3, rows: 4 },
+    { value: 20, label: '20 etiquetas (4 × 5)', cols: 4, rows: 5 },
   ];
 
   get currentLayout() {
@@ -64,15 +71,13 @@ export class SkuLabelComponent implements OnChanges {
 
   // ── Reconstruir páginas ──────────────────────────────────────────────────
   rebuildPages(): void {
-    // Expandir copias
     this.expandedLabels = [];
-    for (const label of this.labels) {
+    for (const label of this.items) {
       for (let i = 0; i < this.copies; i++) {
         this.expandedLabels.push(label);
       }
     }
 
-    // Partir en páginas
     this.pages = [];
     const size = this.labelsPerPage;
     for (let i = 0; i < this.expandedLabels.length; i += size) {
@@ -83,7 +88,7 @@ export class SkuLabelComponent implements OnChanges {
   // ── Cambio de layout ─────────────────────────────────────────────────────
   changeLayout(event: Event): void {
     const value = +(event.target as HTMLSelectElement).value;
-    if ([6, 10, 12].includes(value)) {
+    if ([6, 10, 12, 20].includes(value)) {
       this.labelsPerPage = value as LabelsPerPage;
       this.rebuildPages();
     }
@@ -95,23 +100,19 @@ export class SkuLabelComponent implements OnChanges {
     this.rebuildPages();
   }
 
-  // ── Cambio de copias desde input ─────────────────────────────────────────
   changeCopiesFromInput(event: Event): void {
     const value = +(event.target as HTMLInputElement).value;
     this.changeCopies(value);
   }
 
   // ── Generar barra de texto (simulada) ────────────────────────────────────
-  // Cada carácter del SKU se convierte en una serie de barras delgadas/gruesas
-  // usando un mapeo determinista basado en charCodeAt
   generateBarcode(sku: string): string[] {
     const bars: string[] = [];
     for (const ch of sku.toUpperCase()) {
       const code = ch.charCodeAt(0);
-      // 5 barras por carácter: ancho determinista según el código
       for (let i = 0; i < 5; i++) {
         const bit = (code >> i) & 1;
-        bars.push(bit ? 'T' : 'N'); // T = thick, N = narrow
+        bars.push(bit ? 'T' : 'N');
       }
     }
     return bars;
@@ -126,5 +127,58 @@ export class SkuLabelComponent implements OnChanges {
   // ── Imprimir ─────────────────────────────────────────────────────────────
   print(): void {
     window.print();
+  }
+
+  // ── Exportar a PDF ───────────────────────────────────────────────────────
+  async exportToPDF(): Promise<void> {
+    if (this.items.length === 0) return;
+
+    this.isExporting = true;
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'letter');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // Obtener todos los elementos de página
+      const pageElements = document.querySelectorAll('.label-page');
+
+      for (let i = 0; i < pageElements.length; i++) {
+        const pageElement = pageElements[i] as HTMLElement;
+
+        // Capturar la página como canvas
+        const canvas = await html2canvas(pageElement, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        // Agregar nueva página si no es la primera
+        if (i > 0) {
+          pdf.addPage();
+        }
+
+        // Agregar imagen al PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      }
+
+      // Generar nombre del archivo con fecha
+      const fecha = new Date().toISOString().split('T')[0];
+      const nombreArchivo = `etiquetas-sku-${fecha}.pdf`;
+
+      // Descargar el PDF
+      pdf.save(nombreArchivo);
+
+    } catch (error) {
+      console.error('Error al exportar PDF:', error);
+      alert('Error al generar el PDF. Por favor, intenta de nuevo.');
+    } finally {
+      this.isExporting = false;
+    }
   }
 }

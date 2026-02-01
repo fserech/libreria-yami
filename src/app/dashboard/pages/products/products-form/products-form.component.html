@@ -233,12 +233,24 @@
                 [maxlength]="50"
                 [load]="load">
               </app-input>
-              <button
-                type="button"
-                (click)="generateSKU()"
-                class="absolute right-2 top-9 text-blue-600 hover:text-blue-800 text-xs font-semibold">
-                Generar
-              </button>
+
+              <!-- Botón Generar: solo visible cuando el SKU NO está bloqueado -->
+              @if (!skuLocked) {
+                <button
+                  type="button"
+                  (click)="generateSKU()"
+                  class="absolute right-2 top-9 text-blue-600 hover:text-blue-800 text-xs font-semibold">
+                  Generar
+                </button>
+              }
+
+              <!-- Indicador de SKU bloqueado -->
+              @if (skuLocked) {
+                <div class="flex items-center mt-1 ml-1">
+                  <ng-icon name="matLockOutline" size="14" class="text-gray-500 dark:text-gray-400 mr-1"></ng-icon>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">SKU bloqueado - no puede modificarse</p>
+                </div>
+              }
             </div>
 
             <!-- STOCK INICIAL -->
@@ -381,7 +393,7 @@
 
                 </div>
 
-                <!-- Info adicional -->
+                <!-- Info adicional: última compra -->
                 @if (supplierPrice.lastPurchaseDate) {
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     <ng-icon name="matHistoryOutline" size="14" class="inline mr-1"></ng-icon>
@@ -412,8 +424,10 @@
             }
           </div>
 
-          <!-- PRECIO DE VENTA -->
+          <!-- PRECIO DE VENTA Y MARGEN DESEADO -->
           <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- PRECIO DE VENTA -->
             <div>
               <app-input
                 [form]="stockForm"
@@ -435,24 +449,55 @@
               }
             </div>
 
-            <!-- INFO: MARGEN DE GANANCIA CALCULADO -->
-            @if (getBestCostPrice() > 0 && stockForm.get('salePrice')?.value > 0) {
-              <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                <div class="flex-1">
-                  <p class="text-sm text-blue-800 dark:text-blue-300 font-semibold mb-1">
-                    <ng-icon name="matTrendingUpOutline" size="16" class="inline mr-1"></ng-icon>
-                    Margen de ganancia
-                  </p>
-                  <p class="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {{ calculateCurrentMargin() }}%
-                  </p>
-                  <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">
-                    Ganancia: Q{{ calculateProfit().toFixed(2) }} por unidad
-                  </p>
-                </div>
-              </div>
-            }
+            <!-- MARGEN DESEADO -->
+            <app-input
+              [form]="stockForm"
+              name="desiredMargin"
+              icon="matPercentOutline"
+              label="Margen deseado (%)"
+              placeholder="20"
+              helpMessage="Margen de ganancia que quieres obtener"
+              errorMessage="Ingresa un valor válido"
+              [load]="load"
+              (changes)="calculateSuggestedPrice()">
+            </app-input>
+
           </div>
+
+          <!-- PRECIO SUGERIDO basado en margen deseado -->
+          @if (suggestedSalePrice > 0) {
+            <div class="mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded border border-indigo-200 dark:border-indigo-800">
+              <p class="text-sm text-indigo-800 dark:text-indigo-300">
+                <ng-icon name="matLightbulbOutline" size="16" class="inline mr-1"></ng-icon>
+                <strong>Precio sugerido:</strong> Q{{ suggestedSalePrice.toFixed(2) }}
+                <span class="text-xs ml-2">(basado en tu margen deseado y mejor precio de compra)</span>
+              </p>
+              <button
+                type="button"
+                (click)="stockForm.patchValue({ salePrice: suggestedSalePrice.toFixed(2) })"
+                class="mt-2 text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline">
+                Usar este precio
+              </button>
+            </div>
+          }
+
+          <!-- INFO: MARGEN DE GANANCIA CALCULADO -->
+          @if (getBestCostPrice() > 0 && stockForm.get('salePrice')?.value > 0) {
+            <div class="mt-4 flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+              <div class="flex-1">
+                <p class="text-sm text-blue-800 dark:text-blue-300 font-semibold mb-1">
+                  <ng-icon name="matTrendingUpOutline" size="16" class="inline mr-1"></ng-icon>
+                  Margen de ganancia actual
+                </p>
+                <p class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                  {{ calculateCurrentMargin() }}%
+                </p>
+                <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                  Ganancia: Q{{ calculateProfit().toFixed(2) }} por unidad
+                </p>
+              </div>
+            </div>
+          }
 
           <!-- INFO ADICIONAL -->
           <div class="mt-4 p-4 bg-blue-50 dark:bg-slate-800 rounded border border-blue-200 dark:border-slate-700">
@@ -481,6 +526,8 @@
 
     </div>
   }
+
+
 
   <!-- BOTÓN GUARDAR FINAL -->
   <div class="w-full border-t dark:border-slate-700 pt-4 mt-6 flex justify-between items-center gap-3">

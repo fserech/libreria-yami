@@ -1,124 +1,180 @@
-<div class="sku-label-wrapper">
+<div class="w-full h-full" #labelsContent>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
-       PANEL DE CONTROLES  (se oculta al imprimir)
+       PANEL DE CONTROLES (no se imprime)
        ═══════════════════════════════════════════════════════════════════════ -->
-  <div class="sku-label-controls no-print">
+  <div class="bg-white dark:bg-slate-900 border-b dark:border-slate-700 p-4 mb-4 no-print sticky top-0 z-10">
 
-    <div class="controls-left">
-      <!-- Layout -->
-      <div class="control-group">
-        <label>Etiquetas por página</label>
-        <select [value]="labelsPerPage" (change)="changeLayout($event)">
-          @for (opt of layoutOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-      </div>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 
-      <!-- Copias -->
-      <div class="control-group">
-        <label>Copias por etiqueta</label>
-        <div class="copies-input">
-          <button (click)="changeCopies(copies - 1)">−</button>
-          <input type="number" [value]="copies" min="1" max="20"
-                 (input)="changeCopiesFromInput($event)" />
-          <button (click)="changeCopies(copies + 1)">+</button>
+      <!-- Controles izquierda -->
+      <div class="flex flex-col md:flex-row gap-4 flex-1">
+
+        <!-- Layout -->
+        <div class="flex flex-col">
+          <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+            Etiquetas por página
+          </label>
+          <select
+            [value]="labelsPerPage"
+            (change)="changeLayout($event)"
+            class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            @for (opt of layoutOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Copias -->
+        <div class="flex flex-col">
+          <label class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+            Copias por etiqueta
+          </label>
+          <div class="flex items-center gap-2">
+            <button
+              (click)="changeCopies(copies - 1)"
+              class="px-3 py-2 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 rounded-md transition-colors font-bold">
+              −
+            </button>
+            <input
+              type="number"
+              [value]="copies"
+              min="1"
+              max="20"
+              (input)="changeCopiesFromInput($event)"
+              class="w-16 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <button
+              (click)="changeCopies(copies + 1)"
+              class="px-3 py-2 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 rounded-md transition-colors font-bold">
+              +
+            </button>
+          </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="flex items-end">
+          <div class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+            <div class="flex items-center gap-2 text-sm">
+              <span class="font-semibold text-blue-700 dark:text-blue-300">
+                {{ expandedLabels.length }} etiqueta{{ expandedLabels.length !== 1 ? 's' : '' }}
+              </span>
+              <span class="text-gray-400">·</span>
+              <span class="text-gray-600 dark:text-gray-400">
+                {{ pages.length }} página{{ pages.length !== 1 ? 's' : '' }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Resumen -->
-      <div class="control-summary">
-        <span>{{ expandedLabels.length }} etiqueta{{ expandedLabels.length !== 1 ? 's' : '' }}</span>
-        <span class="separator">·</span>
-        <span>{{ pages.length }} página{{ pages.length !== 1 ? 's' : '' }}</span>
-      </div>
-    </div>
+      <!-- Botones de acción -->
+      <div class="flex gap-2">
+        <!-- Botón exportar PDF -->
+        <button
+          (click)="exportToPDF()"
+          [disabled]="isExporting"
+          class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-md shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+          <ng-icon name="matDownloadOutline" size="20"></ng-icon>
+          <span>{{ isExporting ? 'Exportando...' : 'Exportar PDF' }}</span>
+        </button>
 
-    <div class="controls-right">
-      <button class="btn-print" (click)="print()">
-        <ng-icon name="matPrintOutline" size="18"></ng-icon>
-        Imprimir
-      </button>
+        <!-- Botón imprimir -->
+        <button
+          (click)="print()"
+          class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+          <ng-icon name="matPrintOutline" size="20"></ng-icon>
+          Imprimir
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
        PÁGINAS DE ETIQUETAS
        ═══════════════════════════════════════════════════════════════════════ -->
-  @for (page of pages; track $index) {
-    <div class="label-page" [style.grid-template-columns]="'repeat(' + currentLayout.cols + ', 1fr)'">
+  @if (items.length > 0) {
+    @for (page of pages; track $index) {
+      <div
+        class="label-page grid gap-4 p-6 bg-gray-50 dark:bg-slate-950 rounded-lg mb-6 print:bg-white print:p-4 print:gap-3 print:mb-0 print:page-break-after-always"
+        [style.grid-template-columns]="'repeat(' + currentLayout.cols + ', 1fr)'">
 
-      @for (item of page; track $index) {
-        <div class="label-card">
+        @for (item of page; track $index) {
+          <!-- TARJETA DE ETIQUETA -->
+          <div class="bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow print:shadow-none print:border print:border-gray-400 print:m-2">
 
-          <!-- Barra superior de color (acento) -->
-          <div class="label-accent"></div>
+            <!-- Barra superior de color -->
+            <div class="h-2 bg-gradient-to-r from-blue-500 to-purple-500"></div>
 
-          <!-- Contenido principal -->
-          <div class="label-body">
+            <!-- Contenido con padding aumentado -->
+            <div class="p-4">
 
-            <!-- SKU grande -->
-            <div class="label-sku">{{ item.sku }}</div>
-
-            <!-- Barcode visual simulado -->
-            <div class="label-barcode">
-              @for (bar of generateBarcode(item.sku); track $index) {
-                <div class="bar" [class.thick]="bar === 'T'" [class.narrow]="bar === 'N'"></div>
-              }
-            </div>
-
-            <!-- Nombre del producto -->
-            <div class="label-name">{{ item.name }}</div>
-
-            <!-- Marca (si existe) -->
-            @if (item.brandName) {
-              <div class="label-brand">{{ item.brandName }}</div>
-            }
-
-            <!-- Atributos de variante (si existen) -->
-            @if (item.attributes && getAttributeEntries(item.attributes).length > 0) {
-              <div class="label-attributes">
-                @for (attr of getAttributeEntries(item.attributes); track attr.key) {
-                  <span class="label-attr-tag">
-                    <span class="attr-key">{{ attr.key }}:</span>
-                    <span class="attr-val">{{ attr.value }}</span>
+              <!-- SKU grande y destacado -->
+              <div class="text-center mb-3">
+                <div class="inline-block px-3 py-1 bg-gray-100 dark:bg-slate-800 rounded-md">
+                  <span class="text-base font-bold font-mono text-gray-900 dark:text-gray-100 tracking-wider">
+                    {{ item.sku }}
                   </span>
+                </div>
+              </div>
+
+              <!-- Código de barras simulado -->
+              <div class="flex justify-center items-end gap-px h-10 mb-3 bg-white dark:bg-slate-800 rounded px-2">
+                @for (bar of generateBarcode(item.sku); track $index) {
+                  <div
+                    class="bg-gray-900 dark:bg-gray-100"
+                    [class.w-1]="bar === 'T'"
+                    [class.w-0.5]="bar === 'N'"
+                    [class.h-8]="bar === 'T'"
+                    [class.h-6]="bar === 'N'">
+                  </div>
                 }
               </div>
-            }
 
-            <!-- Precio (si existe) -->
-            @if (item.price !== undefined && item.price !== null) {
-              <div class="label-price">Q {{ item.price | number:'1.2-2' }}</div>
-            }
+              <!-- Nombre del producto -->
+              <div class="text-center mb-2">
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-2 min-h-[2.5rem]">
+                  {{ item.name }}
+                </h3>
+              </div>
+
+
+
+            </div>
+
+            <!-- Borde inferior decorativo -->
+            <div class="h-1 bg-gray-100 dark:bg-slate-800 border-t border-dashed border-gray-300 dark:border-slate-600"></div>
           </div>
+        }
 
-          <!-- Borde inferior punteado decorativo -->
-          <div class="label-footer"></div>
+        <!-- Rellenar espacios vacíos -->
+        @for (empty of ($index === pages.length - 1 ? (labelsPerPage - page.length) : 0) | makeArray; track $index) {
+          <div class="print:hidden"></div>
+        }
+      </div>
+
+      <!-- Separador de página (solo visible en pantalla) -->
+      @if ($index < pages.length - 1) {
+        <div class="text-center py-4 no-print print:hidden">
+          <span class="inline-block px-4 py-2 bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400 text-sm font-medium rounded-full">
+            Página {{ $index + 1 }} de {{ pages.length }}
+          </span>
         </div>
       }
-
-      <!-- Rellenar con espacios vacíos si la página no está llena -->
-      @for (empty of ($index === pages.length - 1 ? labelsPerPage - page.length : 0) | makeArray; track $index) {
-        <div class="label-card label-empty"></div>
-      }
-    </div>
-
-    <!-- Separador de página (solo visible en pantalla) -->
-    @if ($index < pages.length - 1) {
-      <div class="page-separator no-print">
-        <span>— Página {{ $index + 1 }} —</span>
-      </div>
     }
   }
 
   <!-- Estado vacío -->
-  @if (labels.length === 0) {
-    <div class="label-empty-state no-print">
-      <ng-icon name="matQrCodeOutline" size="48"></ng-icon>
-      <p>No hay etiquetas para mostrar</p>
-      <p class="subtitle">Las etiquetas aparecerán cuando el producto tenga SKU generado</p>
+  @if (items.length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 text-center no-print">
+      <div class="w-20 h-20 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+        <ng-icon name="matQrCodeOutline" size="48" class="text-gray-400 dark:text-gray-600"></ng-icon>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        No hay etiquetas para mostrar
+      </h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+        Las etiquetas aparecerán cuando los productos tengan SKU generado. Asegúrate de que los productos en la lista tengan SKU asignado.
+      </p>
     </div>
   }
 

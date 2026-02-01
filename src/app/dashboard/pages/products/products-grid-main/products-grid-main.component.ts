@@ -14,7 +14,9 @@ import {
   matDeleteOutline,
   matEditOutline,
   matKeyboardArrowDownOutline,
-  matKeyboardArrowUpOutline
+  matKeyboardArrowUpOutline,
+  matPrintOutline,
+  matCloseOutline
 } from '@ng-icons/material-icons/outline';
 import { SearchInputTextComponent } from '../../../../shared/components/search-input-text/search-input-text.component';
 import {
@@ -35,6 +37,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { ACTIONS_GRID_MAIN_ADMIN } from '../../../../shared/constants/actions-menu';
+import { SkuLabelComponent, SkuLabelItem } from '../Components/sku-label/sku-label.component';
 
 @Component({
   selector: 'app-products-grid-main',
@@ -46,7 +49,8 @@ import { ACTIONS_GRID_MAIN_ADMIN } from '../../../../shared/constants/actions-me
     ChatBubbleComponent,
     NgClass,
     DialogModule,
-    FormsModule
+    FormsModule,
+    SkuLabelComponent
   ],
   templateUrl: './products-grid-main.component.html',
   styleUrl: './products-grid-main.component.scss',
@@ -62,10 +66,8 @@ import { ACTIONS_GRID_MAIN_ADMIN } from '../../../../shared/constants/actions-me
       matEditOutline,
       matKeyboardArrowDownOutline,
       matKeyboardArrowUpOutline,
-      bootstrapChevronLeft,
-      bootstrapChevronRight,
-      bootstrapChevronBarLeft,
-      bootstrapChevronBarRight
+      matPrintOutline,
+      matCloseOutline
     })
   ]
 })
@@ -75,8 +77,10 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
   actionsGrid: OptionsChatBubble[] = ACTIONS_GRID_MAIN_ADMIN;
   brandMap: Map<number, string> = new Map();
 
-  // Nuevo: Map para controlar qué productos están expandidos
   expandedProducts: Set<number> = new Set();
+
+  // ⭐ Modal de etiquetas SKU
+  showSkuLabels: boolean = false;
 
   constructor(
     private crud: CrudService,
@@ -134,9 +138,6 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     return names.length > 0 ? names.join(', ') : 'Sin marca';
   }
 
-  /**
-   * NUEVO: Toggle para expandir/colapsar variantes
-   */
   toggleProductExpansion(productId: number) {
     if (this.expandedProducts.has(productId)) {
       this.expandedProducts.delete(productId);
@@ -145,11 +146,70 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
     }
   }
 
-  /**
-   * NUEVO: Verifica si un producto está expandido
-   */
   isProductExpanded(productId: number): boolean {
     return this.expandedProducts.has(productId);
+  }
+
+  // ==================== ETIQUETAS SKU ====================
+
+  openSkuLabels() {
+    if (this.ItemsList.length === 0) {
+      this.toast.error('No hay productos para imprimir');
+      return;
+    }
+
+    // Debug: verificar cuántos productos tienen SKU
+    const skuCount = this.skuLabels.length;
+    console.log('Total productos en lista:', this.ItemsList.length);
+    console.log('Etiquetas SKU generadas:', skuCount);
+    console.log('Datos de etiquetas:', this.skuLabels);
+
+    if (skuCount === 0) {
+      this.toast.error('Ningún producto tiene SKU asignado');
+      return;
+    }
+
+    this.showSkuLabels = true;
+  }
+
+  closeSkuLabels() {
+    this.showSkuLabels = false;
+  }
+
+  // Construye el array de SkuLabelItem con TODOS los productos de la lista
+  get skuLabels(): SkuLabelItem[] {
+    const labels: SkuLabelItem[] = [];
+
+    for (const product of this.ItemsList) {
+      if (!product.hasVariants) {
+        // Producto simple: agregar directamente si tiene SKU
+        if (product.sku) {
+          labels.push({
+            sku: product.sku,
+            name: product.productName,
+            brandName: this.getBrandNames(product.brandRef),
+            price: product.salePrice ? Number(product.salePrice) : undefined
+          });
+        }
+      } else {
+        // Producto con variantes: agregar cada variante que tenga SKU
+        if (product.variants && product.variants.length > 0) {
+          for (const variant of product.variants) {
+            if (variant.sku) {
+              labels.push({
+                sku: variant.sku,
+                name: variant.variantName || product.productName,
+                brandName: this.getBrandNames(product.brandRef),
+                price: variant.salePrice ? Number(variant.salePrice) : undefined,
+                attributes: variant.attributes || undefined
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return labels;
   }
 
   // ==================== FILTROS Y BÚSQUEDA ====================
@@ -184,7 +244,7 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
   initPage() {
     this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, 1, 10);
     this.form.reset();
-    this.expandedProducts.clear(); // Limpiar expansiones
+    this.expandedProducts.clear();
   }
 
   introSearch() {
@@ -194,29 +254,30 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
       this.filter(name);
     }
   }
-filter(name?: string, id?: number, initPrice?: number, endPrice?: number, active?: boolean, hasVariants?: boolean) {
-  let filter = '';
 
-  if (id) {
-    filter = filter.concat(`&id=${id}`);
-  }
-  if (name) {
-    filter = filter.concat(`&search=${encodeURIComponent(name)}`);
-  }
-  if (initPrice !== undefined && initPrice !== null && endPrice !== undefined && endPrice !== null) {
-    filter = filter.concat(`&initPrice=${initPrice}&endPrice=${endPrice}`);
-  }
-  if (active !== undefined && active !== null) {
-    filter = filter.concat(`&active=${active}`);
-  }
-  if (hasVariants !== undefined && hasVariants !== null) {
-    filter = filter.concat(`&hasVariants=${hasVariants}`);
-  }
+  filter(name?: string, id?: number, initPrice?: number, endPrice?: number, active?: boolean, hasVariants?: boolean) {
+    let filter = '';
 
-  this.page = 1;
-  this.filters = filter;
-  this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
-}
+    if (id) {
+      filter = filter.concat(`&id=${id}`);
+    }
+    if (name) {
+      filter = filter.concat(`&search=${encodeURIComponent(name)}`);
+    }
+    if (initPrice !== undefined && initPrice !== null && endPrice !== undefined && endPrice !== null) {
+      filter = filter.concat(`&initPrice=${initPrice}&endPrice=${endPrice}`);
+    }
+    if (active !== undefined && active !== null) {
+      filter = filter.concat(`&active=${active}`);
+    }
+    if (hasVariants !== undefined && hasVariants !== null) {
+      filter = filter.concat(`&hasVariants=${hasVariants}`);
+    }
+
+    this.page = 1;
+    this.filters = filter;
+    this.getPageItems(this.sortConfig.sortOrder, this.sortConfig.sortBy, this.page, this.pageSize, filter);
+  }
 
   // ==================== ORDENAMIENTO ====================
 

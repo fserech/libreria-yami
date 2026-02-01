@@ -9,21 +9,31 @@
   <div class="sticky top-0 z-10 grid grid-cols-1 gap-4 md:grid-cols-1 p-1 bg-white dark:bg-slate-900 border-b dark:border-slate-600">
     <div class="border dark:border-slate-700 border-none border-t-0 border-l-0 border-r-0 m-0 p-0 pb-2 w-full">
 
-      <button  (click)="openDialog()" type="button" class="btn-success h-10 sm:flex md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
-        <div class="flex text-center justify-center align-middle">
-          <p class="text-sm md:text-base">Filtros</p>
-          <ng-icon class="text-white font-bold m-1" size="15" name="matFilterAltOutline"></ng-icon>
-        </div>
-      </button>
-
-      @if (user.role === 'ROLE_ADMIN') {
-        <button (click)="add()" type="button" class="btn-primary h-10 float-right w-28">
+      <!-- ✅ NUEVO: Contenedor flex para los tres botones en la misma línea (solo móvil) -->
+      <div class="flex gap-2 sm:hidden">
+        <button (click)="openDialog()" type="button" class="btn-success h-10 flex-1">
           <div class="flex text-center justify-center align-middle">
-            <p class="text-sm md:text-base">Nuevo</p>
-            <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+            <p class="text-sm">Filtros</p>
+            <ng-icon class="text-white font-bold m-1" size="15" name="matFilterAltOutline"></ng-icon>
           </div>
         </button>
-      }
+
+        @if (user.role === 'ROLE_ADMIN') {
+          <button (click)="openSkuLabels()" type="button" class="btn-success h-10 flex-1">
+            <div class="flex text-center justify-center align-middle">
+              <p class="text-sm">Etiquetas</p>
+              <ng-icon class="text-white font-bold m-1" size="15" name="matPrintOutline"></ng-icon>
+            </div>
+          </button>
+
+          <button (click)="add()" type="button" class="btn-primary h-10 flex-1">
+            <div class="flex text-center justify-center align-middle">
+              <p class="text-sm">Nuevo</p>
+              <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+            </div>
+          </button>
+        }
+      </div>
 
     </div>
 
@@ -60,6 +70,16 @@
             <ng-icon class="text-white font-bold m-1" size="17" name="matFilterAltOutline"></ng-icon>
           </div>
         </button>
+
+        <!-- ⭐ BOTÓN PARA IMPRIMIR ETIQUETAS SKU (DESKTOP - SIEMPRE VISIBLE) -->
+        @if (user.role === 'ROLE_ADMIN') {
+          <button (click)="openSkuLabels()" type="button" class="btn-success h-10">
+            <div class="flex text-center justify-center align-middle">
+              <p class="text-sm md:text-base">Etiquetas SKU</p>
+              <ng-icon class="text-white font-bold m-1" size="17" name="matPrintOutline"></ng-icon>
+            </div>
+          </button>
+        }
 
     </div>
 
@@ -133,7 +153,7 @@
             </button>
           </th>
 
-          <!-- ⭐ NUEVA COLUMNA SKU -->
+          <!-- COLUMNA SKU -->
           <th class="content-desktop-custom hidden sm:table-cell">
             <button (click)="changeSortOrderBy('sku')">
               <p>SKU</p>
@@ -219,7 +239,7 @@
           </div>
         </td>
 
-        <!-- ⭐ COLUMNA SKU (Desktop) -->
+        <!-- COLUMNA SKU (Desktop) -->
         <td class="hidden sm:table-cell">
           @if (!product.hasVariants) {
             <p class="text-sm font-mono text-gray-700 dark:text-gray-300">{{ product.sku || 'N/A' }}</p>
@@ -276,7 +296,7 @@
                 {{ product.productDesc }}
               </p>
 
-              <!-- ⭐ SKU EN MOBILE -->
+              <!-- SKU EN MOBILE -->
               @if (!product.hasVariants && product.sku) {
                 <p class="text-xs font-mono text-gray-500 dark:text-gray-400 mt-1">
                   SKU: {{ product.sku }}
@@ -363,7 +383,7 @@
               </div>
             </td>
 
-            <!-- ⭐ COLUMNA SKU DE VARIANTE (Desktop) -->
+            <!-- COLUMNA SKU DE VARIANTE (Desktop) -->
             <td class="hidden sm:table-cell">
               <p class="text-sm font-mono text-gray-700 dark:text-gray-300">{{ variant.sku || 'N/A' }}</p>
             </td>
@@ -400,7 +420,7 @@
                     </p>
                   }
 
-                  <!-- ⭐ SKU DE VARIANTE EN MOBILE -->
+                  <!-- SKU DE VARIANTE EN MOBILE -->
                   @if (variant.sku) {
                     <p class="text-xs font-mono text-gray-500 dark:text-gray-400 mt-1">
                       SKU: {{ variant.sku }}
@@ -522,10 +542,10 @@
         <div class="pagination-child">
           <p><b class="bg-white dark:bg-slate-800 p-2 m-1 rounded text-sm">Página {{page}} de {{totalPages}}</b></p>
           <p>Items {{startIndex}} - {{endIndex}} de {{totalItems}}</p>
-          <button><ng-icon (click)="firstPage()" class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
-          <button><ng-icon (click)="previousPage()" class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
-          <button><ng-icon (click)="nextPage()" class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
-          <button><ng-icon (click)="lastPage()" class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
+          <button (click)="firstPage()"><ng-icon class="btn-pagination" name="bootstrapChevronBarLeft"></ng-icon></button>
+          <button (click)="previousPage()"><ng-icon class="btn-pagination" name="bootstrapChevronLeft"></ng-icon></button>
+          <button (click)="nextPage()"><ng-icon class="btn-pagination" name="bootstrapChevronRight"></ng-icon></button>
+          <button (click)="lastPage()"><ng-icon class="btn-pagination" name="bootstrapChevronBarRight"></ng-icon></button>
         </div>
       </div>
     </div>
@@ -536,10 +556,10 @@
         <div class="w-full bg-gray-100 block rounded-lg dark:bg-slate-950">
 
           <div class="flex justify-between mb-2 p-2 rounded-lg border m-1 bg-white dark:bg-slate-900 dark:border-slate-700">
-            <button class="btn-pagination"><ng-icon (click)="firstPage()" size="22" name="bootstrapChevronBarLeft"></ng-icon></button>
-            <button class="btn-pagination"><ng-icon (click)="previousPage()" size="22" name="bootstrapChevronLeft"></ng-icon></button>
-            <button class="btn-pagination"><ng-icon (click)="nextPage()" size="22" name="bootstrapChevronRight"></ng-icon></button>
-            <button class="btn-pagination"><ng-icon (click)="lastPage()" size="22" name="bootstrapChevronBarRight"></ng-icon></button>
+            <button (click)="firstPage()" class="btn-pagination"><ng-icon size="22" name="bootstrapChevronBarLeft"></ng-icon></button>
+            <button (click)="previousPage()" class="btn-pagination"><ng-icon size="22" name="bootstrapChevronLeft"></ng-icon></button>
+            <button (click)="nextPage()" class="btn-pagination"><ng-icon size="22" name="bootstrapChevronRight"></ng-icon></button>
+            <button (click)="lastPage()" class="btn-pagination"><ng-icon size="22" name="bootstrapChevronBarRight"></ng-icon></button>
           </div>
 
           <div class="flex justify-between">
@@ -553,3 +573,25 @@
 
   </div>
 </div>
+
+<!-- ⭐ MODAL DE ETIQUETAS SKU (IMPRIME TODOS LOS PRODUCTOS) -->
+@if (showSkuLabels) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-4 border-b dark:border-slate-700">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
+          Etiquetas SKU - Todos los Productos
+        </h2>
+        <button
+          (click)="closeSkuLabels()"
+          class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+          <ng-icon size="24" name="matCloseOutline"></ng-icon>
+        </button>
+      </div>
+
+      <div class="overflow-auto max-h-[calc(90vh-120px)]">
+        <app-sku-label [items]="skuLabels"></app-sku-label>
+      </div>
+    </div>
+  </div>
+}

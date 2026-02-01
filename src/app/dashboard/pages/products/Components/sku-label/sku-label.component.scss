@@ -1,0 +1,97 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// ESTILOS PARA IMPRESIÓN
+// ═══════════════════════════════════════════════════════════════════════════
+
+@media print {
+  // Ocultar elementos no imprimibles
+  .no-print,
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  // Configuración de página
+  @page {
+    size: letter;
+    margin: 0.5cm;
+  }
+
+  // Body
+  body {
+    margin: 0;
+    padding: 0;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  // Etiquetas
+  .label-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  // Asegurar que los colores se impriman
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+
+  // Páginas
+  .print\\:page-break-after-always {
+    page-break-after: always;
+  }
+
+  // Forzar bordes y fondos en impresión
+  .bg-gradient-to-r {
+    background: linear-gradient(to right, rgb(59, 130, 246), rgb(168, 85, 247)) !important;
+  }
+
+  .bg-gray-100 {
+    background-color: rgb(243, 244, 246) !important;
+  }
+
+  .bg-white {
+    background-color: white !important;
+  }
+
+  .border-gray-400 {
+    border-color: rgb(156, 163, 175) !important;
+  }
+
+  .text-gray-900 {
+    color: rgb(17, 24, 39) !important;
+  }
+
+  // Código de barras
+  .bg-gray-900 {
+    background-color: rgb(17, 24, 39) !important;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ESTILOS GENERALES (PANTALLA)
+// ═══════════════════════════════════════════════════════════════════════════
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+// Asegurar que los elementos ocupen todo el ancho
+.w-full {
+  width: 100%;
+}
+
+// Altura mínima para las etiquetas
+.min-h-custom {
+  min-height: 2.5rem;
+}
+
+// Line clamp para truncar texto
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
