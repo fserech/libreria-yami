@@ -73,7 +73,7 @@ export class InventoryService {
       ? `${this.apiUrl}/adjustments/variant`
       : `${this.apiUrl}/adjustments`;
 
-    console.log('📤 Enviando ajuste a:', endpoint, payload);
+    
 
     return this.http.post<any>(endpoint, payload);
   }
@@ -111,7 +111,7 @@ export class InventoryService {
       params = params.set('userId', filter.userId.toString());
     }
 
-    console.log('📤 Exportando movimientos con parámetros:', params.toString());
+    
 
     return this.http.get(`${this.apiUrl}/export`, {
       params,
@@ -119,7 +119,7 @@ export class InventoryService {
       observe: 'response'
     }).pipe(
       map(response => {
-        console.log('📥 Respuesta recibida:', response.headers.get('content-type'));
+       
         return response.body as Blob;
       })
     );
@@ -136,7 +136,7 @@ export class InventoryService {
       params = params.set('alertLevel', filter.alertLevel);
     }
 
-    console.log('📤 Exportando alertas con parámetros:', params.toString());
+   
 
     return this.http.get(`${this.apiUrl}/export/low-stock`, {
       params,
@@ -144,7 +144,7 @@ export class InventoryService {
       observe: 'response'
     }).pipe(
       map(response => {
-        console.log('📥 Respuesta recibida:', response.headers.get('content-type'));
+       
         return response.body as Blob;
       })
     );
@@ -158,7 +158,7 @@ export class InventoryService {
       params = params.set('branchId', filter.branchId.toString());
     }
 
-    console.log('📤 Exportando existencias con parámetros:', params.toString());
+   
 
     return this.http.get(`${this.apiUrl}/export/all-stock`, {
       params,
@@ -166,7 +166,7 @@ export class InventoryService {
       observe: 'response'
     }).pipe(
       map(response => {
-        console.log('📥 Respuesta recibida:', response.headers.get('content-type'));
+       
         return response.body as Blob;
       })
     );

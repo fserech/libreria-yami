@@ -96,11 +96,7 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
         this.isEditMode = true;
         this.isLoadingData = true;
 
-        console.log('🔧 Constructor - Modo edición:', {
-          id: this.id,
-          isEditMode: this.isEditMode,
-          mode: this.mode
-        });
+       
       }
 
       this.crud.baseUrl = URL_ORDERS;
@@ -117,10 +113,7 @@ export default class OrdersFormComponent extends BaseForm implements OnInit, Aft
   }
 
   ngOnInit(): void {
-    console.log('🔄 ngOnInit:', {
-      isEditMode: this.isEditMode,
-      id: this.id
-    });
+    
 
     if (this.isEditMode && this.id) {
       this.loadOrderData();

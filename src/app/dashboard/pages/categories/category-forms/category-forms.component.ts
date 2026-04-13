@@ -59,7 +59,7 @@ export default class CategoryFormsComponent extends BaseForm implements OnInit {
           this.form.controls['active'].setValue(category.active);
         })
         .catch((error: any) => {
-          console.log('error id: ', error);
+          this.toast.error('Error al cargar los datos de la categoría');
         })
         .finally(() => {
           this.load = false;

@@ -123,7 +123,7 @@ export class SidebarMenuComponent {
         next: (response: any) => {
           this.isSaving = false;
           this.showNotification('✓ Orden guardado exitosamente', 'success');
-          console.log('✅ Orden guardado:', response);
+          
         },
         error: (err) => {
           this.isSaving = false;

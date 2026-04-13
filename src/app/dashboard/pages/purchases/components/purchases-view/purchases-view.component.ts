@@ -54,36 +54,14 @@ export default class PurchasesViewComponent extends BaseForm implements OnInit{
 ngOnInit(): void {
   this.load = true;
   firstValueFrom(this.crud.getId(this.id))
-    .then((purchase: any) => {
-      console.log('📦 Compra completa:', purchase);
-      console.log('🏢 Proveedor:', purchase.supplier);
-      console.log('📦 Productos:', purchase.products);
-
-      // Log del proveedor
-      console.log('Proveedor detalles:', {
-        id: purchase.supplier?.id,
-        supplierName: purchase.supplier?.supplierName,
-        name: purchase.supplier?.name
-      });
-
-      // Log detallado de cada producto
-      purchase.products?.forEach((p: any, index: number) => {
-        console.log(`Producto ${index + 1}:`, {
-          id: p.id,
-          productId: p.productId,
-          product: p.product,
-          productName: p.product?.productName,
-          name: p.product?.name,
-          sku: p.product?.sku
-        });
-      });
+    .then((purchase: any) => { 
 
       this.purchase = purchase;
       this.supplier = purchase.supplier;
       this.products = purchase.products;
     })
     .catch((error: any) => {
-      console.error('❌ Error al cargar la compra:', error);
+      
       this.toast.error('Error al cargar la compra');
     })
     .finally(() => {

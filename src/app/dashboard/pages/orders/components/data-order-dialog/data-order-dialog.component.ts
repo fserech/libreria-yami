@@ -64,7 +64,7 @@ export class DataOrderDialogComponent implements OnInit {
 
     // ✅ PASO 2: Después de que las sucursales estén cargadas, establecer valores preexistentes
     if (this.data.existingBranchId) {
-      console.log('🔄 Estableciendo sucursal preexistente:', this.data.existingBranchId);
+
 
       // Verificar que la sucursal existe en las opciones cargadas
       const branchExists = this.branches.some(b => b.value === this.data.existingBranchId);
@@ -73,15 +73,15 @@ export class DataOrderDialogComponent implements OnInit {
         // ✅ Usar setTimeout para asegurar que Angular haya renderizado el select
         setTimeout(() => {
           this.form.controls['idBranch'].setValue(this.data.existingBranchId);
-          console.log('✅ Sucursal establecida correctamente:', this.data.existingBranchId);
+
         }, 0);
       } else {
-        console.warn('⚠️ La sucursal preexistente no existe en las opciones:', this.data.existingBranchId);
+        console.warn(`Sucursal con ID ${this.data.existingBranchId} no encontrada en las opciones cargadas.`);
       }
     }
 
     if (this.data.existingObservation) {
-      console.log('🔄 Estableciendo observación preexistente:', this.data.existingObservation);
+
       this.form.controls['observation'].setValue(this.data.existingObservation);
     } else {
       // Solo generar mensaje aleatorio si no hay observación preexistente
@@ -120,7 +120,7 @@ export class DataOrderDialogComponent implements OnInit {
         this.toast.warning('No hay sucursales disponibles. Por favor, cree una sucursal primero.');
       }
 
-      console.log('✅ Sucursales cargadas:', this.branches.length, this.branches);
+
 
     } catch (error: any) {
       console.error('❌ Error al cargar sucursales:', error);
@@ -158,7 +158,6 @@ export class DataOrderDialogComponent implements OnInit {
         : ''
     };
 
-    console.log('✅ Datos del diálogo confirmados:', data);
-    this.dialogRef.close(data);
+        this.dialogRef.close(data);
   }
 }

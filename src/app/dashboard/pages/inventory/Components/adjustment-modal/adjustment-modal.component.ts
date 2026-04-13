@@ -92,7 +92,7 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
   }
 
   private async loadDataFromProductStock(data: any): Promise<void> {
-    console.log('📥 Cargando datos desde ProductStock:', data);
+
 
     await Promise.all([
       this.loadProducts(),
@@ -111,7 +111,6 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
     // ⭐ AGREGADO: Pre-cargar variantId si existe
     this.form.variantId = data.variantId?.toString() || null;
 
-    console.log('🔹 VariantId cargado:', this.form.variantId);
 
     this.currentStockInBranch = data.currentStock || 0;
     this.form.quantity = 0;
@@ -283,12 +282,10 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
       // ⭐ AGREGADO: Incluir variantId si existe
       if (this.form.variantId) {
         payload.variantId = parseInt(this.form.variantId);
-        console.log('✅ Enviando ajuste CON variantId:', payload.variantId);
-      } else {
-        console.log('✅ Enviando ajuste SIN variantId (producto simple)');
-      }
 
-      console.log('📤 Payload completo:', payload);
+      } else {
+        payload.variantId = null;
+      }
 
       let response;
 
@@ -308,7 +305,7 @@ export class AdjustmentModalComponent implements OnInit, OnChanges {
         );
       }
 
-      console.log('📥 Respuesta del servidor:', response);
+
 
       // ⭐ MODIFICADO: Actualizar stock considerando variantes
       this.currentStockInBranch = response.newStock ??

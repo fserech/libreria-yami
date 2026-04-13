@@ -66,7 +66,7 @@ export default class SupplierFormComponent extends BaseForm implements OnInit {
           this.form.controls['active'].setValue(supplier.active);
         })
         .catch((error: any) => {
-          console.log('error id: ', error);
+          this.toast.error('Error al cargar el proveedor');
         })
         .finally(() => {
           this.load = false;

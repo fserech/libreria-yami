@@ -176,7 +176,7 @@ export default class PurchaseGridMainComponent extends BaseForm implements OnIni
         }
       })
       .catch((error: any) => {
-        console.log('err', error);
+        this.toast.error('Error al aplicar filtros');
       });
   }
 

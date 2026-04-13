@@ -112,7 +112,7 @@ export class PurchasesSupplierSelectComponent extends BaseForm implements OnInit
       filter = filter.concat(`&supplierName=${name}`);
     }
 
-    console.log('🔍 Filtro aplicado:', filter);
+   
 
     this.filters = filter;
     this.page = 1; // ✅ Resetear a página 1 al filtrar
@@ -138,7 +138,6 @@ export class PurchasesSupplierSelectComponent extends BaseForm implements OnInit
       this.sortConfig.sortOrder = 'asc';
     }
 
-    console.log('🔄 Ordenamiento cambiado:', { sortBy: this.sortConfig.sortBy, sortOrder: this.sortConfig.sortOrder });
     this.getPageItems(this.sortConfig.sortOrder as 'asc' | 'desc', this.sortConfig.sortBy, this.page, this.pageSize, this.filters);
   }
 

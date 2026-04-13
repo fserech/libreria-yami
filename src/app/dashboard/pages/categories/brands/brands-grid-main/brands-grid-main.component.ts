@@ -85,7 +85,7 @@ export default class BrandsGridMainComponent extends BaseForm implements OnInit 
        })
        .catch((error: any) => {
          this.toast.error(error.message);
-         // console.log('err', error);
+
        });
    }
 

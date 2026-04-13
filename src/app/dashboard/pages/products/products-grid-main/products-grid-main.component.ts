@@ -160,10 +160,7 @@ export default class ProductsGridMainComponent extends BaseForm implements OnIni
 
     // Debug: verificar cuántos productos tienen SKU
     const skuCount = this.skuLabels.length;
-    console.log('Total productos en lista:', this.ItemsList.length);
-    console.log('Etiquetas SKU generadas:', skuCount);
-    console.log('Datos de etiquetas:', this.skuLabels);
-
+    
     if (skuCount === 0) {
       this.toast.error('Ningún producto tiene SKU asignado');
       return;

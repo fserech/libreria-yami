@@ -37,7 +37,7 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
   // ✅ NUEVO: Input para recibir cliente preseleccionado en modo edición
   @Input() set preselectedClient(client: Client | null) {
     if (client) {
-      console.log('🔄 Cliente preseleccionado recibido:', client);
+
       this._preselectedClient = client;
       this.setPreselectedClient();
     }
@@ -83,7 +83,7 @@ export class OrdersClientSelectComponent extends BaseFormClients implements OnIn
   private setPreselectedClient(): void {
     if (this._preselectedClient) {
       this.selectedIdControl.setValue(this._preselectedClient.id);
-      console.log('✅ Cliente preseleccionado establecido:', this._preselectedClient.id);
+      
     }
   }
 

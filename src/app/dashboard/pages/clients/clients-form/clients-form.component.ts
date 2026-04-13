@@ -73,7 +73,7 @@ export default class ClientsFormComponent extends BaseForm implements OnInit {
           this.form.controls['idUser'].setValue(client.idUser);
         })
         .catch((error: any) => {
-          console.log('error id: ', error);
+
           this.toast.error('Error al cargar los datos del cliente');
         })
         .finally(() => {

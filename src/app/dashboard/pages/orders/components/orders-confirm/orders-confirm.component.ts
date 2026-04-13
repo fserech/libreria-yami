@@ -47,13 +47,7 @@ export class OrdersConfirmComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('🔍 orders-confirm ngOnInit:', {
-      orderId: this.orderId,
-      isEditMode: this.isEditMode,
-      client: this.client?.name,
-      productsCount: this.products?.length,
-      branch: this.branch?.name
-    });
+
   }
 
   removeUnit(product: ProductOrderSelect): void {
@@ -117,14 +111,7 @@ export class OrdersConfirmComponent implements OnInit {
   }
 
   buildOrder(){
-    console.log('🚀 buildOrder iniciado');
-    console.log('📋 Datos actuales:', {
-      orderId: this.orderId,
-      isEditMode: this.isEditMode,
-      branchId: this.branch?.id,
-      clientId: this.client?.id,
-      productsCount: this.products?.length
-    });
+
 
     if (!this.branch || !this.branch.id) {
       this.toast.error('Debe seleccionar una sucursal');
@@ -152,15 +139,7 @@ export class OrdersConfirmComponent implements OnInit {
         products: this.buildProducts(this.products)
       }
 
-      console.log('✅ Orden construida para enviar:', {
-        id: order.id,
-        clientId: order.clientId,
-        branchId: order.idBranch,
-        productsCount: order.products.length,
-        isEditMode: this.isEditMode
-      });
 
-      console.log('📦 Orden completa:', order);
 
       this.confirmOrder.emit(order);
     }else{

@@ -112,7 +112,7 @@ export default class OrdersViewComponent extends BaseForm implements OnInit {
   }
 
   // ✅ Navegación correcta a la ruta de edición
-  console.log('🔀 Navegando a edición, ID:', this.id);
+
   this.router.navigate([`/dashboard/orders/detail/edit/${this.id}`]);
 }
 

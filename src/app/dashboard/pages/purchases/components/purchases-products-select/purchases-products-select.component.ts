@@ -80,7 +80,7 @@ export class PurchasesProductsSelectComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges) {
     // ⭐ Cuando cambia el proveedor seleccionado, filtrar productos
     if (changes['selectedSupplier'] && !changes['selectedSupplier'].firstChange) {
-      console.log('🔄 Proveedor cambiado:', this.selectedSupplier);
+
       this.filterProductsBySupplier();
     }
   }
@@ -127,7 +127,7 @@ export class PurchasesProductsSelectComponent implements OnInit, OnChanges {
       this.filteredProducts = productsToFilter;
     }
 
-    console.log(`📦 Productos filtrados: ${this.filteredProducts.length}/${this.products.length}`);
+  
   }
 
   /**

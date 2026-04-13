@@ -63,7 +63,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     // Iniciar escucha si está habilitado
     if (this.scannerService.scannerEnabled) {
       this.scannerService.startListening();
-      console.log('📟 Lector de códigos de barras activado');
+
     }
   }
 
@@ -89,10 +89,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
     if (this.scannerService.scannerEnabled) {
       this.toast.success('Lector de códigos activado', 'Escáner');
-      console.log('📟 Lector de códigos de barras activado');
+    
     } else {
       this.toast.info('Lector de códigos desactivado', 'Escáner');
-      console.log('📟 Lector de códigos de barras desactivado');
+      
     }
   }
 }

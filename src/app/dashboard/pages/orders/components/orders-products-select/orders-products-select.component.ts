@@ -61,7 +61,7 @@ interface ProductOrder {
 export class OrdersProductsSelectComponent implements OnInit, OnDestroy {
   @Input() set existingProducts(products: ProductOrderSelect[]) {
     if (products && products.length > 0) {
-      console.log('🔄 Recibiendo productos existentes:', products);
+
       this._existingProducts = products;
       this.loadExistingProducts();
     }
@@ -112,7 +112,7 @@ export class OrdersProductsSelectComponent implements OnInit, OnDestroy {
       this.products = response.filter(p => p.active);
       this.filteredProducts = [...this.products];
 
-      console.log('✅ Productos cargados:', this.products.length);
+
     } catch (error) {
       console.error('Error cargando productos:', error);
       this.toast.error('Error al cargar productos');
@@ -123,7 +123,7 @@ export class OrdersProductsSelectComponent implements OnInit, OnDestroy {
 
   private loadExistingProducts() {
     if (this._existingProducts && this._existingProducts.length > 0) {
-      console.log('📦 Cargando productos existentes:', this._existingProducts);
+
 
       this.selectedProducts = this._existingProducts.map(item => ({
         product: item.product,
@@ -132,7 +132,7 @@ export class OrdersProductsSelectComponent implements OnInit, OnDestroy {
         costPriceAtSale: item.costPriceAtSale || getProductAverageCostPrice(item.product)
       }));
 
-      console.log('✅ Productos seleccionados cargados:', this.selectedProducts);
+
       this.emitChanges();
     }
   }

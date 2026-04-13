@@ -144,8 +144,7 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
   }
 
   onStepChange(event: StepperSelectionEvent): void {
-    console.log('🔄 Paso cambiado:', event.selectedIndex);
-    console.log('🏢 Proveedor actual:', this.supplier);
+   
   }
 
   ngOnInit(): void {
@@ -205,7 +204,7 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
    * ⭐ Método llamado cuando se selecciona un proveedor
    */
   supplierSelect(supplier: Supplier): void {
-    console.log('🏢 Proveedor seleccionado:', supplier);
+   
 
     // Actualizar el formulario del proveedor
     this.supplierForm.controls.id.setValue(supplier.id ?? 0);
@@ -225,12 +224,11 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
       active: supplier.active ?? true
     };
 
-    console.log('✅ Supplier asignado:', this.supplier);
-    console.log('✅ Formulario válido:', this.supplierForm.valid);
+    
 
     // ⚠️ Limpiar productos si había alguno seleccionado
     if (this.products.length > 0) {
-      console.log('⚠️ Limpiando productos anteriores al cambiar proveedor');
+      
       this.products = [];
       this.stepTwoForm.controls.productsSelected.setValue(false);
     }
@@ -243,7 +241,7 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
    */
   productsSelect(products: ProductPurchaseSelect[]): void {
     this.products = products;
-    console.log('📦 Productos seleccionados para compra:', this.products);
+    
 
     // Actualizar validación del step 2
     if (this.products.length > 0) {
@@ -370,7 +368,7 @@ export default class PurchasesFormComponent extends BaseForm implements OnInit, 
       }))
     };
 
-    console.log('📤 Compra a enviar al backend:', purchase);
+    
     await this.submit(purchase);
   }
 

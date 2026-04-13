@@ -59,7 +59,7 @@ export default class BrandFormsComponent extends BaseForm implements OnInit {
           this.form.controls['active'].setValue(brand.active);
         })
         .catch((error: any) => {
-          console.log('error id: ', error);
+          this.toast.error('Error al cargar los datos de la marca');
         })
         .finally(() => {
           this.load = false;

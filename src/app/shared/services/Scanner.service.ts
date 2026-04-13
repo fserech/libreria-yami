@@ -104,7 +104,7 @@ export class ScannerService implements OnDestroy {
       return;
     }
 
-    console.log('📟 Código escaneado:', sku);
+   
     this.lastScannedSku = sku;
 
     const result = this.findProductBySku(sku);

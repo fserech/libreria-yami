@@ -85,7 +85,7 @@ export default class CategoriesGridMainComponent extends BaseForm implements OnI
       })
       .catch((error: any) => {
         this.toast.error(error.message);
-        // console.log('err', error);
+
       });
   }
 
