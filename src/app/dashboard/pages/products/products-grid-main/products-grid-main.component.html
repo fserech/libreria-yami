@@ -9,31 +9,31 @@
   <div class="sticky top-0 z-10 grid grid-cols-1 gap-4 md:grid-cols-1 p-1 bg-white dark:bg-slate-900 border-b dark:border-slate-600">
     <div class="border dark:border-slate-700 border-none border-t-0 border-l-0 border-r-0 m-0 p-0 pb-2 w-full">
 
-      <!-- ✅ NUEVO: Contenedor flex para los tres botones en la misma línea (solo móvil) -->
-      <div class="flex gap-2 sm:hidden">
-        <button (click)="openDialog()" type="button" class="btn-success h-10 flex-1">
+      <!-- Botón Filtros (solo móvil) -->
+      <button (click)="openDialog()" type="button" class="btn-success h-10 sm:flex md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
+        <div class="flex text-center justify-center align-middle">
+          <p class="text-sm md:text-base">Filtros</p>
+          <ng-icon class="text-white font-bold m-1" size="15" name="matFilterAltOutline"></ng-icon>
+        </div>
+      </button>
+
+      @if (user.role === 'ROLE_ADMIN') {
+        <!-- Botón Etiquetas (solo móvil) -->
+        <button (click)="openSkuLabels()" type="button" class="btn-success h-10 sm:flex md:hidden lg:hidden xl:hidden 2xl:hidden 3xl:hidden">
           <div class="flex text-center justify-center align-middle">
-            <p class="text-sm">Filtros</p>
-            <ng-icon class="text-white font-bold m-1" size="15" name="matFilterAltOutline"></ng-icon>
+            <p class="text-sm md:text-base">Etiquetas</p>
+            <ng-icon class="text-white font-bold m-1" size="15" name="matPrintOutline"></ng-icon>
           </div>
         </button>
 
-        @if (user.role === 'ROLE_ADMIN') {
-          <button (click)="openSkuLabels()" type="button" class="btn-success h-10 flex-1">
-            <div class="flex text-center justify-center align-middle">
-              <p class="text-sm">Etiquetas</p>
-              <ng-icon class="text-white font-bold m-1" size="15" name="matPrintOutline"></ng-icon>
-            </div>
-          </button>
-
-          <button (click)="add()" type="button" class="btn-primary h-10 flex-1">
-            <div class="flex text-center justify-center align-middle">
-              <p class="text-sm">Nuevo</p>
-              <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
-            </div>
-          </button>
-        }
-      </div>
+        <!-- Botón Nuevo (siempre visible, float-right como Clientes) -->
+        <button (click)="add()" type="button" class="btn-primary h-10 float-right w-28">
+          <div class="flex text-center justify-center align-middle">
+            <p class="text-sm md:text-base">Nuevo</p>
+            <ng-icon class="text-white font-bold m-1" size="15" name="matAddOutline"></ng-icon>
+          </div>
+        </button>
+      }
 
     </div>
 
@@ -71,14 +71,15 @@
           </div>
         </button>
 
-        <!-- ⭐ BOTÓN PARA IMPRIMIR ETIQUETAS SKU (DESKTOP - SIEMPRE VISIBLE) -->
         @if (user.role === 'ROLE_ADMIN') {
+          <!-- BOTÓN ETIQUETAS SKU (DESKTOP) -->
           <button (click)="openSkuLabels()" type="button" class="btn-success h-10">
             <div class="flex text-center justify-center align-middle">
               <p class="text-sm md:text-base">Etiquetas SKU</p>
               <ng-icon class="text-white font-bold m-1" size="17" name="matPrintOutline"></ng-icon>
             </div>
           </button>
+
         }
 
     </div>
@@ -619,7 +620,7 @@
   </div>
 </div>
 
-<!-- ⭐ MODAL DE ETIQUETAS SKU (IMPRIME TODOS LOS PRODUCTOS) -->
+<!-- MODAL DE ETIQUETAS SKU -->
 @if (showSkuLabels) {
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
     <div class="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
